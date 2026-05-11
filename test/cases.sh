@@ -133,3 +133,34 @@ run_case render_token_context_bar   sample-input.json ctx-bar.json     --dump-re
 run_case render_line_default sample-input.json default-min.json --dump-render-line 0
 CASE_ENV="MOCK_GIT_STATE=in_repo STATUSLINE_BAR_FAKE_NOW=9999999999" \
   run_case render_all_default sample-input.json default-preset.json --dump-render-all
+
+# Phase 7: config builder & loader
+run_case config_default_build "" "" --dump-default-config
+run_case config_loader_explicit "" default-min.json --dump-loaded-config
+CASE_ENV="STATUSLINE_BAR_CONFIG=test/configs/default-min.json XDG_CONFIG_HOME=/nonexistent HOME=/nonexistent" \
+  run_case config_loader_env "" "" --dump-loaded-config
+CASE_ENV="XDG_CONFIG_HOME=/nonexistent HOME=/nonexistent" \
+  run_case config_loader_fallback "" "" --dump-loaded-config
+
+# Project-level config lookup
+pre_config_loader_project_local() {
+  mkdir -p /tmp/sbar-project
+  jq '.theme="dracula"' /Users/david/Documents/Projects/statusline_bar/statusline-bar/test/configs/default-min.json \
+    > /tmp/sbar-project/.statusline-bar.json
+}
+CASE_ENV="XDG_CONFIG_HOME=/nonexistent HOME=/nonexistent" \
+  run_case config_loader_project_local project-input.json "" --dump-loaded-config
+
+# First-run auto-create
+pre_config_auto_create() { rm -rf /tmp/sbar-autotest; }
+CASE_ENV="XDG_CONFIG_HOME=/tmp/sbar-autotest HOME=/tmp/sbar-autotest" \
+  run_case config_auto_create sample-input.json "" --check-auto-create
+
+# Phase 7: --check validator
+run_case check_ok            "" check-ok.json --check
+expect_exit_check_bad_json=1
+run_case check_bad_json      "" check-bad-json.json --check
+expect_exit_check_bad_preset=1
+run_case check_bad_preset    "" check-bad-preset.json --check
+expect_exit_check_unknown_token=1
+run_case check_unknown_token "" check-unknown-token.json --check

@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "$id": "https://raw.githubusercontent.com/Dworf/statusline-bar/main/schema.json",
+  "title": "statusline-bar config",
+  "type": "object",
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "const": 1 },
+    "preset": {
+      "anyOf": [
+        { "type": "null" },
+        { "enum": ["minimum","compact","default","modern","fancy","everything","maximum"] }
+      ]
+    },
+    "theme": {
+      "enum": ["default","dark","light","graphite","solarized","dracula","nord","gruvbox","tokyo-night","catppuccin"]
+    },
+    "global": {
+      "type": "object",
+      "properties": {
+        "prefix_style": { "enum": ["none","label","emoji","nerd","ascii","emoji+label","label+emoji","nerd+label"] },
+        "separator":    { "enum": ["space","pipe","slash","dot","vbar","dash","bullet","diamond","arrow","tri","star","sparkle","gear","check","heart","music","chevron","slant","chevron_thin"] },
+        "bar_style":    { "anyOf": [{ "type": "null" }, { "enum": ["blocks","heavy","line","braille","dots","arrows","ascii","gradient"] }] },
+        "color_depth":  { "enum": ["auto","truecolor","256","16","none"] },
+        "empty_behavior": { "enum": ["hide","placeholder"] },
+        "placeholder":  { "type": "string" },
+        "bar_width":    { "type": "integer", "minimum": 1, "maximum": 40 }
+      },
+      "additionalProperties": false
+    },
+    "lines": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 4,
+      "items": {
+        "type": "array",
+        "items": { "type": "string" }
+      }
+    },
+    "tokens": {
+      "type": "object",
+      "patternProperties": {
+        "^[a-z_]+$": {
+          "type": "object",
+          "properties": {
+            "prefix":    { "enum": ["none","label","emoji","nerd","ascii","emoji+label","label+emoji","nerd+label"] },
+            "format":    { "enum": ["value","percent","progressbar","progressbar+percent","countdown","remaining","progressbar+percent+countdown","combined","flag"] },
+            "bar_style": { "enum": ["blocks","heavy","line","braille","dots","arrows","ascii","gradient"] },
+            "separator_after": { "enum": ["space","pipe","slash","dot","vbar","dash","bullet","diamond","arrow","tri","star","sparkle","gear","check","heart","music","chevron","slant","chevron_thin"] }
+          },
+          "additionalProperties": false
+        }
+      }
+    },
+    "_cache": {
+      "type": "object",
+      "properties": {
+        "nerd_font_available": { "type": ["boolean","null"] },
+        "detected_at": { "type": "integer" }
+      }
+    }
+  },
+  "required": ["version","theme","global","lines"],
+  "additionalProperties": false
+}

@@ -768,6 +768,120 @@ apply_prefix() {
 }
 
 # ============================================================
+# SECTION: Config loader / writer / validator
+# ============================================================
+
+# Build the default config JSON from PRESETS_JSON (default preset's lines).
+build_default_config() {
+  local lines_json
+  lines_json="$(jq -c '.default.lines' <<<"$PRESETS_JSON")"
+  jq -n --argjson lines "$lines_json" '{
+    "$schema": "https://raw.githubusercontent.com/Dworf/statusline-bar/main/schema.json",
+    version: 1,
+    preset: "default",
+    theme: "default",
+    global: {
+      prefix_style: "emoji",
+      separator: "pipe",
+      bar_style: null,
+      color_depth: "auto",
+      empty_behavior: "hide",
+      placeholder: "—",
+      bar_width: 10
+    },
+    lines: $lines,
+    tokens: {}
+  }'
+}
+
+# Resolve the default-write path: $XDG_CONFIG_HOME/... if set, else ~/.config/...
+_default_config_path() {
+  if [[ -n "${XDG_CONFIG_HOME:-}" ]]; then
+    echo "$XDG_CONFIG_HOME/statusline-bar/config.json"
+  else
+    echo "$HOME/.config/statusline-bar/config.json"
+  fi
+}
+
+# Resolve & load config into $CONFIG_JSON; set $CONFIG_PATH if file-backed.
+load_config() {
+  local p
+  # Precedence: --config → env → project-local → XDG → HOME → defaults.
+  if [[ -n "${CONFIG_PATH:-}" && -f "$CONFIG_PATH" ]]; then
+    p="$CONFIG_PATH"
+  elif [[ -n "${STATUSLINE_BAR_CONFIG:-}" && -f "$STATUSLINE_BAR_CONFIG" ]]; then
+    p="$STATUSLINE_BAR_CONFIG"
+  else
+    local ws=""
+    if [[ -n "${INPUT_JSON:-}" ]]; then
+      ws="$(jq -r '.workspace.current_dir // .cwd // empty' <<<"$INPUT_JSON" 2>/dev/null)"
+    fi
+    [[ -z "$ws" ]] && ws="$PWD"
+    if [[ -f "$ws/.statusline-bar.json" ]]; then
+      p="$ws/.statusline-bar.json"
+    elif [[ -n "${XDG_CONFIG_HOME:-}" && -f "$XDG_CONFIG_HOME/statusline-bar/config.json" ]]; then
+      p="$XDG_CONFIG_HOME/statusline-bar/config.json"
+    elif [[ -f "$HOME/.config/statusline-bar/config.json" ]]; then
+      p="$HOME/.config/statusline-bar/config.json"
+    fi
+  fi
+  if [[ -n "${p:-}" ]]; then
+    CONFIG_PATH="$p"
+    if ! CONFIG_JSON="$(jq '.' "$p" 2>/dev/null)"; then
+      echo "statusline-bar: config parse error at $p — using defaults" >&2
+      CONFIG_JSON="$(build_default_config)"
+      CONFIG_PATH=""
+    fi
+  else
+    CONFIG_JSON="$(build_default_config)"
+    CONFIG_PATH=""
+  fi
+}
+
+# Persist JSON to disk, creating parent dirs.
+save_config() {
+  local path="$1" json="$2"
+  mkdir -p "$(dirname "$path")"
+  printf '%s\n' "$json" > "$path"
+}
+
+# Validate config. Returns 0 if valid, 1 if invalid (with stderr message).
+check_config() {
+  local p="${CONFIG_PATH:-}"
+  if [[ -n "$p" ]]; then
+    if ! jq '.' "$p" >/dev/null 2>&1; then
+      echo "check: config parse error in $p"
+      return 1
+    fi
+  fi
+  load_config
+  local theme; theme="$(jq -r '.theme // ""' <<<"$CONFIG_JSON")"
+  local valid_themes="default dark light graphite solarized dracula nord gruvbox tokyo-night catppuccin"
+  if ! grep -qw "$theme" <<<"$valid_themes"; then
+    echo "check: unknown theme \"$theme\""
+    return 1
+  fi
+  local preset; preset="$(jq -r '.preset // ""' <<<"$CONFIG_JSON")"
+  local valid_presets="minimum compact default modern fancy everything maximum"
+  if [[ -n "$preset" && "$preset" != "null" ]] && ! grep -qw "$preset" <<<"$valid_presets"; then
+    echo "check: unknown preset \"$preset\" (expected: $(echo $valid_presets | tr ' ' ', '))"
+    return 1
+  fi
+  local i n id valid_ids
+  valid_ids="$(jq -r 'keys_unsorted | join(" ")' <<<"$TOKENS_JSON")"
+  n="$(jq -r '.lines | length' <<<"$CONFIG_JSON")"
+  for ((i=0; i<n; i++)); do
+    while IFS= read -r id; do
+      if ! grep -qw "$id" <<<"$valid_ids"; then
+        echo "check: unknown token \"$id\" in lines[$i]"
+        return 1
+      fi
+    done < <( jq -r --argjson i "$i" '.lines[$i][]?' <<<"$CONFIG_JSON" )
+  done
+  return 0
+}
+
+# ============================================================
 # SECTION: render_token
 # ============================================================
 # Globals expected:
@@ -997,6 +1111,32 @@ main() {
   if [[ "${1:-}" == "--apply-format" ]]; then
     apply_format "$2" "$3" "$4" "$5" "$6" "$7"; echo
     exit 0
+  fi
+  if [[ "${1:-}" == "--dump-default-config" ]]; then
+    build_default_config
+    exit 0
+  fi
+  if [[ "${1:-}" == "--dump-loaded-config" ]]; then
+    # If stdin has data, set INPUT_JSON so project-local lookup uses workspace dir.
+    if [[ ! -t 0 ]]; then INPUT_JSON="$(cat)"; fi
+    load_config
+    echo "$CONFIG_JSON"
+    exit 0
+  fi
+  if [[ "${1:-}" == "--check-auto-create" ]]; then
+    if [[ ! -t 0 ]]; then INPUT_JSON="$(cat)"; fi
+    load_config
+    if [[ -z "${CONFIG_PATH:-}" ]]; then
+      local p; p="$(_default_config_path)"
+      save_config "$p" "$CONFIG_JSON"
+      echo "created $p"
+      exit 0
+    fi
+    echo "already-have: $CONFIG_PATH"
+    exit 0
+  fi
+  if [[ "${1:-}" == "--check" ]]; then
+    if check_config; then exit 0; else exit 1; fi
   fi
   if [[ "${1:-}" == "--dump-render-token" ]]; then
     INPUT_JSON="$(cat)"

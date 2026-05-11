@@ -1,0 +1,61 @@
+{
+  "session_id": "test-session-0001",
+  "transcript_path": "/dev/null",
+  "cwd": "/tmp/sbar-project",
+  "effort": {
+    "level": "xhigh"
+  },
+  "session_name": "Browser caps",
+  "model": {
+    "id": "claude-opus-4-7",
+    "display_name": "Opus 4.7 (1M)"
+  },
+  "workspace": {
+    "current_dir": "/tmp/sbar-project",
+    "project_dir": "/tmp/statusline-bar-test",
+    "added_dirs": []
+  },
+  "version": "2.1.137",
+  "output_style": {
+    "name": "default"
+  },
+  "cost": {
+    "total_cost_usd": 0.40,
+    "total_duration_ms": 230000,
+    "total_api_duration_ms": 39000,
+    "total_lines_added": 128,
+    "total_lines_removed": 42
+  },
+  "context_window": {
+    "total_input_tokens": 37903,
+    "total_output_tokens": 22,
+    "context_window_size": 1000000,
+    "current_usage": {
+      "input_tokens": 1,
+      "output_tokens": 22,
+      "cache_creation_input_tokens": 149,
+      "cache_read_input_tokens": 37753
+    },
+    "used_percentage": 4,
+    "remaining_percentage": 96
+  },
+  "exceeds_200k_tokens": false,
+  "fast_mode": false,
+  "thinking": {
+    "enabled": true
+  },
+  "worktree": {
+    "name": "main",
+    "original_cwd": "/tmp/statusline-bar-test"
+  },
+  "rate_limits": {
+    "five_hour": {
+      "used_percentage": 0,
+      "resets_at": 9999999999
+    },
+    "seven_day": {
+      "used_percentage": 6,
+      "resets_at": 9999999999
+    }
+  }
+}

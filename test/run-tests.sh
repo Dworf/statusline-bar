@@ -69,10 +69,17 @@ run_case() {
   if declare -F "$pre_fn" >/dev/null; then "$pre_fn"; fi
   # CASE_ENV lets a case override env vars; falls back to NO_COLOR=1
   local env_prefix="${CASE_ENV:-NO_COLOR=1}"
+  # expect_exit_<id> lets a case assert a non-zero exit code (default 0)
+  local exit_var="expect_exit_${id}"
+  local expected_exit="${!exit_var:-0}"
+  local actual_exit=0
   if /usr/bin/env $env_prefix "$SCRIPT" "${args[@]}" < "$stdin_src" > "$actual_path" 2>&1; then
-    :
+    actual_exit=0
   else
-    echo "FAIL $id (exit non-zero)"
+    actual_exit=$?
+  fi
+  if [[ "$actual_exit" != "$expected_exit" ]]; then
+    echo "FAIL $id (exit $actual_exit; expected $expected_exit)"
     FAIL=$((FAIL+1))
     FAILED_IDS+=("$id")
     return
