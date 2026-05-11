@@ -57,3 +57,61 @@ run_case prefix_emoji_model "" "" --dump-prefix model emoji       "Opus 4.7"
 run_case prefix_label_model "" "" --dump-prefix model label       "Opus 4.7"
 run_case prefix_combo_model "" "" --dump-prefix model emoji+label "Opus 4.7"
 run_case prefix_none_model  "" "" --dump-prefix model none        "Opus 4.7"
+
+# Phase 5: simple string tokens
+run_case tok_model                sample-input.json   "" --dump-token model
+run_case tok_session_name         sample-input.json   "" --dump-token session_name
+run_case tok_effort               sample-input.json   "" --dump-token effort
+run_case tok_output_style         sample-input.json   "" --dump-token output_style
+run_case tok_version              sample-input.json   "" --dump-token version
+run_case tok_dir                  sample-input.json   "" --dump-token dir
+run_case tok_worktree             sample-input.json   "" --dump-token worktree
+run_case tok_vim_mode_missing     sample-input.json   "" --dump-token vim_mode
+run_case tok_agent_name_missing   sample-input.json   "" --dump-token agent_name
+run_case tok_session_id           sample-input.json   "" --dump-token session_id
+run_case tok_added_dirs_zero      sample-input.json   "" --dump-token added_dirs
+run_case tok_git_worktree_missing sample-input.json   "" --dump-token git_worktree
+run_case tok_transcript           sample-input.json   "" --dump-token transcript
+
+# Phase 5: numeric & duration tokens
+run_case tok_cost          sample-input.json "" --dump-token cost
+run_case tok_lines_added   sample-input.json "" --dump-token lines_added
+run_case tok_lines_removed sample-input.json "" --dump-token lines_removed
+run_case tok_duration      sample-input.json "" --dump-token duration
+run_case tok_api_duration  sample-input.json "" --dump-token api_duration
+
+# Phase 5: percent tokens
+run_case tok_context_pct sample-input.json "" --dump-token context_pct
+run_case tok_context_bar sample-input.json "" --dump-token context_bar
+run_case tok_cache_hit   sample-input.json "" --dump-token cache_hit
+
+# Phase 5: rate-limit tokens
+run_case tok_rl_5h sample-input.json "" --dump-token rl_5h
+run_case tok_rl_7d sample-input.json "" --dump-token rl_7d
+
+# Phase 5: flag tokens
+run_case tok_thinking_on  sample-input.json   "" --dump-token thinking
+run_case tok_thinking_off thinking-off.json   "" --dump-token thinking
+run_case tok_fast_mode    thinking-off.json   "" --dump-token fast_mode
+run_case tok_exceeds_200k sample-input.json   "" --dump-token exceeds_200k
+
+# Phase 5: git tokens (via mock)
+CASE_ENV="MOCK_GIT_STATE=in_repo"     run_case tok_git_branch_inrepo  sample-input.json "" --dump-token git_branch
+CASE_ENV="MOCK_GIT_STATE=out_of_repo" run_case tok_git_branch_outside sample-input.json "" --dump-token git_branch
+CASE_ENV="MOCK_GIT_STATE=in_repo"     run_case tok_git_staged         sample-input.json "" --dump-token git_staged
+CASE_ENV="MOCK_GIT_STATE=in_repo"     run_case tok_git_modified       sample-input.json "" --dump-token git_modified
+CASE_ENV="MOCK_GIT_STATE=in_repo"     run_case tok_git_untracked      sample-input.json "" --dump-token git_untracked
+CASE_ENV="MOCK_GIT_STATE=in_repo"     run_case tok_git_status         sample-input.json "" --dump-token git_status
+CASE_ENV="MOCK_GIT_STATE=in_repo"     run_case tok_git_ahead_behind   sample-input.json "" --dump-token git_ahead_behind
+
+# Phase 5: OS tokens
+CASE_ENV="HOSTNAME_OVERRIDE=mbp"                run_case tok_hostname sample-input.json "" --dump-token hostname
+CASE_ENV="USER=david"                           run_case tok_user     sample-input.json "" --dump-token user
+CASE_ENV="STATUSLINE_BAR_FAKE_NOW=1715450580"   run_case tok_clock    sample-input.json "" --dump-token clock
+CASE_ENV="STATUSLINE_BAR_FAKE_NOW=1715450580"   run_case tok_date     sample-input.json "" --dump-token date
+CASE_ENV="STATUSLINE_BAR_FAKE_BATTERY=87"       run_case tok_battery_fake     sample-input.json "" --dump-token battery
+CASE_ENV="STATUSLINE_BAR_FORCE_NO_BATTERY=1"    run_case tok_battery_missing  sample-input.json "" --dump-token battery
+CASE_ENV="STATUSLINE_BAR_FAKE_MEMORY=42"        run_case tok_memory_fake      sample-input.json "" --dump-token memory
+CASE_ENV="STATUSLINE_BAR_FORCE_NO_MEMORY=1"     run_case tok_memory_missing   sample-input.json "" --dump-token memory
+CASE_ENV="STATUSLINE_BAR_FAKE_LOAD=1.42"        run_case tok_load_fake        sample-input.json "" --dump-token load
+CASE_ENV="STATUSLINE_BAR_FORCE_NO_LOAD=1"       run_case tok_load_missing     sample-input.json "" --dump-token load

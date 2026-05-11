@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# Mock git for tests. Behavior driven by $MOCK_GIT_STATE env var.
+# Only present on the test PATH; never installed in users' shells.
+case "${MOCK_GIT_STATE:-real}" in
+  out_of_repo)
+    case "$1" in
+      rev-parse) echo "fatal: not a git repository" >&2; exit 128 ;;
+      *)         exit 128 ;;
+    esac ;;
+  in_repo)
+    case "$1 $2" in
+      "rev-parse --git-dir")        echo ".git"; exit 0 ;;
+      "rev-parse --show-toplevel")  echo "/tmp/statusline-bar-test"; exit 0 ;;
+      "branch --show-current")      echo "feat/wizard"; exit 0 ;;
+      "diff --cached")              printf '1\t0\tfile1.sh\n2\t1\tfile2.sh\n3\t0\tfile3.sh\n'; exit 0 ;;
+      "diff --numstat")             printf '1\t0\ta.sh\n2\t2\tb.sh\n3\t1\tc.sh\n4\t0\td.sh\n5\t5\te.sh\n'; exit 0 ;;
+      "ls-files --others")          printf 'new1.sh\nnew2.sh\n'; exit 0 ;;
+      "rev-list --left-right")      printf '1\t2\n'; exit 0 ;;
+    esac
+    echo "unhandled mock: $*" >&2; exit 99 ;;
+  real|*)
+    # Pass through to real git
+    exec /usr/bin/env -i \
+      PATH="/usr/local/bin:/usr/bin:/bin:/opt/homebrew/bin" \
+      HOME="${HOME:-}" \
+      bash -c 'exec git "$@"' _ "$@" ;;
+esac

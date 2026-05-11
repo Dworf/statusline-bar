@@ -464,6 +464,224 @@ render_bar() {
 }
 
 # ============================================================
+# SECTION: Token renderers — Claude stdin
+# ============================================================
+# Each tok_<id> reads from global $INPUT_JSON and emits the raw value
+# (no prefix, no format — those are applied by the composition layer).
+# Empty/missing data → empty stdout.
+
+tok_model()        { jq -r '.model.display_name // ""' <<<"$INPUT_JSON"; }
+tok_session_name() { jq -r '.session_name // ""' <<<"$INPUT_JSON"; }
+tok_effort()       { jq -r '.effort.level // ""' <<<"$INPUT_JSON"; }
+tok_output_style() { jq -r '.output_style.name // ""' <<<"$INPUT_JSON"; }
+tok_version()      { jq -r '.version // ""' <<<"$INPUT_JSON"; }
+tok_dir() {
+  local d
+  d="$(jq -r '.workspace.current_dir // .cwd // ""' <<<"$INPUT_JSON")"
+  [[ -z "$d" ]] && return
+  local root
+  if root="$(cd "$d" 2>/dev/null && git rev-parse --show-toplevel 2>/dev/null)"; then
+    basename "$root"
+  else
+    basename "$d"
+  fi
+}
+tok_worktree() { jq -r '.worktree.name // ""' <<<"$INPUT_JSON"; }
+
+# New in v0.1.0 — gap-analysis additions
+tok_vim_mode()   { jq -r '.vim.mode // ""' <<<"$INPUT_JSON"; }
+tok_agent_name() { jq -r '.agent.name // ""' <<<"$INPUT_JSON"; }
+tok_session_id() {
+  local s; s="$(jq -r '.session_id // ""' <<<"$INPUT_JSON")"
+  [[ -z "$s" ]] && return
+  printf '%s' "${s:0:8}"
+}
+tok_added_dirs() {
+  jq -r '(.workspace.added_dirs // []) | length' <<<"$INPUT_JSON"
+}
+tok_git_worktree() { jq -r '.workspace.git_worktree // ""' <<<"$INPUT_JSON"; }
+tok_transcript() {
+  local p; p="$(jq -r '.transcript_path // ""' <<<"$INPUT_JSON")"
+  [[ -z "$p" ]] && return
+  basename "$p"
+}
+
+# Numeric / duration
+tok_cost() {
+  local c
+  c="$(jq -r '.cost.total_cost_usd // empty' <<<"$INPUT_JSON")"
+  [[ -z "$c" ]] && return
+  awk -v v="$c" 'BEGIN { printf "$%.2f", v }'
+}
+tok_lines_added() {
+  local n; n="$(jq -r '.cost.total_lines_added // empty' <<<"$INPUT_JSON")"
+  [[ -z "$n" ]] && return
+  printf '+%s' "$n"
+}
+tok_lines_removed() {
+  local n; n="$(jq -r '.cost.total_lines_removed // empty' <<<"$INPUT_JSON")"
+  [[ -z "$n" ]] && return
+  printf -- '-%s' "$n"
+}
+tok_duration() {
+  local ms; ms="$(jq -r '.cost.total_duration_ms // empty' <<<"$INPUT_JSON")"
+  [[ -z "$ms" ]] && return
+  fmt_duration_ms "$ms"
+}
+tok_api_duration() {
+  local ms; ms="$(jq -r '.cost.total_api_duration_ms // empty' <<<"$INPUT_JSON")"
+  [[ -z "$ms" ]] && return
+  fmt_duration_ms "$ms"
+}
+
+# Percent tokens — emit raw integer (0-100); format applied by composition.
+tok_context_pct() { jq -r '.context_window.used_percentage // empty' <<<"$INPUT_JSON"; }
+tok_context_bar() { tok_context_pct; }
+tok_cache_hit() {
+  local r c i
+  r="$(jq -r '.context_window.current_usage.cache_read_input_tokens // 0' <<<"$INPUT_JSON")"
+  c="$(jq -r '.context_window.current_usage.cache_creation_input_tokens // 0' <<<"$INPUT_JSON")"
+  i="$(jq -r '.context_window.current_usage.input_tokens // 0' <<<"$INPUT_JSON")"
+  local total=$(( r + c + i ))
+  (( total <= 0 )) && return
+  awk -v r="$r" -v t="$total" 'BEGIN { printf "%d", (r*100/t) }'
+}
+
+# Rate-limit tokens emit "pct|epoch"; composition parses.
+tok_rl_5h() {
+  local p e
+  p="$(jq -r '.rate_limits.five_hour.used_percentage // empty' <<<"$INPUT_JSON")"
+  e="$(jq -r '.rate_limits.five_hour.resets_at // empty' <<<"$INPUT_JSON")"
+  [[ -z "$p" || -z "$e" ]] && return
+  printf '%s|%s' "$p" "$e"
+}
+tok_rl_7d() {
+  local p e
+  p="$(jq -r '.rate_limits.seven_day.used_percentage // empty' <<<"$INPUT_JSON")"
+  e="$(jq -r '.rate_limits.seven_day.resets_at // empty' <<<"$INPUT_JSON")"
+  [[ -z "$p" || -z "$e" ]] && return
+  printf '%s|%s' "$p" "$e"
+}
+
+# Flag tokens emit raw boolean string; composition translates to flag sentinel.
+# Cannot use `// empty` because jq's // treats `false` as a fallback trigger,
+# so we explicitly skip nulls and stringify the boolean.
+tok_thinking()     { jq -r '.thinking.enabled     | if . == null then empty else tostring end' <<<"$INPUT_JSON"; }
+tok_fast_mode()    { jq -r '.fast_mode            | if . == null then empty else tostring end' <<<"$INPUT_JSON"; }
+tok_exceeds_200k() { jq -r '.exceeds_200k_tokens  | if . == null then empty else tostring end' <<<"$INPUT_JSON"; }
+
+# ============================================================
+# SECTION: Token renderers — git
+# ============================================================
+
+_git_workspace() {
+  jq -r '.workspace.current_dir // .cwd // empty' <<<"$INPUT_JSON"
+}
+_git_check() {
+  local d; d="$(_git_workspace)"
+  [[ -z "$d" ]] && return 1
+  ( cd "$d" 2>/dev/null && git rev-parse --git-dir >/dev/null 2>&1 )
+}
+
+tok_git_branch() {
+  _git_check || return
+  local d; d="$(_git_workspace)"
+  ( cd "$d" && git branch --show-current 2>/dev/null )
+}
+tok_git_staged() {
+  _git_check || return
+  local d; d="$(_git_workspace)"
+  ( cd "$d" && git diff --cached --numstat 2>/dev/null | wc -l | tr -d ' ' )
+}
+tok_git_modified() {
+  _git_check || return
+  local d; d="$(_git_workspace)"
+  ( cd "$d" && git diff --numstat 2>/dev/null | wc -l | tr -d ' ' )
+}
+tok_git_untracked() {
+  _git_check || return
+  local d; d="$(_git_workspace)"
+  ( cd "$d" && git ls-files --others --exclude-standard 2>/dev/null | wc -l | tr -d ' ' )
+}
+tok_git_status() {
+  _git_check || return
+  printf '+%s|~%s|?%s' "$(tok_git_staged)" "$(tok_git_modified)" "$(tok_git_untracked)"
+}
+tok_git_ahead_behind() {
+  _git_check || return
+  local d; d="$(_git_workspace)"
+  local raw a b
+  raw="$( cd "$d" && git rev-list --left-right --count @{u}...HEAD 2>/dev/null )"
+  [[ -z "$raw" ]] && return
+  a="$(echo "$raw" | awk '{print $1}')"
+  b="$(echo "$raw" | awk '{print $2}')"
+  printf '↑%s ↓%s' "$b" "$a"
+}
+
+# ============================================================
+# SECTION: Token renderers — OS
+# ============================================================
+
+tok_clock() {
+  local now="${STATUSLINE_BAR_FAKE_NOW:-$(date +%s)}"
+  TZ=UTC date -r "$now" '+%H:%M' 2>/dev/null || TZ=UTC date -d "@$now" '+%H:%M' 2>/dev/null
+}
+tok_date() {
+  local now="${STATUSLINE_BAR_FAKE_NOW:-$(date +%s)}"
+  TZ=UTC date -r "$now" '+%Y-%m-%d' 2>/dev/null || TZ=UTC date -d "@$now" '+%Y-%m-%d' 2>/dev/null
+}
+tok_hostname() {
+  if [[ -n "${HOSTNAME_OVERRIDE:-}" ]]; then echo "$HOSTNAME_OVERRIDE"; return; fi
+  hostname -s 2>/dev/null || hostname 2>/dev/null
+}
+tok_user() {
+  echo "${USER:-$(id -un 2>/dev/null)}"
+}
+tok_battery() {
+  [[ -n "${STATUSLINE_BAR_FORCE_NO_BATTERY:-}" ]] && return
+  [[ -n "${STATUSLINE_BAR_FAKE_BATTERY:-}" ]] && { echo "$STATUSLINE_BAR_FAKE_BATTERY"; return; }
+  case "$(uname -s)" in
+    Darwin)
+      pmset -g batt 2>/dev/null | awk '/[0-9]+%/ { gsub(/[%;]/,"",$3); print $3; exit }' ;;
+    Linux)
+      local f
+      for f in /sys/class/power_supply/BAT0/capacity /sys/class/power_supply/BAT1/capacity; do
+        if [[ -r "$f" ]]; then cat "$f"; return; fi
+      done ;;
+  esac
+}
+tok_memory() {
+  [[ -n "${STATUSLINE_BAR_FORCE_NO_MEMORY:-}" ]] && return
+  [[ -n "${STATUSLINE_BAR_FAKE_MEMORY:-}" ]] && { echo "$STATUSLINE_BAR_FAKE_MEMORY"; return; }
+  case "$(uname -s)" in
+    Darwin)
+      vm_stat 2>/dev/null | awk '
+        /Pages free/         { f=$3 }
+        /Pages inactive/     { i=$3 }
+        /Pages active/       { a=$3 }
+        /Pages speculative/  { s=$3 }
+        /Pages wired down/   { w=$4 }
+        END {
+          gsub(/\./,"",f); gsub(/\./,"",i); gsub(/\./,"",a); gsub(/\./,"",s); gsub(/\./,"",w)
+          total=f+i+a+s+w
+          if (total==0) exit
+          used=a+w+s
+          printf "%d", used*100/total
+        }' ;;
+    Linux)
+      awk '/MemTotal/{t=$2} /MemAvailable/{a=$2} END { if (t>0) printf "%d", (t-a)*100/t }' /proc/meminfo 2>/dev/null ;;
+  esac
+}
+tok_load() {
+  [[ -n "${STATUSLINE_BAR_FORCE_NO_LOAD:-}" ]] && return
+  [[ -n "${STATUSLINE_BAR_FAKE_LOAD:-}" ]] && { echo "$STATUSLINE_BAR_FAKE_LOAD"; return; }
+  case "$(uname -s)" in
+    Darwin) sysctl -n vm.loadavg 2>/dev/null | awk '{print $2}' ;;
+    Linux)  awk '{print $1}' /proc/loadavg 2>/dev/null ;;
+  esac
+}
+
+# ============================================================
 # SECTION: Prefix dispatcher
 # ============================================================
 
@@ -548,6 +766,12 @@ main() {
   fi
   if [[ "${1:-}" == "--dump-prefix" ]]; then
     apply_prefix "$2" "$3" "$4"; echo
+    exit 0
+  fi
+  if [[ "${1:-}" == "--dump-token" ]]; then
+    INPUT_JSON="$(cat)"
+    "tok_${2}"
+    echo
     exit 0
   fi
   case "${1:-}" in

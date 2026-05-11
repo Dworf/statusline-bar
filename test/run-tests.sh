@@ -17,6 +17,14 @@ CONFIGS_DIR="$SCRIPT_DIR/configs"
 
 mkdir -p "$ACTUAL_DIR"
 
+# The synthetic workspace dir referenced by fixtures/sample-input.json. Several
+# tests need it to exist so token render functions can cd into it. The mock
+# git binary on PATH handles the rest.
+mkdir -p /tmp/statusline-bar-test
+
+# Prepend test/bin to PATH for mocks (git, etc).
+export PATH="$SCRIPT_DIR/bin:$PATH"
+
 FILTER=""
 UPDATE=0
 while [[ $# -gt 0 ]]; do
