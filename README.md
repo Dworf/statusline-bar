@@ -57,6 +57,19 @@ Then point Claude Code's `statusLine.command` at the absolute path. In `~/.claud
 
 Requirements: `bash` 3.2+ and `jq` (both default on macOS / mainstream Linux). Optional: `git`, `fc-list`, `pmset`/`/sys/class/power_supply` for richer tokens.
 
+### Nerd Fonts (optional)
+
+A few separators (`chevron`, `slant`, `chevron_thin`) and the `nerd` / `nerd+label` prefix styles use [Nerd Font](https://www.nerdfonts.com/) glyphs. The wizard detects whether you have one installed and labels those options accordingly. If you don't, the script still works — every other separator / prefix style renders fine without.
+
+**Install a Nerd Font:**
+
+- **macOS** (Homebrew): `brew install --cask font-jetbrains-mono-nerd-font` (any of the [Nerd Fonts casks](https://github.com/Homebrew/homebrew-cask-fonts) works — pick the family you like)
+- **Linux** (Debian/Ubuntu): `sudo apt install fonts-firacode` for FiraCode-Nerd-equivalent, or download a release zip from [github.com/ryanoasis/nerd-fonts/releases](https://github.com/ryanoasis/nerd-fonts/releases) and extract to `~/.local/share/fonts/`, then `fc-cache -f`
+- **Arch**: `sudo pacman -S ttf-nerd-fonts-symbols` for symbol-only, or any `ttf-*-nerd` package for a full family
+- **Manual**: download a `.zip` from [nerdfonts.com](https://www.nerdfonts.com/font-downloads) and install via your OS's font manager
+
+Then set your terminal's font to the Nerd Font variant (e.g. "JetBrainsMono Nerd Font" instead of "JetBrainsMono"). Restart the terminal and the wizard's hint will switch to `Nerd Font ✓ detected`.
+
 ## Quick configure
 
 Launch the interactive wizard:
@@ -116,6 +129,27 @@ statusline-bar.sh --config PATH         use specific config file
 ```
 
 ## Changelog
+
+### 0.2.0 — 2026-05-11
+
+Wizard polish, CLI cleanup, and live Nerd-Font detection.
+
+- **Wizard live preview** updates every time you move the cursor in any sub-menu (preset / theme / prefix / separator / bar / empty / depth) — the bottom pane now reflects the *focused* option, not the current saved config.
+- **Cursor memory** — sub-menus open with the cursor on the currently-selected item, not row 0. Returning to a parent menu restores the cursor to the row you came from.
+- **Wrap-around navigation** — `↑` at the top jumps to the last item; `↓` at the bottom jumps to the first.
+- **Per-item example previews** on the right side of every sub-menu so you can compare all options at a glance: separator characters drawn literally (`a │ b │ c`), `model` token rendered in each prefix style, 10-char bars at 50% in each bar style, etc.
+- **Theme menu columns** — `good / warn / crit / text / bar style` header above the swatches, with `Aa` shown in the theme's accent color (= what regular non-threshold tokens look like) plus the suggested bar style each theme uses when `global.bar_style` is `null`.
+- **Live Nerd-Font detection** surfaced inline:
+  - Separator menu (chevron / slant / chevron_thin): `(Nerd Font ✓ detected)` / `(Nerd Font ✗ — install: nerdfonts.com)` / `(Nerd Font: status unknown)`
+  - Prefix menu (nerd / nerd+label): same detection plus a note that the per-token glyph map is empty in v0.2.0 and ships in a follow-up.
+- **Breadcrumbs** on every screen — `statusline-bar ▸ Theme`, `statusline-bar ▸ Separator`, etc.
+- **Theme colors actually differ** in the wizard preview now — the preview uses the real terminal color depth instead of hardcoded `none`.
+- **CLI flag remap**: `-w` for wizard (was `-c`), `-c` for `--check`, `-e` for `--examples`.
+- **Bare invocation prints help** instead of prompting `set up config? (y/n)`. Help text now includes the wizard hint and a dynamic `Config:` line showing which file is in use (or `no config file found — using built-in defaults`).
+- **Bug fixes**:
+  - `_wiz_next_key` no longer hangs when a scripted input is exhausted (it now checks the parse-time `OPT_TUI_SCRIPT` instead of the consumed buffer).
+  - bash 3.2 sparse-array trap in the cursor-stack pop path — arrays are now sliced rather than `unset`-ed.
+  - Wizard's `tui_cleanup` survives non-TTY stty failures.
 
 ### 0.1.0 — 2026-05-11
 
