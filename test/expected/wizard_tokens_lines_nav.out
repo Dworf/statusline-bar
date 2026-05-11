@@ -16,6 +16,8 @@
 💭 true | 💪 xhigh | 📁 x | 🌳 main | ➕ +128 | ➖ -42 | ⏳ 3m 50s
 ────────────────────────────────────────────────────────────
   ↑↓ navigate   Enter select   Esc back   s save   r reset   q quit
+────────────────────────────────────────────────────────────
+  ⓘ  Preset: factory layouts that pre-fill lines + per-token formats. Theme/prefix/separator stay independent.
 [H[2J[1;1H  statusline-bar ▸ Main
 
   Preset          [default]
@@ -34,6 +36,8 @@
 💭 true | 💪 xhigh | 📁 x | 🌳 main | ➕ +128 | ➖ -42 | ⏳ 3m 50s
 ────────────────────────────────────────────────────────────
   ↑↓ navigate   Enter select   Esc back   s save   r reset   q quit
+────────────────────────────────────────────────────────────
+  ⓘ  Theme: color palette only. Switching themes does not change which tokens render or how they're labeled.
 [H[2J[1;1H  statusline-bar ▸ Main
 
   Preset          [default]
@@ -52,6 +56,8 @@
 💭 true | 💪 xhigh | 📁 x | 🌳 main | ➕ +128 | ➖ -42 | ⏳ 3m 50s
 ────────────────────────────────────────────────────────────
   ↑↓ navigate   Enter select   Esc back   s save   r reset   q quit
+────────────────────────────────────────────────────────────
+  ⓘ  Prefix style: global default for how every token is labeled (emoji / nerd / label / ascii / none + combos). Per-token override available.
 [H[2J[1;1H  statusline-bar ▸ Main
 
   Preset          [default]
@@ -70,6 +76,8 @@
 💭 true | 💪 xhigh | 📁 x | 🌳 main | ➕ +128 | ➖ -42 | ⏳ 3m 50s
 ────────────────────────────────────────────────────────────
   ↑↓ navigate   Enter select   Esc back   s save   r reset   q quit
+────────────────────────────────────────────────────────────
+  ⓘ  Separator: global string inserted between tokens on a line. Per-token override via Tokens & lines.
 [H[2J[1;1H  statusline-bar ▸ Main
 
   Preset          [default]
@@ -88,6 +96,8 @@
 💭 true | 💪 xhigh | 📁 x | 🌳 main | ➕ +128 | ➖ -42 | ⏳ 3m 50s
 ────────────────────────────────────────────────────────────
   ↑↓ navigate   Enter select   Esc back   s save   r reset   q quit
+────────────────────────────────────────────────────────────
+  ⓘ  Bar style: characters used by progressbar tokens. Theme's suggestion applies unless set.
 [H[2J[1;1H  statusline-bar ▸ Main
 
   Preset          [default]
@@ -106,6 +116,8 @@
 💭 true | 💪 xhigh | 📁 x | 🌳 main | ➕ +128 | ➖ -42 | ⏳ 3m 50s
 ────────────────────────────────────────────────────────────
   ↑↓ navigate   Enter select   Esc back   s save   r reset   q quit
+────────────────────────────────────────────────────────────
+  ⓘ  Tokens & lines: add/remove/reorder tokens; switch between up to 4 lines; edit separators inline.
 [H[2J[1;1H  statusline-bar ▸ Tokens & lines
 
   Line:  [1]  2   + 
@@ -124,7 +136,10 @@
 🤖 Opus 4.7 (1M) | 🧠 50% | 💰 $0.40 | ⏱️ 5h █████░░░░░ 50% 🔄 0s | ⏱️ 7d █████░░░░░ 50% 🔄 0s
 💭 true | 💪 xhigh | 📁 x | 🌳 main | ➕ +128 | ➖ -42 | ⏳ 3m 50s
 ────────────────────────────────────────────────────────────
-  ←→ switch line   ↓ enter list   Enter on + adds line   d delete line   Esc back
+  ←→ switch line   ↓ enter list   Enter on + adds line   d delete line
+  s save   r reset   Esc back
+────────────────────────────────────────────────────────────
+  ⓘ  Line tab — ←/→ to switch active line; d to delete this line; ↓ to enter its token list.
 [H[2J[1;1H  statusline-bar ▸ Tokens & lines
 
   Line:  ⟨1⟩  2   + 
@@ -140,10 +155,13 @@
     5. rl_7d
 ────────────────────────────────────────────────────────────
   Preview (all lines):
-🤖 Opus 4.7 (1M) | 🧠 50% | 💰 $0.40 | ⏱️ 5h █████░░░░░ 50% 🔄 0s | ⏱️ 7d █████░░░░░ 50% 🔄 0s
+[🤖 Opus 4.7 (1M)] | 🧠 50% | 💰 $0.40 | ⏱️ 5h █████░░░░░ 50% 🔄 0s | ⏱️ 7d █████░░░░░ 50% 🔄 0s
 💭 true | 💪 xhigh | 📁 x | 🌳 main | ➕ +128 | ➖ -42 | ⏳ 3m 50s
 ────────────────────────────────────────────────────────────
-  ↑↓ navigate   Shift+↑↓ move   Enter edit   a add   d delete   m mark   Esc back
+  ↑↓ navigate   ←→ switch line   Shift+↑↓ move   Enter edit
+  a add   d delete   m mark   s save   r reset   Esc back
+────────────────────────────────────────────────────────────
+  ⓘ  Token row — Enter opens its detail screen. Shift+↑↓ moves it up/down. d deletes (last token also removes the line).
 [H[2J[1;1H  statusline-bar ▸ Tokens & lines
 
   Line:  ⟨1⟩  2   + 
@@ -162,7 +180,10 @@
 🤖 Opus 4.7 (1M) | 🧠 50% | 💰 $0.40 | ⏱️ 5h █████░░░░░ 50% 🔄 0s | ⏱️ 7d █████░░░░░ 50% 🔄 0s
 💭 true | 💪 xhigh | 📁 x | 🌳 main | ➕ +128 | ➖ -42 | ⏳ 3m 50s
 ────────────────────────────────────────────────────────────
-  ↑↓ navigate   Shift+↑↓ move   Enter edit   a add   d delete   m mark   Esc back
+  ↑↓ navigate   ←→ switch line   Shift+↑↓ move   Enter edit
+  a add   d delete   m mark   s save   r reset   Esc back
+────────────────────────────────────────────────────────────
+  ⓘ  Separator row — Enter picks a new separator just for this position. d resets it to the global default.
 [H[2J[1;1H  statusline-bar ▸ Tokens & lines
 
   Line:  ⟨1⟩  2   + 
@@ -178,10 +199,13 @@
     5. rl_7d
 ────────────────────────────────────────────────────────────
   Preview (all lines):
-🤖 Opus 4.7 (1M) | 🧠 50% | 💰 $0.40 | ⏱️ 5h █████░░░░░ 50% 🔄 0s | ⏱️ 7d █████░░░░░ 50% 🔄 0s
+🤖 Opus 4.7 (1M) | [🧠 50%] | 💰 $0.40 | ⏱️ 5h █████░░░░░ 50% 🔄 0s | ⏱️ 7d █████░░░░░ 50% 🔄 0s
 💭 true | 💪 xhigh | 📁 x | 🌳 main | ➕ +128 | ➖ -42 | ⏳ 3m 50s
 ────────────────────────────────────────────────────────────
-  ↑↓ navigate   Shift+↑↓ move   Enter edit   a add   d delete   m mark   Esc back
+  ↑↓ navigate   ←→ switch line   Shift+↑↓ move   Enter edit
+  a add   d delete   m mark   s save   r reset   Esc back
+────────────────────────────────────────────────────────────
+  ⓘ  Token row — Enter opens its detail screen. Shift+↑↓ moves it up/down. d deletes (last token also removes the line).
 [H[2J[1;1H  statusline-bar ▸ Main
 
   Preset          [default]
@@ -200,3 +224,5 @@
 💭 true | 💪 xhigh | 📁 x | 🌳 main | ➕ +128 | ➖ -42 | ⏳ 3m 50s
 ────────────────────────────────────────────────────────────
   ↑↓ navigate   Enter select   Esc back   s save   r reset   q quit
+────────────────────────────────────────────────────────────
+  ⓘ  Tokens & lines: add/remove/reorder tokens; switch between up to 4 lines; edit separators inline.

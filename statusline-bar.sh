@@ -1039,6 +1039,16 @@ render_token() {
   else
     with_prefix="$(apply_prefix "$id" "$prefix_style" "$body")"
   fi
+  # If this token is the currently-focused one in the wizard preview,
+  # wrap it in a visual highlight (reverse video on real TTYs, brackets
+  # when color depth is "none").
+  if [[ -n "${RENDER_HIGHLIGHT_ID:-}" && "$RENDER_HIGHLIGHT_ID" == "$id" ]]; then
+    case "$COLOR_DEPTH" in
+      none) printf '[%s]' "$with_prefix" ;;
+      *)    printf '\033[7m%s%s%s\033[27m' "$color_esc" "$with_prefix" "$reset" ;;
+    esac
+    return
+  fi
   printf '%s%s%s' "$color_esc" "$with_prefix" "$reset"
 }
 
@@ -1166,6 +1176,62 @@ WIZARD_DIRTY=0
 WIZARD_TUI_SCRIPT=""
 WIZARD_COLOR_DEPTH="none"
 WIZARD_NERD_FONT="unknown"
+
+# Per-screen tooltip arrays. Index matches the cursor row on that screen.
+# The tooltip is rendered below the keybind footer; it changes as the
+# cursor moves so users always see context for the focused item.
+
+_TOOLTIPS_MAIN=(
+  "Preset: factory layouts that pre-fill lines + per-token formats. Theme/prefix/separator stay independent."
+  "Theme: color palette only. Switching themes does not change which tokens render or how they're labeled."
+  "Prefix style: global default for how every token is labeled (emoji / nerd / label / ascii / none + combos). Per-token override available."
+  "Separator: global string inserted between tokens on a line. Per-token override via Tokens & lines."
+  "Bar style: characters used by progressbar tokens. Theme's suggestion applies unless set."
+  "Tokens & lines: add/remove/reorder tokens; switch between up to 4 lines; edit separators inline."
+  "Empty data: when a token has no value — hide it (compact) or show a placeholder."
+  "Color depth: auto-detects from \$NO_COLOR / \$COLORTERM / tput colors. Pin to override."
+)
+
+_TOOLTIPS_TOKEN_DETAIL=(
+  "Prefix: how this token is labeled. Override the global prefix style for just this token."
+  "Format: how the value is rendered. Bar / percent / countdown choices depend on the token type."
+  "Bar style: bar characters used by this token. Override global / theme suggestion just for this token."
+  "Reset to defaults: removes ALL per-token overrides for this token (prefix, format, bar, separator-after)."
+)
+
+_wiz_help_tooltip() {
+  local screen="$1" tip="" arr_name=""
+  case "$screen" in
+    main)         arr_name="_TOOLTIPS_MAIN" ;;
+    token_detail) arr_name="_TOOLTIPS_TOKEN_DETAIL" ;;
+    tokens_lines)
+      if [[ "$TL_ZONE" == "tabs" ]]; then
+        local nlines; nlines="$(_tl_num_lines)"
+        if (( TL_TAB_POS == nlines )); then
+          tip="Press Enter to add a new (empty) line. Max 4 lines total."
+        else
+          tip="Line tab — ←/→ to switch active line; d to delete this line; ↓ to enter its token list."
+        fi
+      elif (( $(_tl_line_count) == 0 )); then
+        tip="Empty line — press a to add your first token."
+      else
+        if (( TL_TOKEN_ROW % 2 == 0 )); then
+          tip="Token row — Enter opens its detail screen. Shift+↑↓ moves it up/down. d deletes (last token also removes the line)."
+        else
+          tip="Separator row — Enter picks a new separator just for this position. d resets it to the global default."
+        fi
+      fi ;;
+    sep_picker)   tip="Picking a separator writes \`tokens.<id>.separator_after\` for just this position. (use global) clears the override." ;;
+    token_picker) tip="✓ next to a token means it's already used somewhere. Selecting one inserts it after the cursor on the active line." ;;
+  esac
+  if [[ -z "$tip" && -n "$arr_name" ]]; then
+    eval "tip=\${${arr_name}[$WIZARD_CURSOR]:-}"
+  fi
+  if [[ -n "$tip" ]]; then
+    printf -- '─%.0s' {1..60}; printf '\n'
+    printf '  ⓘ  %s\n' "$tip"
+  fi
+}
 
 # Format a per-item hint about Nerd-font availability. Used in the example
 # column of submenus where the item requires (or would benefit from) a
@@ -1316,6 +1382,7 @@ _wiz_draw_main() {
   printf '\n'
   printf -- '─%.0s' {1..60}; printf '\n'
   printf '  ↑↓ navigate   Enter select   Esc back   s save   r reset   q quit\n'
+  _wiz_help_tooltip main
 }
 
 _wiz_handle_main() {
@@ -1736,21 +1803,42 @@ _wiz_draw_tokens_lines() {
   tui_clear
   printf '  statusline-bar ▸ Tokens & lines\n\n'
   _tl_draw_tabs
-  _tl_draw_tokens
+  local on_plus=0 nlines
+  nlines="$(_tl_num_lines)"
+  [[ "$TL_ZONE" == "tabs" ]] && (( TL_TAB_POS == nlines )) && on_plus=1
+  if (( on_plus )); then
+    printf '\n  ‹+› — Add a new line\n\n'
+    printf '  Press Enter to add an empty line (up to %d lines total; you have %d).\n' 4 "$nlines"
+    printf '  The new line becomes the active one; ↓ to enter its token list.\n\n'
+  else
+    _tl_draw_tokens
+  fi
   printf -- '─%.0s' {1..60}; printf '\n'
+  # Highlight the focused token in the preview when in tokens zone on a token row
+  local hl=""
+  if [[ "$TL_ZONE" == "tokens" ]]; then
+    local count; count="$(_tl_line_count)"
+    if (( count > 0 )) && (( TL_TOKEN_ROW % 2 == 0 )); then
+      hl="$(_tl_token_at "$TL_TOKEN_ROW")"
+    fi
+  fi
   printf '  Preview (all lines):\n'
-  _wiz_preview_line
+  RENDER_HIGHLIGHT_ID="$hl" _wiz_preview_line
   printf '\n'
   printf -- '─%.0s' {1..60}; printf '\n'
   if [[ "$TL_ZONE" == "tabs" ]]; then
-    printf '  ←→ switch line   ↓ enter list   Enter on + adds line   d delete line   Esc back\n'
+    printf '  ←→ switch line   ↓ enter list   Enter on + adds line   d delete line\n'
+    printf '  s save   r reset   Esc back\n'
   else
     if [[ -n "$TL_MARK_LINE" ]]; then
-      printf '  Mark active — navigate to a position and press p to paste     m cancel mark\n'
+      printf '  * Mark active — navigate to target and press p to paste   m cancel mark\n'
+      printf '  s save   r reset   Esc back\n'
     else
-      printf '  ↑↓ navigate   Shift+↑↓ move   Enter edit   a add   d delete   m mark   Esc back\n'
+      printf '  ↑↓ navigate   ←→ switch line   Shift+↑↓ move   Enter edit\n'
+      printf '  a add   d delete   m mark   s save   r reset   Esc back\n'
     fi
   fi
+  _wiz_help_tooltip tokens_lines
 }
 
 # Confirmation prompt overlay. Reuses _wiz_next_key for scripted/real input.
@@ -1926,6 +2014,15 @@ _wiz_handle_tokens_lines() {
     down)
       if (( TL_TOKEN_ROW < max_row )); then TL_TOKEN_ROW=$((TL_TOKEN_ROW+1))
       else TL_ZONE="tabs"; TL_TAB_POS="$TL_ACTIVE_LINE"; fi ;;
+    left)
+      # Switch to previous line (wraps); stay in tokens zone.
+      if (( TL_ACTIVE_LINE > 0 )); then TL_ACTIVE_LINE=$((TL_ACTIVE_LINE-1))
+      else TL_ACTIVE_LINE=$((num_lines-1)); fi
+      TL_TOKEN_ROW=0 ;;
+    right)
+      if (( TL_ACTIVE_LINE < num_lines-1 )); then TL_ACTIVE_LINE=$((TL_ACTIVE_LINE+1))
+      else TL_ACTIVE_LINE=0; fi
+      TL_TOKEN_ROW=0 ;;
     shift-up)   _tl_swap_tokens up   ;;
     shift-down) _tl_swap_tokens down ;;
     enter)
@@ -1941,6 +2038,7 @@ _wiz_handle_tokens_lines() {
         _wiz_push sep_picker 0
       fi ;;
     char:a)
+      _tl_build_picker
       _wiz_push token_picker 0 ;;
     char:d)
       if (( count == 0 )); then return; fi
@@ -2004,23 +2102,31 @@ _tl_paste_mark() {
 # Full-screen grouped list of all 39 tokens. Pressing Enter inserts the
 # selected token after the cursor in the calling Tokens & Lines screen.
 
-TOK_PICKER_LIST=()   # ordered ids
-TOK_PICKER_GROUPS=() # parallel: source label for each id (for grouping display)
+TOK_PICKER_LIST=()    # ordered ids
+TOK_PICKER_GROUPS=()  # parallel: source label for each id (for grouping display)
+TOK_PICKER_SAMPLES=() # parallel: full render sample (emoji + value, etc.)
 
 _tl_build_picker() {
-  TOK_PICKER_LIST=(); TOK_PICKER_GROUPS=()
-  local id src
+  TOK_PICKER_LIST=(); TOK_PICKER_GROUPS=(); TOK_PICKER_SAMPLES=()
+  local id src sample
   while IFS= read -r id; do
     src="$(jq -r --arg id "$id" '.[$id].source' <<<"$TOKENS_JSON")"
+    # Full render of just this token under default global settings + EXAMPLES input.
+    sample="$(INPUT_JSON="$EXAMPLES_INPUT_JSON" \
+      CONFIG_JSON="$CONFIG_JSON" \
+      COLOR_DEPTH="$WIZARD_COLOR_DEPTH" \
+      NOW_EPOCH=9999999999 \
+      MOCK_GIT_STATE=out_of_repo \
+      render_token "$id")"
     TOK_PICKER_LIST+=("$id")
     TOK_PICKER_GROUPS+=("$src")
+    TOK_PICKER_SAMPLES+=("$sample")
   done < <( jq -r 'keys_unsorted[]' <<<"$TOKENS_JSON" )
 }
 
 _wiz_draw_token_picker() {
   tui_clear
   printf '  statusline-bar ▸ Tokens & lines ▸ Add token\n\n'
-  if (( ${#TOK_PICKER_LIST[@]} == 0 )); then _tl_build_picker; fi
   # Set of ids already used somewhere in any line
   local used_ids
   used_ids="$(jq -r '[.lines[][]] | unique | join(" ")' <<<"$CONFIG_JSON")"
@@ -2028,6 +2134,7 @@ _wiz_draw_token_picker() {
   for ((i=0; i<${#TOK_PICKER_LIST[@]}; i++)); do
     id="${TOK_PICKER_LIST[$i]}"
     src="${TOK_PICKER_GROUPS[$i]}"
+    sample="${TOK_PICKER_SAMPLES[$i]}"
     if [[ "$src" != "$last_src" ]]; then
       printf '\n  %s:\n' "$src"
       last_src="$src"
@@ -2035,12 +2142,12 @@ _wiz_draw_token_picker() {
     marker="  "
     (( i == WIZARD_CURSOR )) && marker="› "
     if grep -qw "$id" <<<"$used_ids"; then check="✓"; else check=" "; fi
-    sample="$(jq -r --arg id "$id" '.[$id].prefix.emoji' <<<"$TOKENS_JSON")"
     printf '%s%s %-20s  %s\n' "$marker" "$check" "$id" "$sample"
   done
   printf '\n'
   printf -- '─%.0s' {1..60}; printf '\n'
   printf '  ↑↓ navigate (wraps)   Enter add   Esc cancel\n'
+  _wiz_help_tooltip token_picker
 }
 
 _wiz_handle_token_picker() {
@@ -2067,6 +2174,14 @@ _wiz_handle_token_picker() {
 
 TL_SEP_PICKER_TOKEN=""
 _SEP_PICKER=("(use global)" "${_SEPARATORS[@]}")
+_SEP_PICKER_EX=()
+
+_build_sep_picker_examples() {
+  local global_id; global_id="$(jq -r '.global.separator // "pipe"' <<<"$CONFIG_JSON")"
+  local global_ex_idx; global_ex_idx="$(_index_of _SEPARATORS "$global_id")"
+  local global_ex="${_SEPARATORS_EX[$global_ex_idx]}"
+  _SEP_PICKER_EX=("$global_ex  (current global: $global_id)" "${_SEPARATORS_EX[@]}")
+}
 
 _wiz_draw_sep_picker() {
   tui_clear
@@ -2074,13 +2189,32 @@ _wiz_draw_sep_picker() {
   local cur
   cur="$(jq -r --arg id "$TL_SEP_PICKER_TOKEN" '.tokens[$id].separator_after // empty' <<<"$CONFIG_JSON")"
   [[ -z "$cur" || "$cur" == "null" ]] && cur="(use global)"
-  _wiz_draw_select_inner "$cur" _SEP_PICKER ""
+  _wiz_draw_select_inner "$cur" _SEP_PICKER _SEP_PICKER_EX
   printf -- '─%.0s' {1..60}; printf '\n'
-  printf '  Preview:\n  '
-  _wiz_preview_with '.global.separator=$v' "${_SEP_PICKER[$WIZARD_CURSOR]}"
+  # Preview only changes THIS token's separator_after override — not the global.
+  local focused="${_SEP_PICKER[$WIZARD_CURSOR]}"
+  local cfg
+  if [[ "$focused" == "(use global)" ]]; then
+    cfg="$(jq --arg id "$TL_SEP_PICKER_TOKEN" '
+      if .tokens[$id]? then .tokens[$id] |= del(.separator_after) else . end
+    ' <<<"$CONFIG_JSON")"
+  else
+    cfg="$(jq --arg id "$TL_SEP_PICKER_TOKEN" --arg v "$focused" '
+      .tokens[$id].separator_after = $v
+    ' <<<"$CONFIG_JSON")"
+  fi
+  printf '  Preview (all lines, focused: %s):\n' "$focused"
+  INPUT_JSON="$EXAMPLES_INPUT_JSON" \
+    CONFIG_JSON="$cfg" \
+    COLOR_DEPTH="$WIZARD_COLOR_DEPTH" \
+    NOW_EPOCH=9999999999 \
+    MOCK_GIT_STATE=out_of_repo \
+    RENDER_HIGHLIGHT_ID="$TL_SEP_PICKER_TOKEN" \
+    render_all
   printf '\n'
   printf -- '─%.0s' {1..60}; printf '\n'
   printf '  ↑↓ navigate (wraps)   Enter select   Esc cancel\n'
+  _wiz_help_tooltip sep_picker
 }
 
 # Compact item-list renderer used by sep_picker (no header, no preview block).
@@ -2115,23 +2249,24 @@ _wiz_draw_token_detail() {
   tui_clear
   local id="$WIZARD_TOKEN_DETAIL"
   printf '  statusline-bar ▸ Tokens & lines ▸ %s\n\n' "$id"
-  local cur_prefix cur_format cur_bar cur_sep
+  local cur_prefix cur_format cur_bar
   cur_prefix="$(jq -r --arg id "$id" '.tokens[$id].prefix // "(inherit global)"' <<<"$CONFIG_JSON")"
   cur_format="$(jq -r --arg id "$id" --argjson tokens "$TOKENS_JSON" '.tokens[$id].format // $tokens[$id].default_format' <<<"$CONFIG_JSON")"
   cur_bar="$(jq -r --arg id "$id" '.tokens[$id].bar_style // "(inherit global)"' <<<"$CONFIG_JSON")"
-  cur_sep="$(jq -r --arg id "$id" '.tokens[$id].separator_after // "(use global)"' <<<"$CONFIG_JSON")"
-  local rows=("Prefix [$cur_prefix]" "Format [$cur_format]" "Bar style [$cur_bar]" "Separator after [$cur_sep]" "Reset to defaults")
+  # separator_after lives on the inline separator row in Tokens & lines, not here.
+  local rows=("Prefix [$cur_prefix]" "Format [$cur_format]" "Bar style [$cur_bar]" "Reset to defaults")
   local i marker
   for ((i=0; i<${#rows[@]}; i++)); do
     marker="  "; (( i == WIZARD_CURSOR )) && marker="› "
     printf '%s%s\n' "$marker" "${rows[$i]}"
   done
   printf -- '─%.0s' {1..60}; printf '\n'
-  printf '  Preview:\n'
-  _wiz_preview_line
+  printf '  Preview (all lines, focused: %s):\n' "$id"
+  RENDER_HIGHLIGHT_ID="$id" _wiz_preview_line
   printf '\n'
   printf -- '─%.0s' {1..60}; printf '\n'
-  printf '  ↑↓ navigate (wraps)   Enter edit field   Esc back\n'
+  printf '  ↑↓ navigate (wraps)   Enter edit field   r reset   Esc back\n'
+  _wiz_help_tooltip token_detail
 }
 
 _wiz_handle_token_detail() {
@@ -2139,17 +2274,16 @@ _wiz_handle_token_detail() {
   case "$KEY" in
     up)
       if (( WIZARD_CURSOR > 0 )); then WIZARD_CURSOR=$((WIZARD_CURSOR-1))
-      else WIZARD_CURSOR=4; fi ;;
+      else WIZARD_CURSOR=3; fi ;;
     down)
-      if (( WIZARD_CURSOR < 4 )); then WIZARD_CURSOR=$((WIZARD_CURSOR+1))
+      if (( WIZARD_CURSOR < 3 )); then WIZARD_CURSOR=$((WIZARD_CURSOR+1))
       else WIZARD_CURSOR=0; fi ;;
     enter)
       case "$WIZARD_CURSOR" in
         0) TL_FIELD=prefix;          _wiz_push token_field 0 ;;
         1) TL_FIELD=format;          _wiz_push token_field 0 ;;
         2) TL_FIELD=bar_style;       _wiz_push token_field 0 ;;
-        3) TL_FIELD=separator_after; _wiz_push token_field 0 ;;
-        4) CONFIG_JSON="$(jq --arg id "$id" 'del(.tokens[$id])' <<<"$CONFIG_JSON")"
+        3) CONFIG_JSON="$(jq --arg id "$id" 'del(.tokens[$id])' <<<"$CONFIG_JSON")"
            WIZARD_DIRTY=1 ;;
       esac ;;
     esc|left) _wiz_pop ;;
@@ -2157,11 +2291,13 @@ _wiz_handle_token_detail() {
 }
 
 # Generic per-field picker. Picks the items list based on $TL_FIELD.
+# Right-side examples render the focused token with each option applied,
+# so users compare actual outputs (not generic labels).
 _wiz_draw_token_field() {
   tui_clear
   local id="$WIZARD_TOKEN_DETAIL"
   printf '  statusline-bar ▸ Tokens & lines ▸ %s ▸ %s\n\n' "$id" "$TL_FIELD"
-  local items=() cur
+  local items=() examples=() cur
   case "$TL_FIELD" in
     prefix)
       items=("(inherit global)" "${_PREFIXES[@]}")
@@ -2173,20 +2309,74 @@ _wiz_draw_token_field() {
     bar_style)
       items=("(inherit global)" blocks heavy line braille dots arrows ascii gradient)
       cur="$(jq -r --arg id "$id" '.tokens[$id].bar_style // "(inherit global)"' <<<"$CONFIG_JSON")" ;;
-    separator_after)
-      items=("(use global)" "${_SEPARATORS[@]}")
-      cur="$(jq -r --arg id "$id" '.tokens[$id].separator_after // "(use global)"' <<<"$CONFIG_JSON")" ;;
   esac
   TL_FIELD_ITEMS=("${items[@]}")
+  # Build the example column for the current field.
+  _build_token_field_examples "$id" "$TL_FIELD"
+  examples=("${TL_FIELD_EX[@]}")
   local i name marker
   for ((i=0; i<${#items[@]}; i++)); do
     name="${items[$i]}"
     marker="  "; (( i == WIZARD_CURSOR )) && marker="› "
     [[ "$name" == "$cur" ]] && marker+="● " || marker+="  "
-    printf '%s%s\n' "$marker" "$name"
+    if [[ -n "${examples[$i]:-}" ]]; then
+      printf '%s%-20s  %s\n' "$marker" "$name" "${examples[$i]}"
+    else
+      printf '%s%s\n' "$marker" "$name"
+    fi
   done
   printf -- '─%.0s' {1..60}; printf '\n'
+  # Preview: apply focused option to this token only (per-token override).
+  printf '  Preview (focused: %s):\n' "${items[$WIZARD_CURSOR]}"
+  local focused="${items[$WIZARD_CURSOR]}"
+  local cfg
+  if [[ "$focused" == "(inherit global)" || "$focused" == "(inherit default)" ]]; then
+    cfg="$(jq --arg id "$id" --arg f "$TL_FIELD" '
+      if .tokens[$id]? then .tokens[$id] |= del(.[$f]) else . end
+    ' <<<"$CONFIG_JSON")"
+  else
+    cfg="$(jq --arg id "$id" --arg f "$TL_FIELD" --arg v "$focused" '
+      .tokens[$id][$f] = $v
+    ' <<<"$CONFIG_JSON")"
+  fi
+  INPUT_JSON="$EXAMPLES_INPUT_JSON" \
+    CONFIG_JSON="$cfg" \
+    COLOR_DEPTH="$WIZARD_COLOR_DEPTH" \
+    NOW_EPOCH=9999999999 \
+    MOCK_GIT_STATE=out_of_repo \
+    RENDER_HIGHLIGHT_ID="$id" \
+    render_all
+  printf '\n'
+  printf -- '─%.0s' {1..60}; printf '\n'
   printf '  ↑↓ navigate (wraps)   Enter select   Esc cancel\n'
+}
+
+# Build TL_FIELD_EX parallel to TL_FIELD_ITEMS: each entry is the rendering
+# of the token under that field option, so users see what each choice does.
+TL_FIELD_EX=()
+_build_token_field_examples() {
+  local id="$1" field="$2"
+  TL_FIELD_EX=()
+  local i name cfg out
+  for ((i=0; i<${#TL_FIELD_ITEMS[@]}; i++)); do
+    name="${TL_FIELD_ITEMS[$i]}"
+    if [[ "$name" == "(inherit global)" || "$name" == "(inherit default)" ]]; then
+      cfg="$(jq --arg id "$id" --arg f "$field" '
+        if .tokens[$id]? then .tokens[$id] |= del(.[$f]) else . end
+      ' <<<"$CONFIG_JSON")"
+    else
+      cfg="$(jq --arg id "$id" --arg f "$field" --arg v "$name" '
+        .tokens[$id][$f] = $v
+      ' <<<"$CONFIG_JSON")"
+    fi
+    out="$(INPUT_JSON="$EXAMPLES_INPUT_JSON" \
+      CONFIG_JSON="$cfg" \
+      COLOR_DEPTH="$WIZARD_COLOR_DEPTH" \
+      NOW_EPOCH=9999999999 \
+      MOCK_GIT_STATE=out_of_repo \
+      render_token "$id")"
+    TL_FIELD_EX+=("$out")
+  done
 }
 
 _wiz_handle_token_field() {
@@ -2264,6 +2454,7 @@ run_wizard() {
   _build_theme_examples
   _build_prefix_examples
   _build_separator_examples
+  _build_sep_picker_examples
 
   if (( ! scripted )); then
     tui_init
@@ -2294,6 +2485,15 @@ run_wizard() {
         WIZARD_DIRTY=0
         break ;;
       reset)
+        # On the token_detail screen, `r` resets just that one token's
+        # overrides instead of the whole config. Everywhere else, `r`
+        # resets the entire config to defaults.
+        if [[ "$screen" == "token_detail" ]]; then
+          local _tid="$WIZARD_TOKEN_DETAIL"
+          CONFIG_JSON="$(jq --arg id "$_tid" 'del(.tokens[$id])' <<<"$CONFIG_JSON")"
+          WIZARD_DIRTY=1
+          continue
+        fi
         CONFIG_JSON="$(build_default_config)"
         WIZARD_DIRTY=1
         continue ;;

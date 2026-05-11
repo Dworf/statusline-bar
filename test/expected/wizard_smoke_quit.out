@@ -15,3 +15,5 @@
 🤖 Opus 4.7 (1M)
 ────────────────────────────────────────────────────────────
   ↑↓ navigate   Enter select   Esc back   s save   r reset   q quit
+────────────────────────────────────────────────────────────
+  ⓘ  Preset: factory layouts that pre-fill lines + per-token formats. Theme/prefix/separator stay independent.
