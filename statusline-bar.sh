@@ -296,25 +296,47 @@ print_help() {
 statusline-bar $VERSION — Claude Code statusline (bash + jq)
 
 Usage:
-  statusline-bar.sh [FLAGS]               render from stdin (Claude Code mode)
-  statusline-bar.sh -c | --wizard         interactive setup
-  statusline-bar.sh --examples [MODE]     browse presets/themes/etc
-  statusline-bar.sh --check               validate config; exit 0/1
+  statusline-bar.sh [FLAGS]            render from stdin (Claude Code mode)
+  statusline-bar.sh -w | --wizard      interactive setup
+  statusline-bar.sh -e | --examples    browse presets/themes/etc
+  statusline-bar.sh -c | --check       validate config; exit 0/1
 
 Flags:
   -h, --help                show this help
   -V, --version             print version
-  -c, --wizard              enter setup wizard
-      --examples [MODE]     MODE is catalog|interactive|all; default asks
-      --check               validate config and exit
+  -w, --wizard              enter setup wizard
+  -e, --examples [MODE]     MODE is catalog|interactive|all; default asks
+  -c, --check               validate config and exit
       --config PATH         use this config file instead of default
       --preset NAME         one-shot render with this preset
       --theme NAME          one-shot render with this theme
       --no-color            disable ANSI color output
 
-Config: ~/.config/statusline-bar/config.json (or \$STATUSLINE_BAR_CONFIG).
+To customize colors, layout, tokens, etc., launch the wizard:
+  statusline-bar.sh -w
+
+Config: $(_help_config_status)
 Docs:   https://github.com/Dworf/statusline-bar
 EOF
+}
+
+# Resolve the same lookup chain load_config uses, but only check existence.
+# Used in --help so users see whether they're on defaults or a real file.
+_help_config_status() {
+  local explicit="${CONFIG_PATH:-}"
+  if [[ -n "$explicit" && -f "$explicit" ]]; then
+    echo "using $explicit"
+  elif [[ -n "${STATUSLINE_BAR_CONFIG:-}" && -f "$STATUSLINE_BAR_CONFIG" ]]; then
+    echo "using \$STATUSLINE_BAR_CONFIG = $STATUSLINE_BAR_CONFIG"
+  elif [[ -f "$PWD/.statusline-bar.json" ]]; then
+    echo "using $PWD/.statusline-bar.json (project-local)"
+  elif [[ -n "${XDG_CONFIG_HOME:-}" && -f "$XDG_CONFIG_HOME/statusline-bar/config.json" ]]; then
+    echo "using $XDG_CONFIG_HOME/statusline-bar/config.json"
+  elif [[ -f "$HOME/.config/statusline-bar/config.json" ]]; then
+    echo "using $HOME/.config/statusline-bar/config.json"
+  else
+    echo "no config file found — using built-in defaults (run with -w to create one)"
+  fi
 }
 
 print_version() {
@@ -1297,11 +1319,15 @@ _wiz_handle_main() {
 # Args: <title> <items-array-name> <current-getter-jq-expr> <jq-set-fn-name>
 # This is too unwieldy to factor cleanly in bash 3.2 — we inline each screen below.
 
-_wiz_draw_select() {  # title, current_value, mutation, examples-array-name, items[]...
-  local title="$1" cur="$2" mutation="$3" ex_arr="$4"; shift 4
+_wiz_draw_select() {  # title, current_value, mutation, examples-array-name, header, items[]...
+  local title="$1" cur="$2" mutation="$3" ex_arr="$4" header="$5"; shift 5
   local items=("$@")
   tui_clear
   printf '  statusline-bar ▸ %s\n\n' "$title"
+  if [[ -n "$header" ]]; then
+    # 4-char marker + 16-char name + 2 spaces = 22 cols before example column
+    printf '%22s%s\n' "" "$header"
+  fi
   local i name marker is_current ex
   for ((i=0; i<${#items[@]}; i++)); do
     name="${items[$i]}"
@@ -1413,19 +1439,31 @@ _DEPTH_EX=(
   "no color"
 )
 
-# Build inline theme color swatches dynamically (one per _THEMES entry).
+# Build inline theme swatches dynamically (one per _THEMES entry).
+# Each row shows: good/warn/crit color dots, the accent color applied to
+# "Aa" (representing how regular text is colored), and the bar style the
+# theme suggests when global.bar_style is null.
 # Run once at wizard start so we don't pay color_fg overhead per redraw.
 _THEMES_EX=()
 _build_theme_examples() {
   _THEMES_EX=()
-  local t good warn crit reset
+  local t s good warn crit accent bar reset
   reset="$(color_reset "$WIZARD_COLOR_DEPTH")"
   for t in "${_THEMES[@]}"; do
-    local s="${t//-/_}"
+    s="${t//-/_}"
     eval "good=\$THEME_${s}_good"
     eval "warn=\$THEME_${s}_warn"
     eval "crit=\$THEME_${s}_crit"
-    _THEMES_EX+=( "$(color_fg "$good" "$WIZARD_COLOR_DEPTH")●${reset} $(color_fg "$warn" "$WIZARD_COLOR_DEPTH")●${reset} $(color_fg "$crit" "$WIZARD_COLOR_DEPTH")●${reset}" )
+    eval "accent=\$THEME_${s}_accent"
+    eval "bar=\$THEME_${s}_bar_style"
+    local g w c a
+    g="$(color_fg "$good"   "$WIZARD_COLOR_DEPTH")●${reset}"
+    w="$(color_fg "$warn"   "$WIZARD_COLOR_DEPTH")●${reset}"
+    c="$(color_fg "$crit"   "$WIZARD_COLOR_DEPTH")●${reset}"
+    a="$(color_fg "$accent" "$WIZARD_COLOR_DEPTH")Aa${reset}"
+    # Columns aligned with the header "good warn crit  text  bar style":
+    #   "  ●     ●     ●    Aa     blocks"
+    _THEMES_EX+=( "  $g    $w    $c     $a    $bar" )
   done
 }
 
@@ -1455,7 +1493,7 @@ _wiz_select_handle() {  # items_array_name jq_set_expression
 
 _wiz_draw_preset() {
   local cur; cur="$(jq -r '.preset // ""' <<<"$CONFIG_JSON")"
-  _wiz_draw_select "Preset" "$cur" '.preset=$v | .lines=$presets[$v].lines' _PRESETS_EX "${_PRESETS[@]}"
+  _wiz_draw_select "Preset" "$cur" '.preset=$v | .lines=$presets[$v].lines' _PRESETS_EX "" "${_PRESETS[@]}"
 }
 _wiz_handle_preset() {
   local size=${#_PRESETS[@]}
@@ -1477,37 +1515,37 @@ _wiz_handle_preset() {
 
 _wiz_draw_theme() {
   local cur; cur="$(jq -r '.theme' <<<"$CONFIG_JSON")"
-  _wiz_draw_select "Theme" "$cur" '.theme=$v' _THEMES_EX "${_THEMES[@]}"
+  _wiz_draw_select "Theme" "$cur" '.theme=$v' _THEMES_EX "good warn crit  text  bar style" "${_THEMES[@]}"
 }
 _wiz_handle_theme() { _wiz_select_handle _THEMES '.theme=$v'; }
 
 _wiz_draw_prefix() {
   local cur; cur="$(jq -r '.global.prefix_style' <<<"$CONFIG_JSON")"
-  _wiz_draw_select "Prefix style" "$cur" '.global.prefix_style=$v' _PREFIXES_EX "${_PREFIXES[@]}"
+  _wiz_draw_select "Prefix style" "$cur" '.global.prefix_style=$v' _PREFIXES_EX "" "${_PREFIXES[@]}"
 }
 _wiz_handle_prefix() { _wiz_select_handle _PREFIXES '.global.prefix_style=$v'; }
 
 _wiz_draw_separator() {
   local cur; cur="$(jq -r '.global.separator' <<<"$CONFIG_JSON")"
-  _wiz_draw_select "Separator" "$cur" '.global.separator=$v' _SEPARATORS_EX "${_SEPARATORS[@]}"
+  _wiz_draw_select "Separator" "$cur" '.global.separator=$v' _SEPARATORS_EX "" "${_SEPARATORS[@]}"
 }
 _wiz_handle_separator() { _wiz_select_handle _SEPARATORS '.global.separator=$v'; }
 
 _wiz_draw_bar() {
   local cur; cur="$(jq -r '.global.bar_style // ""' <<<"$CONFIG_JSON")"
-  _wiz_draw_select "Bar style" "$cur" '.global.bar_style=$v' _BARS_EX "${_BARS[@]}"
+  _wiz_draw_select "Bar style" "$cur" '.global.bar_style=$v' _BARS_EX "" "${_BARS[@]}"
 }
 _wiz_handle_bar() { _wiz_select_handle _BARS '.global.bar_style=$v'; }
 
 _wiz_draw_empty() {
   local cur; cur="$(jq -r '.global.empty_behavior // "hide"' <<<"$CONFIG_JSON")"
-  _wiz_draw_select "Empty data" "$cur" '.global.empty_behavior=$v' _EMPTY_EX "${_EMPTY[@]}"
+  _wiz_draw_select "Empty data" "$cur" '.global.empty_behavior=$v' _EMPTY_EX "" "${_EMPTY[@]}"
 }
 _wiz_handle_empty() { _wiz_select_handle _EMPTY '.global.empty_behavior=$v'; }
 
 _wiz_draw_depth() {
   local cur; cur="$(jq -r '.global.color_depth // "auto"' <<<"$CONFIG_JSON")"
-  _wiz_draw_select "Color depth" "$cur" '.global.color_depth=$v' _DEPTH_EX "${_DEPTH[@]}"
+  _wiz_draw_select "Color depth" "$cur" '.global.color_depth=$v' _DEPTH_EX "" "${_DEPTH[@]}"
 }
 _wiz_handle_depth() { _wiz_select_handle _DEPTH '.global.color_depth=$v'; }
 
@@ -1730,8 +1768,8 @@ main() {
     case "${!_i}" in
       -h|--help)    OPT_HELP=1 ;;
       -V|--version) OPT_VERSION=1 ;;
-      -c|--wizard)  OPT_WIZARD=1 ;;
-      --check)      OPT_CHECK=1 ;;
+      -w|--wizard)  OPT_WIZARD=1 ;;
+      -c|--check)   OPT_CHECK=1 ;;
       --no-color)   OPT_NO_COLOR=1 ;;
       --config)
         _i=$((_i+1)); CONFIG_PATH="${!_i}" ;;
@@ -1739,7 +1777,7 @@ main() {
         _i=$((_i+1)); OPT_PRESET="${!_i}" ;;
       --theme)
         _i=$((_i+1)); OPT_THEME="${!_i}" ;;
-      --examples)
+      -e|--examples)
         OPT_EXAMPLES=1
         local next_idx=$((_i+1))
         if (( next_idx <= $# )) && [[ "${!next_idx}" != -* ]]; then
@@ -1894,15 +1932,9 @@ main() {
   (( OPT_EXAMPLES )) && { run_examples "$OPT_EXAMPLES_MODE"; exit $?; }
   (( OPT_NO_COLOR )) && export NO_COLOR=1
 
-  # Render path
+  # Render path. With no piped data, print help and exit (same as -h).
   if [[ -t 0 ]]; then
-    # No piped data → prompt
-    echo -n "No piped data detected. Set up config? (y/n) " >&2
-    local ans; read -r ans
-    case "$ans" in
-      y|Y|yes) run_wizard; exit $? ;;
-      *) print_help; exit 0 ;;
-    esac
+    print_help; exit 0
   fi
 
   INPUT_JSON="$(cat)"
