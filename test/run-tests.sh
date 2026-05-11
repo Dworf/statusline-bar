@@ -50,8 +50,18 @@ run_case() {
   local actual_path="$ACTUAL_DIR/$id.out"
   local expected_path="$EXPECTED_DIR/$id.out"
   local stdin_src=/dev/null
-  [[ -n "$fixture" ]] && stdin_src="$FIXTURES_DIR/$fixture"
-  if NO_COLOR=1 "$SCRIPT" "${args[@]}" < "$stdin_src" > "$actual_path" 2>&1; then
+  if [[ -n "$fixture" ]]; then
+    if [[ -f "$FIXTURES_DIR/$fixture" ]]; then stdin_src="$FIXTURES_DIR/$fixture"
+    elif [[ -f "$SCRIPT_DIR/$fixture" ]]; then stdin_src="$SCRIPT_DIR/$fixture"
+    else echo "FAIL $id (fixture not found: $fixture)"; FAIL=$((FAIL+1)); FAILED_IDS+=("$id"); return
+    fi
+  fi
+  # Per-case pre-hook (optional)
+  local pre_fn="pre_${id}"
+  if declare -F "$pre_fn" >/dev/null; then "$pre_fn"; fi
+  # CASE_ENV lets a case override env vars; falls back to NO_COLOR=1
+  local env_prefix="${CASE_ENV:-NO_COLOR=1}"
+  if /usr/bin/env $env_prefix "$SCRIPT" "${args[@]}" < "$stdin_src" > "$actual_path" 2>&1; then
     :
   else
     echo "FAIL $id (exit non-zero)"

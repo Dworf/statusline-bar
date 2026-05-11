@@ -283,6 +283,99 @@ print_version() {
 # SECTION: main dispatch
 # ============================================================
 
+# ============================================================
+# SECTION: Capability detection
+# ============================================================
+
+detect_color_depth() {
+  if [[ -n "${NO_COLOR:-}" ]]; then
+    echo "none"; return
+  fi
+  case "${COLORTERM:-}" in
+    truecolor|24bit) echo "truecolor"; return ;;
+  esac
+  local n
+  n="$(tput colors 2>/dev/null || echo 0)"
+  if   (( n >= 256 )); then echo "256"
+  elif (( n >= 8 ));   then echo "16"
+  else                       echo "none"
+  fi
+}
+
+detect_nerd_font() {
+  # Override hook for tests.
+  if [[ -n "${STATUSLINE_BAR_FORCE_NERD:-}" ]]; then
+    echo "$STATUSLINE_BAR_FORCE_NERD"; return
+  fi
+  if command -v fc-list >/dev/null 2>&1; then
+    if fc-list 2>/dev/null | grep -qi 'nerd font'; then
+      echo "yes"; return
+    fi
+    echo "no"; return
+  fi
+  case "$(uname -s)" in
+    Darwin)
+      if find ~/Library/Fonts /Library/Fonts /System/Library/Fonts \
+           -maxdepth 3 \( -name '*Nerd*.ttf' -o -name '*Nerd*.otf' \) 2>/dev/null \
+           | grep -q .; then
+        echo "yes"; return
+      fi
+      echo "no"; return ;;
+    Linux)
+      if find ~/.local/share/fonts /usr/share/fonts /usr/local/share/fonts \
+           -maxdepth 4 \( -name '*Nerd*.ttf' -o -name '*Nerd*.otf' \) 2>/dev/null \
+           | grep -q .; then
+        echo "yes"; return
+      fi
+      echo "no"; return ;;
+    *) echo "unknown"; return ;;
+  esac
+}
+
+# Hex "#rrggbb" → "r;g;b" decimal triple.
+_hex_to_rgb() {
+  local hex="${1#'#'}"
+  local r=$((16#${hex:0:2}))
+  local g=$((16#${hex:2:2}))
+  local b=$((16#${hex:4:2}))
+  printf '%d;%d;%d' "$r" "$g" "$b"
+}
+
+# Hex → approximate xterm-256 cube index.
+_hex_to_256() {
+  local hex="${1#'#'}"
+  local r=$((16#${hex:0:2}))
+  local g=$((16#${hex:2:2}))
+  local b=$((16#${hex:4:2}))
+  printf '%d' $(( 16 + 36 * (r * 5 / 255) + 6 * (g * 5 / 255) + (b * 5 / 255) ))
+}
+
+# Emit foreground SGR for COLOR at DEPTH. Empty if depth=none.
+color_fg() {
+  local color="$1" depth="$2"
+  case "$depth" in
+    none) return ;;
+  esac
+  case "$color" in
+    bold)   printf '\033[1m'; return ;;
+    dim)    printf '\033[2m'; return ;;
+    normal) printf '\033[22m'; return ;;
+  esac
+  case "$depth" in
+    truecolor) printf '\033[38;2;%sm' "$(_hex_to_rgb "$color")" ;;
+    256)       printf '\033[38;5;%sm' "$(_hex_to_256 "$color")" ;;
+    16)        printf '\033[37m' ;;
+  esac
+}
+
+color_reset() {
+  local depth="$1"
+  case "$depth" in
+    none) return ;;
+    *) printf '\033[0m' ;;
+  esac
+}
+
 main() {
   # --dump-data is a test hook surfacing the embedded data tables.
   if [[ "${1:-}" == "--dump-data" ]]; then
@@ -309,6 +402,20 @@ main() {
         exit 0 ;;
       *) echo "unknown --dump-data kind: ${2:-}" >&2; exit 2 ;;
     esac
+  fi
+  if [[ "${1:-}" == "--dump-cap" ]]; then
+    case "${2:-}" in
+      color-depth) detect_color_depth; exit 0 ;;
+      nerd-font)   detect_nerd_font; exit 0 ;;
+      *) echo "unknown --dump-cap kind: ${2:-}" >&2; exit 2 ;;
+    esac
+  fi
+  if [[ "${1:-}" == "--dump-color" ]]; then
+    local _depth; _depth="$(detect_color_depth)"
+    # Emit escaped form so expected files are diff-friendly.
+    color_fg "$2" "$_depth" | sed 's/\x1b/\\033/g'
+    echo
+    exit 0
   fi
   case "${1:-}" in
     -h|--help) print_help; exit 0 ;;
