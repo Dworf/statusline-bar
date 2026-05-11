@@ -174,3 +174,13 @@ CASE_ENV="MOCK_GIT_STATE=in_repo STATUSLINE_BAR_FAKE_NOW=9999999999 XDG_CONFIG_H
   run_case override_preset_minimum sample-input.json default-preset.json --preset minimum
 CASE_ENV="MOCK_GIT_STATE=in_repo STATUSLINE_BAR_FAKE_NOW=9999999999 XDG_CONFIG_HOME=/tmp/sbar-noop HOME=/tmp/sbar-noop" \
   run_case override_theme_dracula  sample-input.json default-preset.json --theme dracula
+
+# Phase 9: Examples mode
+# (--examples all is too slow for the standard suite — 10,640 samples × ~30 jq
+# calls each ≈ 25 min. Verify manually via:
+#   ./statusline-bar.sh --examples-all-count
+# Expected: 10640
+# )
+run_case examples_synthetic_load          "" "" --dump-data examples_input
+run_case examples_catalog_section_themes  "" "" --examples catalog --only themes
+run_case examples_catalog_full            "" "" --examples catalog

@@ -246,6 +246,48 @@ read -r -d '' TOKENS_JSON <<'JSON' || true
 JSON
 
 # ============================================================
+# SECTION: Embedded data — synthetic input for --examples
+# ============================================================
+
+read -r -d '' EXAMPLES_INPUT_JSON <<'JSON' || true
+{
+  "session_id": "browse001",
+  "transcript_path": "/dev/null",
+  "session_name": "Browse",
+  "model": { "display_name": "Opus 4.7 (1M)" },
+  "workspace": { "current_dir": "/tmp/x", "added_dirs": [] },
+  "effort": { "level": "xhigh" },
+  "thinking": { "enabled": true },
+  "output_style": { "name": "default" },
+  "version": "2.1.137",
+  "fast_mode": false,
+  "exceeds_200k_tokens": false,
+  "worktree": { "name": "main" },
+  "cost": {
+    "total_cost_usd": 0.40,
+    "total_duration_ms": 230000,
+    "total_api_duration_ms": 39000,
+    "total_lines_added": 128,
+    "total_lines_removed": 42
+  },
+  "context_window": {
+    "used_percentage": 50,
+    "remaining_percentage": 50,
+    "current_usage": {
+      "input_tokens": 100,
+      "output_tokens": 50,
+      "cache_creation_input_tokens": 100,
+      "cache_read_input_tokens": 9750
+    }
+  },
+  "rate_limits": {
+    "five_hour": { "used_percentage": 50, "resets_at": 9999999999 },
+    "seven_day": { "used_percentage": 50, "resets_at": 9999999999 }
+  }
+}
+JSON
+
+# ============================================================
 # SECTION: CLI helpers
 # ============================================================
 
@@ -1037,16 +1079,125 @@ render_all() {
 }
 
 # ============================================================
-# SECTION: Wizard / Examples stubs (replaced in Phases 9 & 10)
+# SECTION: Wizard stub (replaced in Phase 10)
 # ============================================================
 
 run_wizard() {
   echo "statusline-bar: wizard not yet implemented (coming in v0.1.0 final)" >&2
   exit 1
 }
+
+# ============================================================
+# SECTION: Examples mode
+# ============================================================
+
+# Run the renderer once with a synthetic input + a config override.
+# Args: <preset> <theme> <prefix> <separator> <bar_style|"null">
+_render_sample() {
+  local preset="$1" theme="$2" prefix="$3" sep="$4" bar="$5"
+  local cfg
+  cfg="$(build_default_config | jq \
+    --arg p "$preset" --arg t "$theme" --arg ps "$prefix" --arg s "$sep" --arg b "$bar" \
+    --argjson presets "$PRESETS_JSON" '
+      .preset=$p
+      | .theme=$t
+      | .lines=$presets[$p].lines
+      | .global.prefix_style=$ps
+      | .global.separator=$s
+      | (if $b=="null" then .global.bar_style=null else .global.bar_style=$b end)
+      | .global.color_depth="none"')"
+  INPUT_JSON="$EXAMPLES_INPUT_JSON" \
+    CONFIG_JSON="$cfg" \
+    COLOR_DEPTH="none" \
+    NOW_EPOCH=9999999999 \
+    MOCK_GIT_STATE=out_of_repo \
+    render_all
+}
+
+examples_catalog() {
+  local only="${ONLY:-all}"
+  local p t ps s b
+  if [[ "$only" == "all" || "$only" == "presets" ]]; then
+    echo "## Presets"
+    for p in minimum compact default modern fancy everything maximum; do
+      printf '[ %-10s ] %s\n' "$p" "$(_render_sample "$p" default emoji pipe null | head -n 1)"
+    done
+    echo
+  fi
+  if [[ "$only" == "all" || "$only" == "themes" ]]; then
+    echo "## Themes"
+    for t in default dark light graphite solarized dracula nord gruvbox tokyo-night catppuccin; do
+      printf '[ %-12s ] %s\n' "$t" "$(_render_sample minimum "$t" emoji pipe null | head -n 1)"
+    done
+    echo
+  fi
+  if [[ "$only" == "all" || "$only" == "prefixes" ]]; then
+    echo "## Prefix styles"
+    for ps in none label emoji nerd ascii emoji+label label+emoji nerd+label; do
+      printf '[ %-12s ] %s\n' "$ps" "$(_render_sample minimum default "$ps" pipe null | head -n 1)"
+    done
+    echo
+  fi
+  if [[ "$only" == "all" || "$only" == "separators" ]]; then
+    echo "## Separators"
+    for s in space pipe slash dot vbar dash bullet diamond arrow tri star sparkle gear check heart music chevron slant chevron_thin; do
+      printf '[ %-12s ] %s\n' "$s" "$(_render_sample minimum default emoji "$s" null | head -n 1)"
+    done
+    echo
+  fi
+  if [[ "$only" == "all" || "$only" == "bars" ]]; then
+    echo "## Bar styles"
+    for b in blocks heavy line braille dots arrows ascii gradient; do
+      printf '[ %-10s ] %s\n' "$b" "$(_render_sample fancy default emoji pipe "$b" | sed -n '1p')"
+    done
+  fi
+}
+
+# Combinatorial: 7 presets × 10 themes × 8 prefixes × 19 separators = 10,640 lines.
+examples_all() {
+  local p t ps s
+  for p in minimum compact default modern fancy everything maximum; do
+    for t in default dark light graphite solarized dracula nord gruvbox tokyo-night catppuccin; do
+      for ps in none label emoji nerd ascii emoji+label label+emoji nerd+label; do
+        for s in space pipe slash dot vbar dash bullet diamond arrow tri star sparkle gear check heart music chevron slant chevron_thin; do
+          _render_sample "$p" "$t" "$ps" "$s" null | head -n 1
+        done
+      done
+    done
+  done
+}
+
+# Interactive examples (stub; full TUI version comes in Phase 10 addendum).
+examples_interactive() {
+  echo "statusline-bar: --examples interactive not yet implemented" >&2
+  return 1
+}
+
 run_examples() {
-  echo "statusline-bar: --examples not yet implemented (coming in v0.1.0 final)" >&2
-  exit 1
+  local mode="${1:-}"
+  case "$mode" in
+    "")
+      printf '%s\n' \
+        "statusline-bar examples" \
+        "  1) Catalog       one preview per preset/theme/prefix/separator" \
+        "  2) Interactive   browse-only TUI like the wizard" \
+        "  3) All           combinatorial 7×10×8×19 = 10,640 lines (paged)"
+      printf "  Enter choice [1-3, q]: "
+      local choice; read -r choice
+      case "$choice" in
+        1) run_examples catalog ;;
+        2) run_examples interactive ;;
+        3) run_examples all ;;
+        *) return 0 ;;
+      esac ;;
+    catalog) examples_catalog ;;
+    all)
+      if [[ -t 1 ]]; then examples_all | ${PAGER:-less}
+      else                examples_all
+      fi ;;
+    interactive) examples_interactive ;;
+    *) echo "unknown examples mode: $mode" >&2; return 2 ;;
+  esac
 }
 
 main() {
@@ -1074,6 +1225,11 @@ main() {
           OPT_EXAMPLES_MODE="${!next_idx}"
           _i=$next_idx
         fi ;;
+      --only)
+        _i=$((_i+1)); ONLY="${!_i}"; export ONLY ;;
+      --examples-all-count)
+        examples_all | wc -l | tr -d ' '
+        exit 0 ;;
       *) _args+=("${!_i}") ;;
     esac
     _i=$((_i+1))
@@ -1087,6 +1243,7 @@ main() {
       bar_styles) jq -r 'keys_unsorted | join(" ")' <<<"$BAR_STYLES_JSON"; exit 0 ;;
       presets)    jq -r 'keys_unsorted | join(" ")' <<<"$PRESETS_JSON"; exit 0 ;;
       tokens)     jq -r 'keys_unsorted | join(" ")' <<<"$TOKENS_JSON"; exit 0 ;;
+      examples_input) jq -r '.model.display_name' <<<"$EXAMPLES_INPUT_JSON"; exit 0 ;;
       token:*)
         local id="${2#token:}"
         jq -r --arg id "$id" '

@@ -1,0 +1,61 @@
+## Presets
+[ minimum    ] 🤖 Opus 4.7 (1M) | 🧠 50% | 💰 $0.40
+[ compact    ] 🤖 Opus 4.7 (1M) | 🧠 50% | 💰 $0.40 | ⏳ 3m 50s | ⏱️ 5h 50%
+[ default    ] 🤖 Opus 4.7 (1M) | 🧠 50% | 💰 $0.40 | ⏱️ 5h █████░░░░░ 50% 🔄 0s | ⏱️ 7d █████░░░░░ 50% 🔄 0s
+[ modern     ] 🤖 Opus 4.7 (1M) | 🧠 50% | 💰 $0.40
+[ fancy      ] 🤖 Opus 4.7 (1M) | 🧠 █████░░░░░ 50% | 💰 $0.40 | ⏳ 3m 50s
+[ everything ] 🤖 Opus 4.7 (1M) | 📝 Browse | 🧠 50% | 💾 97% | 💰 $0.40 | ⏳ 3m 50s | 📡 39s
+[ maximum    ] 🤖 Opus 4.7 (1M) | 📝 Browse | 🧠 █████░░░░░ 50% | 💾 ██████████ 97% | 💰 $0.40 | ⏳ 3m 50s | 📡 39s
+
+## Themes
+[ default      ] 🤖 Opus 4.7 (1M) | 🧠 50% | 💰 $0.40
+[ dark         ] 🤖 Opus 4.7 (1M) | 🧠 50% | 💰 $0.40
+[ light        ] 🤖 Opus 4.7 (1M) | 🧠 50% | 💰 $0.40
+[ graphite     ] 🤖 Opus 4.7 (1M) | 🧠 50% | 💰 $0.40
+[ solarized    ] 🤖 Opus 4.7 (1M) | 🧠 50% | 💰 $0.40
+[ dracula      ] 🤖 Opus 4.7 (1M) | 🧠 50% | 💰 $0.40
+[ nord         ] 🤖 Opus 4.7 (1M) | 🧠 50% | 💰 $0.40
+[ gruvbox      ] 🤖 Opus 4.7 (1M) | 🧠 50% | 💰 $0.40
+[ tokyo-night  ] 🤖 Opus 4.7 (1M) | 🧠 50% | 💰 $0.40
+[ catppuccin   ] 🤖 Opus 4.7 (1M) | 🧠 50% | 💰 $0.40
+
+## Prefix styles
+[ none         ] Opus 4.7 (1M) | 50% | $0.40
+[ label        ] Model: Opus 4.7 (1M) | Ctx: 50% | Cost: $0.40
+[ emoji        ] 🤖 Opus 4.7 (1M) | 🧠 50% | 💰 $0.40
+[ nerd         ] Opus 4.7 (1M) | 50% | $0.40
+[ ascii        ] [M] Opus 4.7 (1M) | [C] 50% | [$] $0.40
+[ emoji+label  ] 🤖 Model: Opus 4.7 (1M) | 🧠 Ctx: 50% | 💰 Cost: $0.40
+[ label+emoji  ] Model 🤖 Opus 4.7 (1M) | Ctx 🧠 50% | Cost 💰 $0.40
+[ nerd+label   ]  Model: Opus 4.7 (1M) |  Ctx: 50% |  Cost: $0.40
+
+## Separators
+[ space        ] 🤖 Opus 4.7 (1M)  🧠 50%  💰 $0.40
+[ pipe         ] 🤖 Opus 4.7 (1M) | 🧠 50% | 💰 $0.40
+[ slash        ] 🤖 Opus 4.7 (1M) / 🧠 50% / 💰 $0.40
+[ dot          ] 🤖 Opus 4.7 (1M) · 🧠 50% · 💰 $0.40
+[ vbar         ] 🤖 Opus 4.7 (1M) │ 🧠 50% │ 💰 $0.40
+[ dash         ] 🤖 Opus 4.7 (1M) ─ 🧠 50% ─ 💰 $0.40
+[ bullet       ] 🤖 Opus 4.7 (1M) • 🧠 50% • 💰 $0.40
+[ diamond      ] 🤖 Opus 4.7 (1M) ◆ 🧠 50% ◆ 💰 $0.40
+[ arrow        ] 🤖 Opus 4.7 (1M) ▸ 🧠 50% ▸ 💰 $0.40
+[ tri          ] 🤖 Opus 4.7 (1M) ▶ 🧠 50% ▶ 💰 $0.40
+[ star         ] 🤖 Opus 4.7 (1M) ★ 🧠 50% ★ 💰 $0.40
+[ sparkle      ] 🤖 Opus 4.7 (1M) ✦ 🧠 50% ✦ 💰 $0.40
+[ gear         ] 🤖 Opus 4.7 (1M) ⚙ 🧠 50% ⚙ 💰 $0.40
+[ check        ] 🤖 Opus 4.7 (1M) ✓ 🧠 50% ✓ 💰 $0.40
+[ heart        ] 🤖 Opus 4.7 (1M) ♥ 🧠 50% ♥ 💰 $0.40
+[ music        ] 🤖 Opus 4.7 (1M) ♪ 🧠 50% ♪ 💰 $0.40
+[ chevron      ] 🤖 Opus 4.7 (1M)  🧠 50%  💰 $0.40
+[ slant        ] 🤖 Opus 4.7 (1M)  🧠 50%  💰 $0.40
+[ chevron_thin ] 🤖 Opus 4.7 (1M)  🧠 50%  💰 $0.40
+
+## Bar styles
+[ blocks     ] 🤖 Opus 4.7 (1M) | 🧠 █████░░░░░ 50% | 💰 $0.40 | ⏳ 3m 50s
+[ heavy      ] 🤖 Opus 4.7 (1M) | 🧠 ▰▰▰▰▰▱▱▱▱▱ 50% | 💰 $0.40 | ⏳ 3m 50s
+[ line       ] 🤖 Opus 4.7 (1M) | 🧠 ━━━━━───── 50% | 💰 $0.40 | ⏳ 3m 50s
+[ braille    ] 🤖 Opus 4.7 (1M) | 🧠 ⣿⣿⣿⣿⣿⣀⣀⣀⣀⣀ 50% | 💰 $0.40 | ⏳ 3m 50s
+[ dots       ] 🤖 Opus 4.7 (1M) | 🧠 ●●●●●○○○○○ 50% | 💰 $0.40 | ⏳ 3m 50s
+[ arrows     ] 🤖 Opus 4.7 (1M) | 🧠 ▶▶▶▶▶▷▷▷▷▷ 50% | 💰 $0.40 | ⏳ 3m 50s
+[ ascii      ] 🤖 Opus 4.7 (1M) | 🧠 #####..... 50% | 💰 $0.40 | ⏳ 3m 50s
+[ gradient   ] 🤖 Opus 4.7 (1M) | 🧠 █████      50% | 💰 $0.40 | ⏳ 3m 50s
