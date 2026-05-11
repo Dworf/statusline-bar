@@ -1,5 +1,121 @@
 # statusline-bar
 
-Customizable Claude Code statusline. POSIX bash + jq, single file.
+Customizable Claude Code statusline. Single bash file, no JavaScript, no network, no daemon.
 
-(README draft — final content arrives with v0.1.0 release.)
+```
+🤖 Opus 4.7 (1M) | 🧠 4% | 💰 $0.40 | ⏱️ 5h ░░░░░░░░░░ 0% 🔄 4h 58m | ⏱️ 7d █░░░░░░░░░ 6% 🔄 5d 23h
+💭 true | 💪 xhigh | 📁 my-project | 🌿 main | ➕ +128 | ➖ -42 | ⏳ 3m 50s
+```
+
+## Why
+
+Claude Code lets you set any command as its statusline. This script turns the JSON it pipes you into a configurable 1–4 line display — presets, themes, progressbars, per-token overrides — without dragging in Node, Rust, Python, or a daemon.
+
+## Install
+
+```bash
+mkdir -p ~/.local/bin
+curl -fsSL https://raw.githubusercontent.com/Dworf/statusline-bar/v0.1.0/statusline-bar.sh \
+  -o ~/.local/bin/statusline-bar.sh
+chmod +x ~/.local/bin/statusline-bar.sh
+```
+
+Then point Claude Code's `statusLine.command` at the absolute path. In `~/.claude/settings.json`:
+
+```json
+{
+  "statusLine": {
+    "type": "command",
+    "command": "/Users/you/.local/bin/statusline-bar.sh"
+  }
+}
+```
+
+Requirements: `bash` 3.2+ and `jq` (both default on macOS / mainstream Linux). Optional: `git`, `fc-list`, `pmset`/`/sys/class/power_supply` for richer tokens.
+
+## Quick configure
+
+Launch the interactive wizard:
+
+```bash
+statusline-bar.sh -c
+```
+
+Arrow keys + Enter to navigate, Esc to go back, **s** to save, **r** to reset, **q** to quit. The bottom pane shows a live preview as you change settings.
+
+## Browse
+
+```bash
+statusline-bar.sh --examples catalog
+```
+
+Prints one sample per preset / theme / prefix style / separator / bar style. For the full combinatorial tour, `--examples all` (slow; pipes through `$PAGER`).
+
+## Catalog
+
+- **39 tokens** — 26 from Claude stdin (model, context, cost, rate limits, vim mode, agent name, session id, …) + 6 git + 7 OS (clock, battery, memory, load, …)
+- **7 presets** — `minimum`, `compact`, `default`, `modern`, `fancy`, `everything`, `maximum`
+- **10 themes** — `default`, `dark`, `light`, `graphite`, `solarized`, `dracula`, `nord`, `gruvbox`, `tokyo-night`, `catppuccin`
+- **8 prefix styles** — `none`, `label`, `emoji`, `nerd`, `ascii` + 3 combos
+- **19 separators** — ASCII (3), Unicode (10), Decorative (3), Powerline (3)
+- **8 bar styles** — `blocks`, `heavy`, `line`, `braille`, `dots`, `arrows`, `ascii`, `gradient`
+- **9 formats** — `value`, `percent`, `progressbar`, `progressbar+percent`, `countdown`, `remaining`, `progressbar+percent+countdown`, `combined`, `flag`
+
+Globals can be overridden per-token via `tokens.<id>.prefix`, `.format`, `.bar_style`, `.separator_after`.
+
+## Configuration
+
+Config lookup order (highest precedence first):
+
+1. `--config PATH` flag
+2. `$STATUSLINE_BAR_CONFIG`
+3. `./.statusline-bar.json` (project-local — pin a per-project statusline)
+4. `$XDG_CONFIG_HOME/statusline-bar/config.json`
+5. `~/.config/statusline-bar/config.json`
+6. Built-in defaults
+
+The auto-created config includes a `$schema` field pointing at this repo's `schema.json` — VS Code, Cursor, JetBrains, and Neovim's LSP all give you autocomplete and inline docs while editing.
+
+Validate any config with `statusline-bar.sh --check --config PATH`.
+
+## CLI
+
+```text
+statusline-bar.sh [FLAGS]               render from stdin (Claude Code mode)
+statusline-bar.sh -c | --wizard         interactive setup
+statusline-bar.sh --examples [MODE]     browse presets/themes/etc
+statusline-bar.sh --check               validate config; exit 0/1
+statusline-bar.sh --preset NAME         one-shot render override
+statusline-bar.sh --theme NAME          one-shot render override
+statusline-bar.sh --no-color            disable ANSI output
+statusline-bar.sh --config PATH         use specific config file
+```
+
+## Changelog
+
+### 0.1.0 — 2026-05-11
+
+- Initial release. 39 tokens, 7 presets, 10 themes, 8 prefix styles, 19 separators, 8 bar styles, 9 formats, per-token overrides.
+- Interactive TUI wizard for preset / theme / prefix / separator / bar / empty / color-depth.
+- `--examples catalog` and `--examples all` modes.
+- Project-level config (`./.statusline-bar.json`) and `schema.json` for editor autocomplete.
+- 114 end-to-end test cases.
+- Known follow-ups for v0.1.1: TUI line-editor (add / reorder / remove lines), TUI per-token overrides (prefix/format/bar/separator-after), `--examples interactive` mode, full Nerd-font glyph mapping for the `nerd` prefix style.
+
+## Contributing
+
+Issues and PRs welcome at https://github.com/Dworf/statusline-bar.
+
+Run the test suite before submitting:
+
+```bash
+./test/run-tests.sh
+```
+
+## License
+
+MIT — see LICENSE.
+
+## Acknowledgements
+
+Inspired by and shaped after surveying 13 community statusline projects: `cc-statusline`, `CCometixLine`, `ccstatusline`, `claude-code-statusline`, `claude-code-statusline_x`, `claude-code-usage-bar`, `claude-hud`, `claude-statusline`, `claude-statusline-powerline`, `ClaudeCodeStatusLine`, `Best-ClaudeCode-statusline`, `oh-my-claude`, and `claude-statusline_x`. Thanks to all the authors.
