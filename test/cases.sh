@@ -115,3 +115,21 @@ CASE_ENV="STATUSLINE_BAR_FAKE_MEMORY=42"        run_case tok_memory_fake      sa
 CASE_ENV="STATUSLINE_BAR_FORCE_NO_MEMORY=1"     run_case tok_memory_missing   sample-input.json "" --dump-token memory
 CASE_ENV="STATUSLINE_BAR_FAKE_LOAD=1.42"        run_case tok_load_fake        sample-input.json "" --dump-token load
 CASE_ENV="STATUSLINE_BAR_FORCE_NO_LOAD=1"       run_case tok_load_missing     sample-input.json "" --dump-token load
+
+# Phase 6: apply_format
+run_case fmt_value             "" "" --apply-format model       value                            "Opus" blocks 10 0
+run_case fmt_percent_apply     "" "" --apply-format context_pct percent                          "4"    blocks 10 0
+run_case fmt_bar_apply         "" "" --apply-format context_pct progressbar                      "50"   blocks 10 0
+run_case fmt_rl_combined_apply "" "" --apply-format rl_5h       progressbar+percent+countdown    "0|3600" blocks 10 0
+run_case fmt_flag_true         "" "" --apply-format thinking    flag                             "true"  blocks 10 0
+run_case fmt_flag_false        "" "" --apply-format thinking    flag                             "false" blocks 10 0
+run_case fmt_combined_git      "" "" --apply-format git_status  combined                         "+3|~5|?2" blocks 10 0
+
+# Phase 6: render_token
+run_case render_token_model_default sample-input.json default-min.json --dump-render-token model
+run_case render_token_context_bar   sample-input.json ctx-bar.json     --dump-render-token context_bar
+
+# Phase 6: render_line / render_all
+run_case render_line_default sample-input.json default-min.json --dump-render-line 0
+CASE_ENV="MOCK_GIT_STATE=in_repo STATUSLINE_BAR_FAKE_NOW=9999999999" \
+  run_case render_all_default sample-input.json default-preset.json --dump-render-all

@@ -1,0 +1,34 @@
+{
+  "version": 1,
+  "preset": "default",
+  "theme": "default",
+  "global": {
+    "prefix_style": "emoji",
+    "separator": "pipe",
+    "bar_style": null,
+    "color_depth": "none",
+    "empty_behavior": "hide",
+    "placeholder": "—",
+    "bar_width": 10
+  },
+  "lines": [
+    [
+      "model",
+      "context_pct",
+      "cost",
+      "rl_5h",
+      "rl_7d"
+    ],
+    [
+      "thinking",
+      "effort",
+      "dir",
+      "worktree",
+      "git_branch",
+      "lines_added",
+      "lines_removed",
+      "duration"
+    ]
+  ],
+  "tokens": {}
+}

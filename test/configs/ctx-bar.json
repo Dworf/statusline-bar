@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "preset": "default",
+  "theme": "default",
+  "global": {
+    "prefix_style": "emoji",
+    "separator": "pipe",
+    "bar_style": null,
+    "color_depth": "none",
+    "empty_behavior": "hide",
+    "placeholder": "—",
+    "bar_width": 10
+  },
+  "lines": [
+    [
+      "context_bar"
+    ]
+  ],
+  "tokens": {}
+}

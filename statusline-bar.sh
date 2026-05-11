@@ -682,6 +682,58 @@ tok_load() {
 }
 
 # ============================================================
+# SECTION: Format dispatcher
+# ============================================================
+
+# apply_format <id> <fmt> <raw> <bar_style> <bar_width> <now_epoch>
+apply_format() {
+  local id="$1" fmt="$2" raw="$3" bar_style="$4" bar_width="$5" now="$6"
+  case "$fmt" in
+    value) printf '%s' "$raw" ;;
+    percent)
+      [[ -z "$raw" ]] && return
+      local p="${raw%%|*}"
+      fmt_percent "$p" ;;
+    progressbar)
+      [[ -z "$raw" ]] && return
+      local p="${raw%%|*}"
+      render_bar "$p" "$bar_style" "$bar_width" ;;
+    "progressbar+percent")
+      [[ -z "$raw" ]] && return
+      local p="${raw%%|*}"
+      printf '%s %s' "$(render_bar "$p" "$bar_style" "$bar_width")" "$(fmt_percent "$p")" ;;
+    countdown)
+      [[ -z "$raw" ]] && return
+      local r="${raw##*|}"
+      local diff=$(( r - now ))
+      (( diff < 0 )) && diff=0
+      fmt_duration_ms $(( diff * 1000 )) ;;
+    remaining)
+      [[ -z "$raw" ]] && return
+      local r="${raw##*|}"
+      local diff=$(( r - now ))
+      (( diff < 0 )) && diff=0
+      printf 'in %s' "$(fmt_duration_ms $(( diff * 1000 )))" ;;
+    "progressbar+percent+countdown")
+      [[ -z "$raw" ]] && return
+      local p="${raw%%|*}" r="${raw##*|}"
+      local diff=$(( r - now ))
+      (( diff < 0 )) && diff=0
+      printf '%s %s 🔄 %s' \
+        "$(render_bar "$p" "$bar_style" "$bar_width")" \
+        "$(fmt_percent "$p")" \
+        "$(fmt_duration_ms $(( diff * 1000 )))" ;;
+    combined)
+      # git_status: "+s|~m|?u" → "+s ~m ?u"
+      [[ -z "$raw" ]] && return
+      printf '%s' "$raw" | tr '|' ' ' ;;
+    flag)
+      if [[ "$raw" == "true" ]]; then printf '__FLAG_ON__'; fi ;;
+    *) printf '%s' "$raw" ;;
+  esac
+}
+
+# ============================================================
 # SECTION: Prefix dispatcher
 # ============================================================
 
@@ -715,7 +767,175 @@ apply_prefix() {
   esac
 }
 
+# ============================================================
+# SECTION: render_token
+# ============================================================
+# Globals expected:
+#   INPUT_JSON, CONFIG_JSON, COLOR_DEPTH, NOW_EPOCH
+# render_token <id> → final colored, prefixed, formatted string (or empty).
+
+# _theme_var <theme> <field> → contents of THEME_<sanitized_theme>_<field>.
+_theme_var() {
+  local t="${1//-/_}" f="$2" v
+  eval "v=\${THEME_${t}_${f}:-}"
+  printf '%s' "$v"
+}
+
+_threshold_color() {
+  local id="$1" raw="$2" theme="$3"
+  local pct
+  case "$id" in
+    context_pct|context_bar|cache_hit|rl_5h|rl_7d)
+      pct="${raw%%|*}"
+      pct="$(awk -v v="$pct" 'BEGIN{printf "%d", v+0}')"
+      if   (( pct >= 90 )); then _theme_var "$theme" crit
+      elif (( pct >= 70 )); then _theme_var "$theme" warn
+      else                       _theme_var "$theme" good
+      fi ;;
+    battery)
+      pct="$(awk -v v="$raw" 'BEGIN{printf "%d", v+0}')"
+      if   (( pct < 20 )); then _theme_var "$theme" crit
+      elif (( pct < 50 )); then _theme_var "$theme" warn
+      else                      _theme_var "$theme" good
+      fi ;;
+    memory)
+      pct="$(awk -v v="$raw" 'BEGIN{printf "%d", v+0}')"
+      if   (( pct >= 95 )); then _theme_var "$theme" crit
+      elif (( pct >= 80 )); then _theme_var "$theme" warn
+      else                       _theme_var "$theme" good
+      fi ;;
+    *) _theme_var "$theme" accent ;;
+  esac
+}
+
+render_token() {
+  local id="$1"
+  local theme prefix_style format bar_style bar_width preset
+  theme="$(jq -r '.theme' <<<"$CONFIG_JSON")"
+  preset="$(jq -r '.preset // ""' <<<"$CONFIG_JSON")"
+  prefix_style="$(jq -r --arg id "$id" '.tokens[$id].prefix // .global.prefix_style' <<<"$CONFIG_JSON")"
+  bar_width="$(jq -r '.global.bar_width // 10' <<<"$CONFIG_JSON")"
+
+  # Format precedence: per-token override > preset's token_formats > token default.
+  format="$(jq -r --arg id "$id" '.tokens[$id].format // empty' <<<"$CONFIG_JSON")"
+  if [[ -z "$format" && -n "$preset" && "$preset" != "null" ]]; then
+    format="$(jq -r --arg id "$id" --arg p "$preset" '.[$p].token_formats[$id] // empty' <<<"$PRESETS_JSON")"
+  fi
+  if [[ -z "$format" ]]; then
+    format="$(jq -r --arg id "$id" '.[$id].default_format' <<<"$TOKENS_JSON")"
+  fi
+
+  # Bar style precedence: per-token > global > theme suggestion.
+  bar_style="$(jq -r --arg id "$id" '.tokens[$id].bar_style // .global.bar_style // ""' <<<"$CONFIG_JSON")"
+  if [[ -z "$bar_style" || "$bar_style" == "null" ]]; then
+    bar_style="$(_theme_var "$theme" bar_style)"
+  fi
+
+  local raw; raw="$("tok_${id}")"
+
+  local empty_behavior placeholder
+  empty_behavior="$(jq -r '.global.empty_behavior // "hide"' <<<"$CONFIG_JSON")"
+  placeholder="$(jq -r '.global.placeholder // "—"' <<<"$CONFIG_JSON")"
+  if [[ -z "$raw" ]]; then
+    if [[ "$empty_behavior" == "hide" ]]; then return; fi
+    raw="$placeholder"
+    format="value"
+  fi
+
+  local body
+  body="$(apply_format "$id" "$format" "$raw" "$bar_style" "$bar_width" "$NOW_EPOCH")"
+
+  if [[ "$body" == "__FLAG_ON__" ]]; then
+    body=""
+  elif [[ -z "$body" && "$format" == "flag" ]]; then
+    return
+  fi
+
+  local color_token color_esc reset with_prefix
+  color_token="$(_threshold_color "$id" "$raw" "$theme")"
+  color_esc="$(color_fg "$color_token" "$COLOR_DEPTH")"
+  reset="$(color_reset "$COLOR_DEPTH")"
+  if [[ -z "$body" ]]; then
+    with_prefix="$(apply_prefix "$id" "$prefix_style" "")"
+    with_prefix="${with_prefix% }"
+  else
+    with_prefix="$(apply_prefix "$id" "$prefix_style" "$body")"
+  fi
+  printf '%s%s%s' "$color_esc" "$with_prefix" "$reset"
+}
+
+# ============================================================
+# SECTION: render_line / render_all
+# ============================================================
+
+_sep_chars() {
+  jq -r --arg id "$1" '.[$id].chars // " "' <<<"$SEPARATORS_JSON"
+}
+
+render_line() {
+  local idx="$1"
+  local ids tok i count
+  ids=()
+  while IFS= read -r tok; do ids+=("$tok"); done < <(
+    jq -r --argjson i "$idx" '.lines[$i][]?' <<<"$CONFIG_JSON"
+  )
+  count=${#ids[@]}
+  (( count == 0 )) && return
+  local global_sep_id global_sep
+  global_sep_id="$(jq -r '.global.separator // "pipe"' <<<"$CONFIG_JSON")"
+  global_sep="$(_sep_chars "$global_sep_id")"
+
+  local rendered=() out
+  for ((i=0; i<count; i++)); do
+    out="$(render_token "${ids[$i]}")"
+    rendered+=("$out")
+  done
+
+  local result="" prev_visible=0
+  for ((i=0; i<count; i++)); do
+    local body="${rendered[$i]}"
+    [[ -z "$body" ]] && continue
+    if (( prev_visible )); then
+      local prev_id_for_sep="" k
+      for ((k=i-1; k>=0; k--)); do
+        if [[ -n "${rendered[$k]}" ]]; then prev_id_for_sep="${ids[$k]}"; break; fi
+      done
+      local sep_id sep
+      sep_id="$(jq -r --arg id "$prev_id_for_sep" '.tokens[$id].separator_after // empty' <<<"$CONFIG_JSON")"
+      if [[ -n "$sep_id" && "$sep_id" != "null" ]]; then sep="$(_sep_chars "$sep_id")"
+      else sep="$global_sep"
+      fi
+      result+="$sep"
+    fi
+    result+="$body"
+    prev_visible=1
+  done
+  printf '%s' "$result"
+}
+
+render_all() {
+  local n; n="$(jq -r '.lines | length' <<<"$CONFIG_JSON")"
+  local i first=1
+  for ((i=0; i<n; i++)); do
+    if (( first )); then first=0; else printf '\n'; fi
+    render_line "$i"
+  done
+}
+
 main() {
+  # Minimal pre-parse of --config so dump hooks see the right path. Strips
+  # --config PATH from "$@" so the rest of dispatch sees only its own args.
+  # (Full CLI parser comes in Phase 8.)
+  local _args=() _i
+  for (( _i=1; _i<=$#; _i++ )); do
+    case "${!_i}" in
+      --config)
+        _i=$((_i+1))
+        CONFIG_PATH="${!_i}" ;;
+      *) _args+=("${!_i}") ;;
+    esac
+  done
+  set -- "${_args[@]}"
   # --dump-data is a test hook surfacing the embedded data tables.
   if [[ "${1:-}" == "--dump-data" ]]; then
     case "${2:-}" in
@@ -772,6 +992,49 @@ main() {
     INPUT_JSON="$(cat)"
     "tok_${2}"
     echo
+    exit 0
+  fi
+  if [[ "${1:-}" == "--apply-format" ]]; then
+    apply_format "$2" "$3" "$4" "$5" "$6" "$7"; echo
+    exit 0
+  fi
+  if [[ "${1:-}" == "--dump-render-token" ]]; then
+    INPUT_JSON="$(cat)"
+    CONFIG_JSON="$(jq '.' "${CONFIG_PATH:-/dev/null}" 2>/dev/null)"
+    local _cfg_depth; _cfg_depth="$(jq -r '.global.color_depth // "auto"' <<<"${CONFIG_JSON:-{\}}" 2>/dev/null)"
+    if [[ "$_cfg_depth" == "auto" || -z "$_cfg_depth" ]]; then
+      COLOR_DEPTH="$(detect_color_depth)"
+    else
+      COLOR_DEPTH="$_cfg_depth"
+    fi
+    NOW_EPOCH="${STATUSLINE_BAR_FAKE_NOW:-$(date +%s)}"
+    render_token "$2"; echo
+    exit 0
+  fi
+  if [[ "${1:-}" == "--dump-render-line" ]]; then
+    INPUT_JSON="$(cat)"
+    CONFIG_JSON="$(jq '.' "${CONFIG_PATH:-/dev/null}" 2>/dev/null)"
+    local _cfg_depth; _cfg_depth="$(jq -r '.global.color_depth // "auto"' <<<"${CONFIG_JSON:-{\}}" 2>/dev/null)"
+    if [[ "$_cfg_depth" == "auto" || -z "$_cfg_depth" ]]; then
+      COLOR_DEPTH="$(detect_color_depth)"
+    else
+      COLOR_DEPTH="$_cfg_depth"
+    fi
+    NOW_EPOCH="${STATUSLINE_BAR_FAKE_NOW:-$(date +%s)}"
+    render_line "$2"; echo
+    exit 0
+  fi
+  if [[ "${1:-}" == "--dump-render-all" ]]; then
+    INPUT_JSON="$(cat)"
+    CONFIG_JSON="$(jq '.' "${CONFIG_PATH:-/dev/null}" 2>/dev/null)"
+    local _cfg_depth; _cfg_depth="$(jq -r '.global.color_depth // "auto"' <<<"${CONFIG_JSON:-{\}}" 2>/dev/null)"
+    if [[ "$_cfg_depth" == "auto" || -z "$_cfg_depth" ]]; then
+      COLOR_DEPTH="$(detect_color_depth)"
+    else
+      COLOR_DEPTH="$_cfg_depth"
+    fi
+    NOW_EPOCH="${STATUSLINE_BAR_FAKE_NOW:-$(date +%s)}"
+    render_all; echo
     exit 0
   fi
   case "${1:-}" in
