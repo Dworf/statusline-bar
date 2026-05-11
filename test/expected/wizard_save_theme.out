@@ -1,4 +1,4 @@
-[H[2J[1;1H  statusline-bar ▸ Main menu
+[H[2J[1;1H  statusline-bar ▸ Main
 
 › Preset          [default]
   Theme           [default]
@@ -16,7 +16,7 @@
 🤖 Opus 4.7 (1M)
 ────────────────────────────────────────────────────────────
   ↑↓ navigate   Enter select   Esc back   s save   r reset   q quit
-[H[2J[1;1H  statusline-bar ▸ Main menu
+[H[2J[1;1H  statusline-bar ▸ Main
 
   Preset          [default]
 › Theme           [default]
@@ -34,7 +34,7 @@
 🤖 Opus 4.7 (1M)
 ────────────────────────────────────────────────────────────
   ↑↓ navigate   Enter select   Esc back   s save   r reset   q quit
-[H[2J[1;1H  Theme
+[H[2J[1;1H  statusline-bar ▸ Theme
 
 › ● default
     dark
@@ -46,10 +46,12 @@
     gruvbox
     tokyo-night
     catppuccin
-
-  Preview:
-  🤖 Opus 4.7 (1M)
-[H[2J[1;1H  Theme
+────────────────────────────────────────────────────────────
+  Preview (focused: default):
+🤖 Opus 4.7 (1M)
+────────────────────────────────────────────────────────────
+  ↑↓ navigate   Enter select   Esc back   q quit
+[H[2J[1;1H  statusline-bar ▸ Theme
 
   ● default
 ›   dark
@@ -61,10 +63,12 @@
     gruvbox
     tokyo-night
     catppuccin
-
-  Preview:
-  🤖 Opus 4.7 (1M)
-[H[2J[1;1H  Theme
+────────────────────────────────────────────────────────────
+  Preview (focused: dark):
+🤖 Opus 4.7 (1M)
+────────────────────────────────────────────────────────────
+  ↑↓ navigate   Enter select   Esc back   q quit
+[H[2J[1;1H  statusline-bar ▸ Theme
 
   ● default
     dark
@@ -76,10 +80,12 @@
     gruvbox
     tokyo-night
     catppuccin
-
-  Preview:
-  🤖 Opus 4.7 (1M)
-[H[2J[1;1H  Theme
+────────────────────────────────────────────────────────────
+  Preview (focused: light):
+🤖 Opus 4.7 (1M)
+────────────────────────────────────────────────────────────
+  ↑↓ navigate   Enter select   Esc back   q quit
+[H[2J[1;1H  statusline-bar ▸ Theme
 
   ● default
     dark
@@ -91,10 +97,12 @@
     gruvbox
     tokyo-night
     catppuccin
-
-  Preview:
-  🤖 Opus 4.7 (1M)
-[H[2J[1;1H  Theme
+────────────────────────────────────────────────────────────
+  Preview (focused: graphite):
+🤖 Opus 4.7 (1M)
+────────────────────────────────────────────────────────────
+  ↑↓ navigate   Enter select   Esc back   q quit
+[H[2J[1;1H  statusline-bar ▸ Theme
 
   ● default
     dark
@@ -106,10 +114,12 @@
     gruvbox
     tokyo-night
     catppuccin
-
-  Preview:
-  🤖 Opus 4.7 (1M)
-[H[2J[1;1H  Theme
+────────────────────────────────────────────────────────────
+  Preview (focused: solarized):
+🤖 Opus 4.7 (1M)
+────────────────────────────────────────────────────────────
+  ↑↓ navigate   Enter select   Esc back   q quit
+[H[2J[1;1H  statusline-bar ▸ Theme
 
   ● default
     dark
@@ -121,13 +131,15 @@
     gruvbox
     tokyo-night
     catppuccin
+────────────────────────────────────────────────────────────
+  Preview (focused: dracula):
+🤖 Opus 4.7 (1M)
+────────────────────────────────────────────────────────────
+  ↑↓ navigate   Enter select   Esc back   q quit
+[H[2J[1;1H  statusline-bar ▸ Main
 
-  Preview:
-  🤖 Opus 4.7 (1M)
-[H[2J[1;1H  statusline-bar ▸ Main menu
-
-› Preset          [default]
-  Theme           [dracula]
+  Preset          [default]
+› Theme           [dracula]
   Prefix style    [emoji]
   Separator       [pipe]
   Bar style       [(theme default)]

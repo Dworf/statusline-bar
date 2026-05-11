@@ -1126,12 +1126,17 @@ tui_read_key() {
 # ============================================================
 
 WIZARD_STACK=()
+WIZARD_CURSOR_STACK=()
 WIZARD_CURSOR=0
 WIZARD_DIRTY=0
 WIZARD_TUI_SCRIPT=""
+WIZARD_COLOR_DEPTH="none"
 
 _wiz_next_key() {
-  if [[ -n "$WIZARD_TUI_SCRIPT" ]]; then
+  # OPT_TUI_SCRIPT (set once by the parser) signals scripted mode. WIZARD_TUI_SCRIPT
+  # is the consumable buffer — checking it here would block on tui_read_key once
+  # the script is exhausted, instead of cleanly exiting.
+  if [[ -n "${OPT_TUI_SCRIPT:-}" ]]; then
     local c="${WIZARD_TUI_SCRIPT:0:1}"
     WIZARD_TUI_SCRIPT="${WIZARD_TUI_SCRIPT:1}"
     # Single-char protocol for scripted input (tests):
@@ -1158,20 +1163,67 @@ _wiz_next_key() {
 _wiz_top() {
   echo "${WIZARD_STACK[$(( ${#WIZARD_STACK[@]} - 1 ))]}"
 }
-_wiz_pop() {
-  local last=$(( ${#WIZARD_STACK[@]} - 1 ))
-  unset 'WIZARD_STACK[last]'
-  WIZARD_CURSOR=0
-}
+# Push a new screen onto the stack. Saves the current cursor position;
+# the new cursor defaults to 0 unless an initial value is provided.
 _wiz_push() {
   WIZARD_STACK+=("$1")
-  WIZARD_CURSOR=0
+  WIZARD_CURSOR_STACK+=("$WIZARD_CURSOR")
+  WIZARD_CURSOR="${2:-0}"
+}
+# Pop back, restoring the cursor position from before the push. We rebuild
+# the arrays via slice (rather than `unset arr[i]`) because bash 3.2 leaves
+# sparse holes after unset and ${#arr[@]} stops matching the highest index.
+_wiz_pop() {
+  local n=${#WIZARD_STACK[@]}
+  if (( n > 0 )); then
+    WIZARD_STACK=("${WIZARD_STACK[@]:0:n-1}")
+  fi
+  local m=${#WIZARD_CURSOR_STACK[@]}
+  if (( m > 0 )); then
+    WIZARD_CURSOR="${WIZARD_CURSOR_STACK[$((m-1))]:-0}"
+    WIZARD_CURSOR_STACK=("${WIZARD_CURSOR_STACK[@]:0:m-1}")
+  else
+    WIZARD_CURSOR=0
+  fi
 }
 
-# Render a one-line preview using the current $CONFIG_JSON.
+# Return the index of $2 in array named $1, or 0 if not found.
+_index_of() {
+  local arr_name="$1" needle="$2"
+  local size; eval "size=\${#${arr_name}[@]}"
+  local i v
+  for ((i=0; i<size; i++)); do
+    eval "v=\${${arr_name}[$i]}"
+    if [[ "$v" == "$needle" ]]; then echo "$i"; return; fi
+  done
+  echo 0
+}
+
+# Render a one-line preview using the current $CONFIG_JSON (used by main menu).
 _wiz_preview_line() {
   INPUT_JSON="$EXAMPLES_INPUT_JSON" \
-    COLOR_DEPTH=none \
+    COLOR_DEPTH="$WIZARD_COLOR_DEPTH" \
+    NOW_EPOCH=9999999999 \
+    MOCK_GIT_STATE=out_of_repo \
+    render_all
+}
+
+# Render a preview with a hypothetical config mutation applied. Used by
+# selection screens so the preview reflects the currently-focused option.
+# Args:
+#   $1 = jq mutation expression (uses $v and optionally $presets)
+#   $2 = value to substitute for $v
+_wiz_preview_with() {
+  local mutation="$1" v="$2"
+  local cfg
+  if [[ "$v" == "(theme default)" ]]; then
+    cfg="$(jq '.global.bar_style=null' <<<"$CONFIG_JSON")"
+  else
+    cfg="$(jq --arg v "$v" --argjson presets "$PRESETS_JSON" "$mutation" <<<"$CONFIG_JSON")"
+  fi
+  INPUT_JSON="$EXAMPLES_INPUT_JSON" \
+    CONFIG_JSON="$cfg" \
+    COLOR_DEPTH="$WIZARD_COLOR_DEPTH" \
     NOW_EPOCH=9999999999 \
     MOCK_GIT_STATE=out_of_repo \
     render_all
@@ -1187,7 +1239,7 @@ _wiz_draw_main() {
   bar="$(jq -r '.global.bar_style // "(theme default)"' <<<"$CONFIG_JSON")"
   lines="$(jq -r '.lines | length' <<<"$CONFIG_JSON")"
 
-  printf '  statusline-bar ▸ Main menu\n\n'
+  printf '  statusline-bar ▸ Main\n\n'
   local items=("Preset" "Theme" "Prefix style" "Separator" "Bar style" "Lines" "Tokens" "Empty data" "Color depth")
   local vals=("$preset" "$theme" "$prefix" "$sep" "$bar" "$lines lines" "39 tokens" "$(jq -r '.global.empty_behavior // "hide"' <<<"$CONFIG_JSON")" "$(jq -r '.global.color_depth // "auto"' <<<"$CONFIG_JSON")")
   local i
@@ -1209,16 +1261,30 @@ _wiz_handle_main() {
     up)   (( WIZARD_CURSOR > 0 )) && WIZARD_CURSOR=$((WIZARD_CURSOR-1)) ;;
     down) (( WIZARD_CURSOR < 8 )) && WIZARD_CURSOR=$((WIZARD_CURSOR+1)) ;;
     enter|right)
+      # Initial cursor in the submenu = index of currently-selected value.
+      local cur
       case "$WIZARD_CURSOR" in
-        0) _wiz_push preset ;;
-        1) _wiz_push theme ;;
-        2) _wiz_push prefix ;;
-        3) _wiz_push separator ;;
-        4) _wiz_push bar ;;
+        0) cur="$(jq -r '.preset // ""' <<<"$CONFIG_JSON")"
+           _wiz_push preset    "$(_index_of _PRESETS    "$cur")" ;;
+        1) cur="$(jq -r '.theme' <<<"$CONFIG_JSON")"
+           _wiz_push theme     "$(_index_of _THEMES     "$cur")" ;;
+        2) cur="$(jq -r '.global.prefix_style' <<<"$CONFIG_JSON")"
+           _wiz_push prefix    "$(_index_of _PREFIXES   "$cur")" ;;
+        3) cur="$(jq -r '.global.separator' <<<"$CONFIG_JSON")"
+           _wiz_push separator "$(_index_of _SEPARATORS "$cur")" ;;
+        4) cur="$(jq -r '.global.bar_style // ""' <<<"$CONFIG_JSON")"
+           # null/empty bar_style → focus the synthetic "(theme default)" row (index 0)
+           if [[ -z "$cur" || "$cur" == "null" ]]; then
+             _wiz_push bar 0
+           else
+             _wiz_push bar "$(_index_of _BARS "$cur")"
+           fi ;;
         5) _wiz_push lines ;;
         6) _wiz_push tokens ;;
-        7) _wiz_push empty ;;
-        8) _wiz_push depth ;;
+        7) cur="$(jq -r '.global.empty_behavior // "hide"' <<<"$CONFIG_JSON")"
+           _wiz_push empty     "$(_index_of _EMPTY      "$cur")" ;;
+        8) cur="$(jq -r '.global.color_depth // "auto"' <<<"$CONFIG_JSON")"
+           _wiz_push depth     "$(_index_of _DEPTH      "$cur")" ;;
       esac ;;
   esac
 }
@@ -1227,26 +1293,32 @@ _wiz_handle_main() {
 # Args: <title> <items-array-name> <current-getter-jq-expr> <jq-set-fn-name>
 # This is too unwieldy to factor cleanly in bash 3.2 — we inline each screen below.
 
-_wiz_draw_select() {  # title, current_value, items[]...
-  local title="$1" cur="$2"; shift 2
+_wiz_draw_select() {  # title, current_value, mutation, items[]...
+  local title="$1" cur="$2" mutation="$3"; shift 3
   local items=("$@")
   tui_clear
-  printf '  %s\n\n' "$title"
-  local i name marker
+  printf '  statusline-bar ▸ %s\n\n' "$title"
+  local i name marker is_current
   for ((i=0; i<${#items[@]}; i++)); do
     name="${items[$i]}"
     marker="  "
     (( i == WIZARD_CURSOR )) && marker="› "
-    if [[ "$name" == "$cur" || "${name#\(}" != "$name" && "$cur" == "null" ]]; then
-      marker+="● "
-    else
-      marker+="  "
+    is_current=0
+    if [[ "$name" == "$cur" ]]; then
+      is_current=1
+    elif [[ "${name#\(}" != "$name" && ( "$cur" == "null" || -z "$cur" ) ]]; then
+      # Parenthesized synthetic value (e.g. "(theme default)") matches null/empty
+      is_current=1
     fi
+    if (( is_current )); then marker+="● "; else marker+="  "; fi
     printf '%s%s\n' "$marker" "$name"
   done
-  printf '\n  Preview:\n  '
-  _wiz_preview_line
+  printf -- '─%.0s' {1..60}; printf '\n'
+  printf '  Preview (focused: %s):\n' "${items[$WIZARD_CURSOR]}"
+  _wiz_preview_with "$mutation" "${items[$WIZARD_CURSOR]}"
   printf '\n'
+  printf -- '─%.0s' {1..60}; printf '\n'
+  printf '  ↑↓ navigate   Enter select   Esc back   q quit\n'
 }
 
 # Each selection screen is wrapped as a small draw+handle pair using a shared list.
@@ -1281,7 +1353,7 @@ _wiz_select_handle() {  # items_array_name jq_set_expression
 
 _wiz_draw_preset() {
   local cur; cur="$(jq -r '.preset // ""' <<<"$CONFIG_JSON")"
-  _wiz_draw_select "Preset" "$cur" "${_PRESETS[@]}"
+  _wiz_draw_select "Preset" "$cur" '.preset=$v | .lines=$presets[$v].lines' "${_PRESETS[@]}"
 }
 _wiz_handle_preset() {
   case "$KEY" in
@@ -1298,44 +1370,43 @@ _wiz_handle_preset() {
 
 _wiz_draw_theme() {
   local cur; cur="$(jq -r '.theme' <<<"$CONFIG_JSON")"
-  _wiz_draw_select "Theme" "$cur" "${_THEMES[@]}"
+  _wiz_draw_select "Theme" "$cur" '.theme=$v' "${_THEMES[@]}"
 }
 _wiz_handle_theme() { _wiz_select_handle _THEMES '.theme=$v'; }
 
 _wiz_draw_prefix() {
   local cur; cur="$(jq -r '.global.prefix_style' <<<"$CONFIG_JSON")"
-  _wiz_draw_select "Prefix style" "$cur" "${_PREFIXES[@]}"
+  _wiz_draw_select "Prefix style" "$cur" '.global.prefix_style=$v' "${_PREFIXES[@]}"
 }
 _wiz_handle_prefix() { _wiz_select_handle _PREFIXES '.global.prefix_style=$v'; }
 
 _wiz_draw_separator() {
   local cur; cur="$(jq -r '.global.separator' <<<"$CONFIG_JSON")"
-  _wiz_draw_select "Separator" "$cur" "${_SEPARATORS[@]}"
+  _wiz_draw_select "Separator" "$cur" '.global.separator=$v' "${_SEPARATORS[@]}"
 }
 _wiz_handle_separator() { _wiz_select_handle _SEPARATORS '.global.separator=$v'; }
 
 _wiz_draw_bar() {
   local cur; cur="$(jq -r '.global.bar_style // ""' <<<"$CONFIG_JSON")"
-  [[ -z "$cur" || "$cur" == "null" ]] && cur="(theme default)"
-  _wiz_draw_select "Bar style" "$cur" "${_BARS[@]}"
+  _wiz_draw_select "Bar style" "$cur" '.global.bar_style=$v' "${_BARS[@]}"
 }
 _wiz_handle_bar() { _wiz_select_handle _BARS '.global.bar_style=$v'; }
 
 _wiz_draw_empty() {
   local cur; cur="$(jq -r '.global.empty_behavior // "hide"' <<<"$CONFIG_JSON")"
-  _wiz_draw_select "Empty data" "$cur" "${_EMPTY[@]}"
+  _wiz_draw_select "Empty data" "$cur" '.global.empty_behavior=$v' "${_EMPTY[@]}"
 }
 _wiz_handle_empty() { _wiz_select_handle _EMPTY '.global.empty_behavior=$v'; }
 
 _wiz_draw_depth() {
   local cur; cur="$(jq -r '.global.color_depth // "auto"' <<<"$CONFIG_JSON")"
-  _wiz_draw_select "Color depth" "$cur" "${_DEPTH[@]}"
+  _wiz_draw_select "Color depth" "$cur" '.global.color_depth=$v' "${_DEPTH[@]}"
 }
 _wiz_handle_depth() { _wiz_select_handle _DEPTH '.global.color_depth=$v'; }
 
 _wiz_draw_lines() {
   tui_clear
-  printf '  Lines (advanced)\n\n'
+  printf '  statusline-bar ▸ Lines (advanced)\n\n'
   printf '  Editing the lines array via TUI is coming in v0.1.1.\n'
   printf '  For now, edit your config file directly:\n\n'
   printf '    %s\n\n' "${CONFIG_PATH:-(no config file — run :save first)}"
@@ -1346,7 +1417,7 @@ _wiz_handle_lines() { case "$KEY" in esc|left|quit) _wiz_pop ;; esac; }
 
 _wiz_draw_tokens() {
   tui_clear
-  printf '  Tokens (advanced)\n\n'
+  printf '  statusline-bar ▸ Tokens (advanced)\n\n'
   printf '  Per-token overrides via TUI are coming in v0.1.1.\n'
   printf '  For now, edit your config file directly:\n\n'
   printf '    %s\n\n' "${CONFIG_PATH:-(no config file — run :save first)}"
@@ -1358,11 +1429,21 @@ _wiz_handle_tokens() { case "$KEY" in esc|left|quit) _wiz_pop ;; esac; }
 run_wizard() {
   if [[ -z "${CONFIG_JSON:-}" ]]; then load_config; fi
   WIZARD_STACK=(main)
+  WIZARD_CURSOR_STACK=()
   WIZARD_CURSOR=0
   WIZARD_DIRTY=0
   WIZARD_TUI_SCRIPT="${OPT_TUI_SCRIPT:-}"
   local scripted=0
   [[ -n "$WIZARD_TUI_SCRIPT" ]] && scripted=1
+
+  # Use the real terminal's color depth in the live preview so themes
+  # visibly differ when scrolling. Scripted tests force "none" to keep
+  # expected-output files ANSI-free.
+  if (( scripted )); then
+    WIZARD_COLOR_DEPTH="none"
+  else
+    WIZARD_COLOR_DEPTH="$(detect_color_depth)"
+  fi
 
   if (( ! scripted )); then
     tui_init
