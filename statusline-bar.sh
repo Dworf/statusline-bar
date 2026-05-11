@@ -1258,8 +1258,12 @@ _wiz_draw_main() {
 
 _wiz_handle_main() {
   case "$KEY" in
-    up)   (( WIZARD_CURSOR > 0 )) && WIZARD_CURSOR=$((WIZARD_CURSOR-1)) ;;
-    down) (( WIZARD_CURSOR < 8 )) && WIZARD_CURSOR=$((WIZARD_CURSOR+1)) ;;
+    up)
+      if (( WIZARD_CURSOR > 0 )); then WIZARD_CURSOR=$((WIZARD_CURSOR-1))
+      else WIZARD_CURSOR=8; fi ;;
+    down)
+      if (( WIZARD_CURSOR < 8 )); then WIZARD_CURSOR=$((WIZARD_CURSOR+1))
+      else WIZARD_CURSOR=0; fi ;;
     enter|right)
       # Initial cursor in the submenu = index of currently-selected value.
       local cur
@@ -1293,12 +1297,12 @@ _wiz_handle_main() {
 # Args: <title> <items-array-name> <current-getter-jq-expr> <jq-set-fn-name>
 # This is too unwieldy to factor cleanly in bash 3.2 — we inline each screen below.
 
-_wiz_draw_select() {  # title, current_value, mutation, items[]...
-  local title="$1" cur="$2" mutation="$3"; shift 3
+_wiz_draw_select() {  # title, current_value, mutation, examples-array-name, items[]...
+  local title="$1" cur="$2" mutation="$3" ex_arr="$4"; shift 4
   local items=("$@")
   tui_clear
   printf '  statusline-bar ▸ %s\n\n' "$title"
-  local i name marker is_current
+  local i name marker is_current ex
   for ((i=0; i<${#items[@]}; i++)); do
     name="${items[$i]}"
     marker="  "
@@ -1307,18 +1311,26 @@ _wiz_draw_select() {  # title, current_value, mutation, items[]...
     if [[ "$name" == "$cur" ]]; then
       is_current=1
     elif [[ "${name#\(}" != "$name" && ( "$cur" == "null" || -z "$cur" ) ]]; then
-      # Parenthesized synthetic value (e.g. "(theme default)") matches null/empty
       is_current=1
     fi
     if (( is_current )); then marker+="● "; else marker+="  "; fi
-    printf '%s%s\n' "$marker" "$name"
+    # Right-side per-item example (parallel array, if provided)
+    ex=""
+    if [[ -n "$ex_arr" ]]; then
+      eval "ex=\${${ex_arr}[$i]:-}"
+    fi
+    if [[ -n "$ex" ]]; then
+      printf '%s%-16s  %s\n' "$marker" "$name" "$ex"
+    else
+      printf '%s%s\n' "$marker" "$name"
+    fi
   done
   printf -- '─%.0s' {1..60}; printf '\n'
   printf '  Preview (focused: %s):\n' "${items[$WIZARD_CURSOR]}"
   _wiz_preview_with "$mutation" "${items[$WIZARD_CURSOR]}"
   printf '\n'
   printf -- '─%.0s' {1..60}; printf '\n'
-  printf '  ↑↓ navigate   Enter select   Esc back   q quit\n'
+  printf '  ↑↓ navigate (wraps)   Enter select   Esc back   q quit\n'
 }
 
 # Each selection screen is wrapped as a small draw+handle pair using a shared list.
@@ -1330,13 +1342,103 @@ _BARS=("(theme default)" blocks heavy line braille dots arrows ascii gradient)
 _EMPTY=(hide placeholder)
 _DEPTH=(auto truecolor 256 16 none)
 
+# Per-item examples shown on the right side of each selection screen.
+# Parallel to the data arrays above.
+
+_PRESETS_EX=(
+  "1 line · 3 tokens"
+  "1 line · 6 tokens"
+  "2 lines · 13 tokens"
+  "2 lines · 9 tokens"
+  "3 lines · 11 tokens"
+  "4 lines · 29 tokens"
+  "4 lines · 29 tokens (detailed)"
+)
+
+_PREFIXES_EX=(
+  "Opus"
+  "Model: Opus"
+  "🤖 Opus"
+  " Opus"
+  "[M] Opus"
+  "🤖 Model: Opus"
+  "Model 🤖 Opus"
+  " Model: Opus"
+)
+
+_SEPARATORS_EX=(
+  "a  b  c"
+  "a | b | c"
+  "a / b / c"
+  "a · b · c"
+  "a │ b │ c"
+  "a ─ b ─ c"
+  "a • b • c"
+  "a ◆ b ◆ c"
+  "a ▸ b ▸ c"
+  "a ▶ b ▶ c"
+  "a ★ b ★ c"
+  "a ✦ b ✦ c"
+  "a ⚙ b ⚙ c"
+  "a ✓ b ✓ c"
+  "a ♥ b ♥ c"
+  "a ♪ b ♪ c"
+  "a  b  c (needs Nerd Font)"
+  "a  b  c (needs Nerd Font)"
+  "a  b  c (needs Nerd Font)"
+)
+
+_BARS_EX=(
+  ""
+  "█████░░░░░"
+  "▰▰▰▰▰▱▱▱▱▱"
+  "━━━━━─────"
+  "⣿⣿⣿⣿⣿⣀⣀⣀⣀⣀"
+  "●●●●●○○○○○"
+  "▶▶▶▶▶▷▷▷▷▷"
+  "#####....."
+  "█████     "
+)
+
+_EMPTY_EX=(
+  "🤖 Opus | 💰 \$0.40        (empty tokens dropped)"
+  "🤖 Opus | — | 💰 \$0.40   (empty tokens become —)"
+)
+
+_DEPTH_EX=(
+  "auto-detect (recommended)"
+  "24-bit RGB"
+  "8-bit cube"
+  "basic ANSI"
+  "no color"
+)
+
+# Build inline theme color swatches dynamically (one per _THEMES entry).
+# Run once at wizard start so we don't pay color_fg overhead per redraw.
+_THEMES_EX=()
+_build_theme_examples() {
+  _THEMES_EX=()
+  local t good warn crit reset
+  reset="$(color_reset "$WIZARD_COLOR_DEPTH")"
+  for t in "${_THEMES[@]}"; do
+    local s="${t//-/_}"
+    eval "good=\$THEME_${s}_good"
+    eval "warn=\$THEME_${s}_warn"
+    eval "crit=\$THEME_${s}_crit"
+    _THEMES_EX+=( "$(color_fg "$good" "$WIZARD_COLOR_DEPTH")●${reset} $(color_fg "$warn" "$WIZARD_COLOR_DEPTH")●${reset} $(color_fg "$crit" "$WIZARD_COLOR_DEPTH")●${reset}" )
+  done
+}
+
 _wiz_select_handle() {  # items_array_name jq_set_expression
   local arr_name="$1" set_expr="$2"
-  local size_var="${arr_name}[@]"
-  local size=$(eval "echo \${#${arr_name}[@]}")
+  local size; eval "size=\${#${arr_name}[@]}"
   case "$KEY" in
-    up)   (( WIZARD_CURSOR > 0 )) && WIZARD_CURSOR=$((WIZARD_CURSOR-1)) ;;
-    down) (( WIZARD_CURSOR < size-1 )) && WIZARD_CURSOR=$((WIZARD_CURSOR+1)) ;;
+    up)
+      if (( WIZARD_CURSOR > 0 )); then WIZARD_CURSOR=$((WIZARD_CURSOR-1))
+      else WIZARD_CURSOR=$((size-1)); fi ;;
+    down)
+      if (( WIZARD_CURSOR < size-1 )); then WIZARD_CURSOR=$((WIZARD_CURSOR+1))
+      else WIZARD_CURSOR=0; fi ;;
     enter)
       local v
       eval "v=\${${arr_name}[$WIZARD_CURSOR]}"
@@ -1353,12 +1455,17 @@ _wiz_select_handle() {  # items_array_name jq_set_expression
 
 _wiz_draw_preset() {
   local cur; cur="$(jq -r '.preset // ""' <<<"$CONFIG_JSON")"
-  _wiz_draw_select "Preset" "$cur" '.preset=$v | .lines=$presets[$v].lines' "${_PRESETS[@]}"
+  _wiz_draw_select "Preset" "$cur" '.preset=$v | .lines=$presets[$v].lines' _PRESETS_EX "${_PRESETS[@]}"
 }
 _wiz_handle_preset() {
+  local size=${#_PRESETS[@]}
   case "$KEY" in
-    up)   (( WIZARD_CURSOR > 0 )) && WIZARD_CURSOR=$((WIZARD_CURSOR-1)) ;;
-    down) (( WIZARD_CURSOR < ${#_PRESETS[@]}-1 )) && WIZARD_CURSOR=$((WIZARD_CURSOR+1)) ;;
+    up)
+      if (( WIZARD_CURSOR > 0 )); then WIZARD_CURSOR=$((WIZARD_CURSOR-1))
+      else WIZARD_CURSOR=$((size-1)); fi ;;
+    down)
+      if (( WIZARD_CURSOR < size-1 )); then WIZARD_CURSOR=$((WIZARD_CURSOR+1))
+      else WIZARD_CURSOR=0; fi ;;
     enter)
       local v="${_PRESETS[$WIZARD_CURSOR]}"
       CONFIG_JSON="$(jq --arg p "$v" --argjson presets "$PRESETS_JSON" \
@@ -1370,37 +1477,37 @@ _wiz_handle_preset() {
 
 _wiz_draw_theme() {
   local cur; cur="$(jq -r '.theme' <<<"$CONFIG_JSON")"
-  _wiz_draw_select "Theme" "$cur" '.theme=$v' "${_THEMES[@]}"
+  _wiz_draw_select "Theme" "$cur" '.theme=$v' _THEMES_EX "${_THEMES[@]}"
 }
 _wiz_handle_theme() { _wiz_select_handle _THEMES '.theme=$v'; }
 
 _wiz_draw_prefix() {
   local cur; cur="$(jq -r '.global.prefix_style' <<<"$CONFIG_JSON")"
-  _wiz_draw_select "Prefix style" "$cur" '.global.prefix_style=$v' "${_PREFIXES[@]}"
+  _wiz_draw_select "Prefix style" "$cur" '.global.prefix_style=$v' _PREFIXES_EX "${_PREFIXES[@]}"
 }
 _wiz_handle_prefix() { _wiz_select_handle _PREFIXES '.global.prefix_style=$v'; }
 
 _wiz_draw_separator() {
   local cur; cur="$(jq -r '.global.separator' <<<"$CONFIG_JSON")"
-  _wiz_draw_select "Separator" "$cur" '.global.separator=$v' "${_SEPARATORS[@]}"
+  _wiz_draw_select "Separator" "$cur" '.global.separator=$v' _SEPARATORS_EX "${_SEPARATORS[@]}"
 }
 _wiz_handle_separator() { _wiz_select_handle _SEPARATORS '.global.separator=$v'; }
 
 _wiz_draw_bar() {
   local cur; cur="$(jq -r '.global.bar_style // ""' <<<"$CONFIG_JSON")"
-  _wiz_draw_select "Bar style" "$cur" '.global.bar_style=$v' "${_BARS[@]}"
+  _wiz_draw_select "Bar style" "$cur" '.global.bar_style=$v' _BARS_EX "${_BARS[@]}"
 }
 _wiz_handle_bar() { _wiz_select_handle _BARS '.global.bar_style=$v'; }
 
 _wiz_draw_empty() {
   local cur; cur="$(jq -r '.global.empty_behavior // "hide"' <<<"$CONFIG_JSON")"
-  _wiz_draw_select "Empty data" "$cur" '.global.empty_behavior=$v' "${_EMPTY[@]}"
+  _wiz_draw_select "Empty data" "$cur" '.global.empty_behavior=$v' _EMPTY_EX "${_EMPTY[@]}"
 }
 _wiz_handle_empty() { _wiz_select_handle _EMPTY '.global.empty_behavior=$v'; }
 
 _wiz_draw_depth() {
   local cur; cur="$(jq -r '.global.color_depth // "auto"' <<<"$CONFIG_JSON")"
-  _wiz_draw_select "Color depth" "$cur" '.global.color_depth=$v' "${_DEPTH[@]}"
+  _wiz_draw_select "Color depth" "$cur" '.global.color_depth=$v' _DEPTH_EX "${_DEPTH[@]}"
 }
 _wiz_handle_depth() { _wiz_select_handle _DEPTH '.global.color_depth=$v'; }
 
@@ -1444,6 +1551,7 @@ run_wizard() {
   else
     WIZARD_COLOR_DEPTH="$(detect_color_depth)"
   fi
+  _build_theme_examples
 
   if (( ! scripted )); then
     tui_init
