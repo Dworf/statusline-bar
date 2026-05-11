@@ -5,8 +5,7 @@
   Prefix style    [emoji]
   Separator       [pipe]
   Bar style       [(theme default)]
-  Lines           [1 lines]
-  Tokens          [39 tokens]
+  Tokens & lines  [1 lines · 1 tokens]
   Empty data      [hide]
   Color depth     [none]
 

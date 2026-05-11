@@ -1132,6 +1132,18 @@ tui_read_key() {
           "[B") KEY=down;  return ;;
           "[C") KEY=right; return ;;
           "[D") KEY=left;  return ;;
+          "[1")
+            # Modified arrow: terminals send \e[1;<mod><dir> for Shift / etc.
+            #   mod=2 → Shift, 5 → Ctrl, 6 → Ctrl+Shift, ...
+            local more
+            if IFS= read -rsn3 -t 0.05 more; then
+              case "$more" in
+                ";2A") KEY=shift-up;    return ;;
+                ";2B") KEY=shift-down;  return ;;
+                ";2C") KEY=shift-right; return ;;
+                ";2D") KEY=shift-left;  return ;;
+              esac
+            fi ;;
         esac
       fi
       KEY=esc; return ;;
@@ -1186,7 +1198,9 @@ _wiz_next_key() {
     WIZARD_TUI_SCRIPT="${WIZARD_TUI_SCRIPT:1}"
     # Single-char protocol for scripted input (tests):
     #   D=down  U=up  L=left  R=right  \n=enter
+    #   J=shift-down  K=shift-up  (in-line move)
     #   s=save  r=reset  q=quit  ESC=esc
+    #   lowercase a/d/m/p reach the screen as char:a / char:d / etc.
     case "$c" in
       q) KEY=quit ;;
       s) KEY=save ;;
@@ -1195,6 +1209,8 @@ _wiz_next_key() {
       U) KEY=up ;;
       L) KEY=left ;;
       R) KEY=right ;;
+      J) KEY=shift-down ;;
+      K) KEY=shift-up ;;
       $'\n') KEY=enter ;;
       $'\x1b') KEY=esc ;;
       "") KEY=quit ;;
@@ -1285,8 +1301,9 @@ _wiz_draw_main() {
   lines="$(jq -r '.lines | length' <<<"$CONFIG_JSON")"
 
   printf '  statusline-bar ▸ Main\n\n'
-  local items=("Preset" "Theme" "Prefix style" "Separator" "Bar style" "Lines" "Tokens" "Empty data" "Color depth")
-  local vals=("$preset" "$theme" "$prefix" "$sep" "$bar" "$lines lines" "39 tokens" "$(jq -r '.global.empty_behavior // "hide"' <<<"$CONFIG_JSON")" "$(jq -r '.global.color_depth // "auto"' <<<"$CONFIG_JSON")")
+  local total_tokens; total_tokens="$(jq -r '[.lines[][]] | length' <<<"$CONFIG_JSON")"
+  local items=("Preset" "Theme" "Prefix style" "Separator" "Bar style" "Tokens & lines" "Empty data" "Color depth")
+  local vals=("$preset" "$theme" "$prefix" "$sep" "$bar" "$lines lines · $total_tokens tokens" "$(jq -r '.global.empty_behavior // "hide"' <<<"$CONFIG_JSON")" "$(jq -r '.global.color_depth // "auto"' <<<"$CONFIG_JSON")")
   local i
   for ((i=0; i<${#items[@]}; i++)); do
     if (( i == WIZARD_CURSOR )); then printf '› '; else printf '  '; fi
@@ -1305,9 +1322,9 @@ _wiz_handle_main() {
   case "$KEY" in
     up)
       if (( WIZARD_CURSOR > 0 )); then WIZARD_CURSOR=$((WIZARD_CURSOR-1))
-      else WIZARD_CURSOR=8; fi ;;
+      else WIZARD_CURSOR=7; fi ;;
     down)
-      if (( WIZARD_CURSOR < 8 )); then WIZARD_CURSOR=$((WIZARD_CURSOR+1))
+      if (( WIZARD_CURSOR < 7 )); then WIZARD_CURSOR=$((WIZARD_CURSOR+1))
       else WIZARD_CURSOR=0; fi ;;
     enter|right)
       # Initial cursor in the submenu = index of currently-selected value.
@@ -1322,17 +1339,15 @@ _wiz_handle_main() {
         3) cur="$(jq -r '.global.separator' <<<"$CONFIG_JSON")"
            _wiz_push separator "$(_index_of _SEPARATORS "$cur")" ;;
         4) cur="$(jq -r '.global.bar_style // ""' <<<"$CONFIG_JSON")"
-           # null/empty bar_style → focus the synthetic "(theme default)" row (index 0)
            if [[ -z "$cur" || "$cur" == "null" ]]; then
              _wiz_push bar 0
            else
              _wiz_push bar "$(_index_of _BARS "$cur")"
            fi ;;
-        5) _wiz_push lines ;;
-        6) _wiz_push tokens ;;
-        7) cur="$(jq -r '.global.empty_behavior // "hide"' <<<"$CONFIG_JSON")"
+        5) _wiz_push tokens_lines ;;
+        6) cur="$(jq -r '.global.empty_behavior // "hide"' <<<"$CONFIG_JSON")"
            _wiz_push empty     "$(_index_of _EMPTY      "$cur")" ;;
-        8) cur="$(jq -r '.global.color_depth // "auto"' <<<"$CONFIG_JSON")"
+        7) cur="$(jq -r '.global.color_depth // "auto"' <<<"$CONFIG_JSON")"
            _wiz_push depth     "$(_index_of _DEPTH      "$cur")" ;;
       esac ;;
   esac
@@ -1583,27 +1598,649 @@ _wiz_draw_depth() {
 }
 _wiz_handle_depth() { _wiz_select_handle _DEPTH '.global.color_depth=$v'; }
 
-_wiz_draw_lines() {
-  tui_clear
-  printf '  statusline-bar ▸ Lines (advanced)\n\n'
-  printf '  Editing the lines array via TUI is coming in v0.1.1.\n'
-  printf '  For now, edit your config file directly:\n\n'
-  printf '    %s\n\n' "${CONFIG_PATH:-(no config file — run :save first)}"
-  printf '  Or pick a preset from the main menu; presets define the lines.\n\n'
-  printf '  Press Esc or q to go back.\n'
-}
-_wiz_handle_lines() { case "$KEY" in esc|left|quit) _wiz_pop ;; esac; }
+# ============================================================
+# SECTION: Tokens & Lines screen
+# ============================================================
+# State:
+#   TL_ZONE        : "tabs" (cursor on the line tabs row) | "tokens" (in list)
+#   TL_TAB_POS     : 0..N where N = #lines (TAB_POS=N selects the + button)
+#   TL_ACTIVE_LINE : currently-edited line index (kept in sync with TL_TAB_POS
+#                    when in tabs zone and TAB_POS < N)
+#   TL_TOKEN_ROW   : cursor within the active line's row list:
+#                      - empty line: only row 0 (the placeholder)
+#                      - K tokens: rows 0..2K-2 (even = token, odd = separator)
+#   TL_MARK_LINE   : "" or line index of marked token (cross-line cut/paste)
+#   TL_MARK_POS    : "" or token index of marked token
 
-_wiz_draw_tokens() {
-  tui_clear
-  printf '  statusline-bar ▸ Tokens (advanced)\n\n'
-  printf '  Per-token overrides via TUI are coming in v0.1.1.\n'
-  printf '  For now, edit your config file directly:\n\n'
-  printf '    %s\n\n' "${CONFIG_PATH:-(no config file — run :save first)}"
-  printf '  Set tokens.<id>.prefix / format / bar_style / separator_after.\n\n'
-  printf '  Press Esc or q to go back.\n'
+TL_ZONE="tabs"
+TL_TAB_POS=0
+TL_ACTIVE_LINE=0
+TL_TOKEN_ROW=0
+TL_MARK_LINE=""
+TL_MARK_POS=""
+
+# True if the active line has zero tokens.
+_tl_line_empty() {
+  local n; n="$(jq -r --argjson i "$TL_ACTIVE_LINE" '.lines[$i] | length' <<<"$CONFIG_JSON")"
+  [[ "$n" == "0" ]]
 }
-_wiz_handle_tokens() { case "$KEY" in esc|left|quit) _wiz_pop ;; esac; }
+
+# Number of tokens in the active line.
+_tl_line_count() {
+  jq -r --argjson i "$TL_ACTIVE_LINE" '.lines[$i] | length' <<<"$CONFIG_JSON"
+}
+
+# Total displayable rows in the active line (token rows + inline separator rows).
+# Returns 1 for an empty line (the placeholder row).
+_tl_line_rows() {
+  local n; n="$(_tl_line_count)"
+  if (( n == 0 )); then echo 1
+  else echo $(( n * 2 - 1 ))
+  fi
+}
+
+# Number of lines currently configured.
+_tl_num_lines() {
+  jq -r '.lines | length' <<<"$CONFIG_JSON"
+}
+
+# Token id at row position $1 (must be an even position with at least 1 token).
+_tl_token_at() {
+  local row="$1"
+  local tok_idx=$(( row / 2 ))
+  jq -r --argjson i "$TL_ACTIVE_LINE" --argjson j "$tok_idx" '.lines[$i][$j]' <<<"$CONFIG_JSON"
+}
+
+# Effective separator id and source ("global" or "override") between tokens
+# at indices $1 and $1+1. Echoes "id|source".
+_tl_separator_at() {
+  local prev_idx="$1"
+  local prev_id; prev_id="$(jq -r --argjson i "$TL_ACTIVE_LINE" --argjson j "$prev_idx" '.lines[$i][$j]' <<<"$CONFIG_JSON")"
+  local override
+  override="$(jq -r --arg id "$prev_id" '.tokens[$id].separator_after // empty' <<<"$CONFIG_JSON")"
+  if [[ -n "$override" && "$override" != "null" ]]; then
+    echo "$override|override"
+  else
+    echo "$(jq -r '.global.separator' <<<"$CONFIG_JSON")|global"
+  fi
+}
+
+# Render the line-tabs row at the top.
+_tl_draw_tabs() {
+  local n total; n="$(_tl_num_lines)"
+  printf '  Line:  '
+  local i
+  for ((i=0; i<n; i++)); do
+    if (( i == TL_TAB_POS )) && [[ "$TL_ZONE" == "tabs" ]]; then
+      printf '[%d] ' $((i+1))
+    elif (( i == TL_ACTIVE_LINE )); then
+      printf '⟨%d⟩ ' $((i+1))
+    else
+      printf ' %d  ' $((i+1))
+    fi
+  done
+  # + button (only if under max)
+  if (( n < 4 )); then
+    if (( TL_TAB_POS == n )) && [[ "$TL_ZONE" == "tabs" ]]; then
+      printf '[+]'
+    else
+      printf ' + '
+    fi
+  fi
+  printf '\n'
+  printf -- '─%.0s' {1..60}; printf '\n'
+}
+
+# Render the token list for the active line.
+_tl_draw_tokens() {
+  local count; count="$(_tl_line_count)"
+  if (( count == 0 )); then
+    if [[ "$TL_ZONE" == "tokens" ]]; then
+      printf '  › (empty — press '\''a'\'' to add a token)\n'
+    else
+      printf '    (empty — press '\''a'\'' to add a token)\n'
+    fi
+    return
+  fi
+  local i tok mark cur sep_info sep_id sep_source
+  for ((i=0; i<count; i++)); do
+    tok="$(jq -r --argjson l "$TL_ACTIVE_LINE" --argjson j "$i" '.lines[$l][$j]' <<<"$CONFIG_JSON")"
+    # Cursor marker
+    if [[ "$TL_ZONE" == "tokens" ]] && (( TL_TOKEN_ROW == i*2 )); then
+      cur="› "
+    else
+      cur="  "
+    fi
+    # Mark indicator (cross-line move)
+    if [[ "$TL_MARK_LINE" == "$TL_ACTIVE_LINE" && "$TL_MARK_POS" == "$i" ]]; then
+      mark="*"
+    else
+      mark=" "
+    fi
+    printf '%s%s%2d. %s\n' "$cur" "$mark" $((i+1)) "$tok"
+    # Inline separator row (only if not the last token)
+    if (( i < count - 1 )); then
+      sep_info="$(_tl_separator_at "$i")"
+      sep_id="${sep_info%|*}"
+      sep_source="${sep_info#*|}"
+      if [[ "$TL_ZONE" == "tokens" ]] && (( TL_TOKEN_ROW == i*2 + 1 )); then
+        printf '  ›       ↓ %s (%s)\n' "$sep_id" "$sep_source"
+      else
+        printf '          ↓ %s (%s)\n' "$sep_id" "$sep_source"
+      fi
+    fi
+  done
+}
+
+_wiz_draw_tokens_lines() {
+  tui_clear
+  printf '  statusline-bar ▸ Tokens & lines\n\n'
+  _tl_draw_tabs
+  _tl_draw_tokens
+  printf -- '─%.0s' {1..60}; printf '\n'
+  printf '  Preview (all lines):\n'
+  _wiz_preview_line
+  printf '\n'
+  printf -- '─%.0s' {1..60}; printf '\n'
+  if [[ "$TL_ZONE" == "tabs" ]]; then
+    printf '  ←→ switch line   ↓ enter list   Enter on + adds line   d delete line   Esc back\n'
+  else
+    if [[ -n "$TL_MARK_LINE" ]]; then
+      printf '  Mark active — navigate to a position and press p to paste     m cancel mark\n'
+    else
+      printf '  ↑↓ navigate   Shift+↑↓ move   Enter edit   a add   d delete   m mark   Esc back\n'
+    fi
+  fi
+}
+
+# Confirmation prompt overlay. Reuses _wiz_next_key for scripted/real input.
+# Args: $1 = message.
+# Returns 0 if confirmed (y), 1 otherwise.
+_tl_confirm() {
+  tui_clear
+  printf '  %s\n\n' "$1"
+  printf '  Press y to confirm, any other key to cancel.\n'
+  _wiz_next_key
+  case "$KEY" in
+    char:y|char:Y) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+# Delete the active line entirely. If it was the only line, replace it with
+# an empty line so we always have ≥1.
+_tl_delete_active_line() {
+  CONFIG_JSON="$(jq --argjson i "$TL_ACTIVE_LINE" '
+    .lines |= ( del(.[$i]) )
+    | if (.lines | length) == 0 then .lines = [[]] else . end
+  ' <<<"$CONFIG_JSON")"
+  WIZARD_DIRTY=1
+  # Adjust cursor: stay in tabs zone, clamp position
+  local n; n="$(_tl_num_lines)"
+  if (( TL_ACTIVE_LINE >= n )); then TL_ACTIVE_LINE=$((n-1)); fi
+  TL_TAB_POS="$TL_ACTIVE_LINE"
+  TL_ZONE="tabs"
+}
+
+# Insert a token id after the current cursor position in the active line.
+# If line is empty, makes it the first token.
+_tl_insert_token() {
+  local new_id="$1"
+  local count; count="$(_tl_line_count)"
+  local insert_at
+  if (( count == 0 )); then
+    insert_at=0
+  else
+    # If cursor is on a token row, insert after that token.
+    # If on a separator row, insert between the two tokens.
+    if (( TL_TOKEN_ROW % 2 == 0 )); then
+      insert_at=$(( (TL_TOKEN_ROW / 2) + 1 ))
+    else
+      insert_at=$(( (TL_TOKEN_ROW - 1) / 2 + 1 ))
+    fi
+  fi
+  CONFIG_JSON="$(jq --argjson i "$TL_ACTIVE_LINE" --argjson p "$insert_at" --arg id "$new_id" '
+    .lines[$i] |= ( .[0:$p] + [$id] + .[$p:] )
+  ' <<<"$CONFIG_JSON")"
+  WIZARD_DIRTY=1
+  TL_TOKEN_ROW=$(( insert_at * 2 ))
+}
+
+# Delete the token at current cursor position. If that leaves the line empty,
+# delete the line too (unless it's the only line, then keep it empty).
+_tl_delete_token_at_cursor() {
+  local count; count="$(_tl_line_count)"
+  (( count == 0 )) && return
+  if (( TL_TOKEN_ROW % 2 != 0 )); then
+    # Cursor on a separator row: remove the override (back to global)
+    local prev_idx=$(( (TL_TOKEN_ROW - 1) / 2 ))
+    local prev_id; prev_id="$(jq -r --argjson i "$TL_ACTIVE_LINE" --argjson j "$prev_idx" '.lines[$i][$j]' <<<"$CONFIG_JSON")"
+    CONFIG_JSON="$(jq --arg id "$prev_id" '
+      if .tokens[$id]? then .tokens[$id] |= del(.separator_after) else . end
+    ' <<<"$CONFIG_JSON")"
+    WIZARD_DIRTY=1
+    return
+  fi
+  local tok_idx=$(( TL_TOKEN_ROW / 2 ))
+  if (( count == 1 )); then
+    # Last token on this line — delete the line too
+    _tl_delete_active_line
+    return
+  fi
+  CONFIG_JSON="$(jq --argjson i "$TL_ACTIVE_LINE" --argjson j "$tok_idx" '
+    .lines[$i] |= del(.[$j])
+  ' <<<"$CONFIG_JSON")"
+  WIZARD_DIRTY=1
+  # Move cursor: stay on same row if possible, else step back
+  local new_count=$(( count - 1 ))
+  local max_row=$(( new_count * 2 - 1 - 1 ))
+  (( max_row < 0 )) && max_row=0
+  if (( TL_TOKEN_ROW > max_row )); then TL_TOKEN_ROW="$max_row"; fi
+  if (( TL_TOKEN_ROW % 2 != 0 )); then TL_TOKEN_ROW=$((TL_TOKEN_ROW-1)); fi
+}
+
+# Swap two tokens within the active line (move current token up or down).
+_tl_swap_tokens() {
+  local direction="$1"  # "up" or "down"
+  local count; count="$(_tl_line_count)"
+  (( count < 2 )) && return
+  if (( TL_TOKEN_ROW % 2 != 0 )); then return; fi  # only on token rows
+  local j=$(( TL_TOKEN_ROW / 2 )) other
+  if [[ "$direction" == "up" ]]; then
+    (( j == 0 )) && return
+    other=$((j-1))
+  else
+    (( j >= count - 1 )) && return
+    other=$((j+1))
+  fi
+  CONFIG_JSON="$(jq --argjson i "$TL_ACTIVE_LINE" --argjson a "$j" --argjson b "$other" '
+    .lines[$i] |= ( .[:[$a, $b] | min] + [.[ [$a, $b] | max ], .[ [$a, $b] | min ]] + .[[$a, $b] | max + 1:] )
+  ' <<<"$CONFIG_JSON")"
+  WIZARD_DIRTY=1
+  TL_TOKEN_ROW=$((other * 2))
+}
+
+_wiz_handle_tokens_lines() {
+  local count num_lines
+  count="$(_tl_line_count)"
+  num_lines="$(_tl_num_lines)"
+
+  if [[ "$TL_ZONE" == "tabs" ]]; then
+    local tabs_count=$num_lines
+    (( num_lines < 4 )) && tabs_count=$((num_lines+1))
+    case "$KEY" in
+      left)
+        if (( TL_TAB_POS > 0 )); then TL_TAB_POS=$((TL_TAB_POS-1))
+        else TL_TAB_POS=$((tabs_count-1)); fi
+        # Sync ACTIVE_LINE if we're on a real line tab
+        (( TL_TAB_POS < num_lines )) && TL_ACTIVE_LINE="$TL_TAB_POS"
+        TL_TOKEN_ROW=0 ;;
+      right)
+        if (( TL_TAB_POS < tabs_count - 1 )); then TL_TAB_POS=$((TL_TAB_POS+1))
+        else TL_TAB_POS=0; fi
+        (( TL_TAB_POS < num_lines )) && TL_ACTIVE_LINE="$TL_TAB_POS"
+        TL_TOKEN_ROW=0 ;;
+      down)
+        if (( TL_TAB_POS < num_lines )); then
+          TL_ZONE="tokens"
+          TL_TOKEN_ROW=0
+        fi ;;
+      enter)
+        if (( TL_TAB_POS == num_lines )) && (( num_lines < 4 )); then
+          # + button: add an empty line
+          CONFIG_JSON="$(jq '.lines += [[]]' <<<"$CONFIG_JSON")"
+          WIZARD_DIRTY=1
+          TL_ACTIVE_LINE="$num_lines"
+          TL_TAB_POS="$num_lines"
+        fi ;;
+      char:d)
+        # Delete the line currently focused in tabs
+        if (( TL_TAB_POS < num_lines )); then
+          if (( num_lines == 1 )); then
+            local lcount; lcount="$(jq -r '.lines[0] | length' <<<"$CONFIG_JSON")"
+            if (( lcount > 0 )); then
+              if ! _tl_confirm "Delete the only line (it has $lcount token(s))? It will be replaced by an empty line."; then return; fi
+              CONFIG_JSON="$(jq '.lines = [[]]' <<<"$CONFIG_JSON")"
+              WIZARD_DIRTY=1
+            fi
+          else
+            local lcount; lcount="$(jq -r --argjson i "$TL_TAB_POS" '.lines[$i] | length' <<<"$CONFIG_JSON")"
+            if (( lcount > 0 )); then
+              if ! _tl_confirm "Delete line $((TL_TAB_POS+1)) ($lcount token(s))?"; then return; fi
+            fi
+            TL_ACTIVE_LINE="$TL_TAB_POS"
+            _tl_delete_active_line
+          fi
+        fi ;;
+      esc) _wiz_pop ;;
+    esac
+    return
+  fi
+
+  # Tokens zone
+  local max_row; max_row="$(_tl_line_rows)"; max_row=$((max_row-1))
+  case "$KEY" in
+    up)
+      if (( TL_TOKEN_ROW > 0 )); then TL_TOKEN_ROW=$((TL_TOKEN_ROW-1))
+      else TL_ZONE="tabs"; TL_TAB_POS="$TL_ACTIVE_LINE"; fi ;;
+    down)
+      if (( TL_TOKEN_ROW < max_row )); then TL_TOKEN_ROW=$((TL_TOKEN_ROW+1))
+      else TL_ZONE="tabs"; TL_TAB_POS="$TL_ACTIVE_LINE"; fi ;;
+    shift-up)   _tl_swap_tokens up   ;;
+    shift-down) _tl_swap_tokens down ;;
+    enter)
+      if (( count == 0 )); then return; fi
+      if (( TL_TOKEN_ROW % 2 == 0 )); then
+        # Token row: open token detail
+        WIZARD_TOKEN_DETAIL="$(_tl_token_at "$TL_TOKEN_ROW")"
+        _wiz_push token_detail 0
+      else
+        # Separator row: open separator picker (with "(use global)" option)
+        local prev_idx=$(( (TL_TOKEN_ROW - 1) / 2 ))
+        TL_SEP_PICKER_TOKEN="$(jq -r --argjson i "$TL_ACTIVE_LINE" --argjson j "$prev_idx" '.lines[$i][$j]' <<<"$CONFIG_JSON")"
+        _wiz_push sep_picker 0
+      fi ;;
+    char:a)
+      _wiz_push token_picker 0 ;;
+    char:d)
+      if (( count == 0 )); then return; fi
+      if (( count == 1 )) && (( TL_TOKEN_ROW % 2 == 0 )); then
+        if ! _tl_confirm "Delete the last token on this line? The line will be removed."; then return; fi
+      fi
+      _tl_delete_token_at_cursor ;;
+    char:m)
+      if (( count == 0 )); then return; fi
+      if (( TL_TOKEN_ROW % 2 == 0 )); then
+        TL_MARK_LINE="$TL_ACTIVE_LINE"
+        TL_MARK_POS=$(( TL_TOKEN_ROW / 2 ))
+      fi ;;
+    char:p)
+      if [[ -z "$TL_MARK_LINE" ]]; then return; fi
+      _tl_paste_mark ;;
+    esc) _wiz_pop ;;
+  esac
+}
+
+# Move the marked token from (TL_MARK_LINE, TL_MARK_POS) to the position
+# after the current cursor in the active line. Handles same-line and
+# cross-line moves; clears the mark afterward.
+_tl_paste_mark() {
+  local src_line="$TL_MARK_LINE" src_idx="$TL_MARK_POS"
+  local dst_line="$TL_ACTIVE_LINE"
+  # Compute destination insert index
+  local dst_idx count; count="$(_tl_line_count)"
+  if (( count == 0 )); then dst_idx=0
+  elif (( TL_TOKEN_ROW % 2 == 0 )); then dst_idx=$(( (TL_TOKEN_ROW / 2) + 1 ))
+  else dst_idx=$(( (TL_TOKEN_ROW - 1) / 2 + 1 ))
+  fi
+  # Get the moved token id
+  local tok; tok="$(jq -r --argjson l "$src_line" --argjson j "$src_idx" '.lines[$l][$j]' <<<"$CONFIG_JSON")"
+  if [[ "$src_line" == "$dst_line" ]]; then
+    # Same-line move
+    if (( dst_idx > src_idx )); then dst_idx=$((dst_idx-1)); fi
+    CONFIG_JSON="$(jq --argjson l "$src_line" --argjson s "$src_idx" --argjson d "$dst_idx" '
+      .lines[$l] |= (del(.[$s]) | .[0:$d] + [.[$s]] + .[$d:])
+    ' <<<"$CONFIG_JSON")"
+    # The above replaces .[ $s ] with the now-shifted version — simpler to do via two-step:
+    CONFIG_JSON="$(jq --argjson l "$src_line" --argjson s "$src_idx" --argjson d "$dst_idx" --arg t "$tok" '
+      .lines[$l] |= ( del(.[$s]) )
+      | .lines[$l] |= ( .[0:$d] + [$t] + .[$d:] )
+    ' <<<"$CONFIG_JSON")"
+  else
+    # Cross-line: delete from source, insert into dest
+    CONFIG_JSON="$(jq --argjson sl "$src_line" --argjson s "$src_idx" --argjson dl "$dst_line" --argjson d "$dst_idx" --arg t "$tok" '
+      .lines[$sl] |= del(.[$s])
+      | .lines[$dl] |= ( .[0:$d] + [$t] + .[$d:] )
+    ' <<<"$CONFIG_JSON")"
+  fi
+  WIZARD_DIRTY=1
+  TL_MARK_LINE=""; TL_MARK_POS=""
+  TL_TOKEN_ROW=$(( dst_idx * 2 ))
+}
+
+# ============================================================
+# SECTION: Token picker (Tokens & Lines → press 'a')
+# ============================================================
+# Full-screen grouped list of all 39 tokens. Pressing Enter inserts the
+# selected token after the cursor in the calling Tokens & Lines screen.
+
+TOK_PICKER_LIST=()   # ordered ids
+TOK_PICKER_GROUPS=() # parallel: source label for each id (for grouping display)
+
+_tl_build_picker() {
+  TOK_PICKER_LIST=(); TOK_PICKER_GROUPS=()
+  local id src
+  while IFS= read -r id; do
+    src="$(jq -r --arg id "$id" '.[$id].source' <<<"$TOKENS_JSON")"
+    TOK_PICKER_LIST+=("$id")
+    TOK_PICKER_GROUPS+=("$src")
+  done < <( jq -r 'keys_unsorted[]' <<<"$TOKENS_JSON" )
+}
+
+_wiz_draw_token_picker() {
+  tui_clear
+  printf '  statusline-bar ▸ Tokens & lines ▸ Add token\n\n'
+  if (( ${#TOK_PICKER_LIST[@]} == 0 )); then _tl_build_picker; fi
+  # Set of ids already used somewhere in any line
+  local used_ids
+  used_ids="$(jq -r '[.lines[][]] | unique | join(" ")' <<<"$CONFIG_JSON")"
+  local i id src last_src="" marker check sample
+  for ((i=0; i<${#TOK_PICKER_LIST[@]}; i++)); do
+    id="${TOK_PICKER_LIST[$i]}"
+    src="${TOK_PICKER_GROUPS[$i]}"
+    if [[ "$src" != "$last_src" ]]; then
+      printf '\n  %s:\n' "$src"
+      last_src="$src"
+    fi
+    marker="  "
+    (( i == WIZARD_CURSOR )) && marker="› "
+    if grep -qw "$id" <<<"$used_ids"; then check="✓"; else check=" "; fi
+    sample="$(jq -r --arg id "$id" '.[$id].prefix.emoji' <<<"$TOKENS_JSON")"
+    printf '%s%s %-20s  %s\n' "$marker" "$check" "$id" "$sample"
+  done
+  printf '\n'
+  printf -- '─%.0s' {1..60}; printf '\n'
+  printf '  ↑↓ navigate (wraps)   Enter add   Esc cancel\n'
+}
+
+_wiz_handle_token_picker() {
+  local size=${#TOK_PICKER_LIST[@]}
+  case "$KEY" in
+    up)
+      if (( WIZARD_CURSOR > 0 )); then WIZARD_CURSOR=$((WIZARD_CURSOR-1))
+      else WIZARD_CURSOR=$((size-1)); fi ;;
+    down)
+      if (( WIZARD_CURSOR < size-1 )); then WIZARD_CURSOR=$((WIZARD_CURSOR+1))
+      else WIZARD_CURSOR=0; fi ;;
+    enter)
+      _tl_insert_token "${TOK_PICKER_LIST[$WIZARD_CURSOR]}"
+      _wiz_pop ;;
+    esc|left) _wiz_pop ;;
+  esac
+}
+
+# ============================================================
+# SECTION: Separator picker (Tokens & Lines → Enter on a separator row)
+# ============================================================
+# Shows the 19 separators plus an extra synthetic "(use global)" entry that
+# clears the token's separator_after override.
+
+TL_SEP_PICKER_TOKEN=""
+_SEP_PICKER=("(use global)" "${_SEPARATORS[@]}")
+
+_wiz_draw_sep_picker() {
+  tui_clear
+  printf '  statusline-bar ▸ Tokens & lines ▸ Separator after `%s`\n\n' "$TL_SEP_PICKER_TOKEN"
+  local cur
+  cur="$(jq -r --arg id "$TL_SEP_PICKER_TOKEN" '.tokens[$id].separator_after // empty' <<<"$CONFIG_JSON")"
+  [[ -z "$cur" || "$cur" == "null" ]] && cur="(use global)"
+  _wiz_draw_select_inner "$cur" _SEP_PICKER ""
+  printf -- '─%.0s' {1..60}; printf '\n'
+  printf '  Preview:\n  '
+  _wiz_preview_with '.global.separator=$v' "${_SEP_PICKER[$WIZARD_CURSOR]}"
+  printf '\n'
+  printf -- '─%.0s' {1..60}; printf '\n'
+  printf '  ↑↓ navigate (wraps)   Enter select   Esc cancel\n'
+}
+
+# Compact item-list renderer used by sep_picker (no header, no preview block).
+_wiz_draw_select_inner() {
+  local cur="$1" arr_name="$2" ex_arr="$3"
+  local size; eval "size=\${#${arr_name}[@]}"
+  local i name marker is_current ex
+  for ((i=0; i<size; i++)); do
+    eval "name=\${${arr_name}[$i]}"
+    marker="  "
+    (( i == WIZARD_CURSOR )) && marker="› "
+    is_current=0
+    [[ "$name" == "$cur" ]] && is_current=1
+    if (( is_current )); then marker+="● "; else marker+="  "; fi
+    if [[ -n "$ex_arr" ]]; then eval "ex=\${${ex_arr}[$i]:-}"; else ex=""; fi
+    if [[ -n "$ex" ]]; then printf '%s%-16s  %s\n' "$marker" "$name" "$ex"
+    else printf '%s%s\n' "$marker" "$name"
+    fi
+  done
+}
+
+# ============================================================
+# SECTION: Token detail (Enter on a token row)
+# ============================================================
+# Edits per-token overrides for: prefix, format, bar_style, separator_after.
+# Each override is settable to "(inherit global)" which deletes the override.
+
+WIZARD_TOKEN_DETAIL=""
+TL_FIELD=""   # which sub-field we're editing in the field-picker
+
+_wiz_draw_token_detail() {
+  tui_clear
+  local id="$WIZARD_TOKEN_DETAIL"
+  printf '  statusline-bar ▸ Tokens & lines ▸ %s\n\n' "$id"
+  local cur_prefix cur_format cur_bar cur_sep
+  cur_prefix="$(jq -r --arg id "$id" '.tokens[$id].prefix // "(inherit global)"' <<<"$CONFIG_JSON")"
+  cur_format="$(jq -r --arg id "$id" --argjson tokens "$TOKENS_JSON" '.tokens[$id].format // $tokens[$id].default_format' <<<"$CONFIG_JSON")"
+  cur_bar="$(jq -r --arg id "$id" '.tokens[$id].bar_style // "(inherit global)"' <<<"$CONFIG_JSON")"
+  cur_sep="$(jq -r --arg id "$id" '.tokens[$id].separator_after // "(use global)"' <<<"$CONFIG_JSON")"
+  local rows=("Prefix [$cur_prefix]" "Format [$cur_format]" "Bar style [$cur_bar]" "Separator after [$cur_sep]" "Reset to defaults")
+  local i marker
+  for ((i=0; i<${#rows[@]}; i++)); do
+    marker="  "; (( i == WIZARD_CURSOR )) && marker="› "
+    printf '%s%s\n' "$marker" "${rows[$i]}"
+  done
+  printf -- '─%.0s' {1..60}; printf '\n'
+  printf '  Preview:\n'
+  _wiz_preview_line
+  printf '\n'
+  printf -- '─%.0s' {1..60}; printf '\n'
+  printf '  ↑↓ navigate (wraps)   Enter edit field   Esc back\n'
+}
+
+_wiz_handle_token_detail() {
+  local id="$WIZARD_TOKEN_DETAIL"
+  case "$KEY" in
+    up)
+      if (( WIZARD_CURSOR > 0 )); then WIZARD_CURSOR=$((WIZARD_CURSOR-1))
+      else WIZARD_CURSOR=4; fi ;;
+    down)
+      if (( WIZARD_CURSOR < 4 )); then WIZARD_CURSOR=$((WIZARD_CURSOR+1))
+      else WIZARD_CURSOR=0; fi ;;
+    enter)
+      case "$WIZARD_CURSOR" in
+        0) TL_FIELD=prefix;          _wiz_push token_field 0 ;;
+        1) TL_FIELD=format;          _wiz_push token_field 0 ;;
+        2) TL_FIELD=bar_style;       _wiz_push token_field 0 ;;
+        3) TL_FIELD=separator_after; _wiz_push token_field 0 ;;
+        4) CONFIG_JSON="$(jq --arg id "$id" 'del(.tokens[$id])' <<<"$CONFIG_JSON")"
+           WIZARD_DIRTY=1 ;;
+      esac ;;
+    esc|left) _wiz_pop ;;
+  esac
+}
+
+# Generic per-field picker. Picks the items list based on $TL_FIELD.
+_wiz_draw_token_field() {
+  tui_clear
+  local id="$WIZARD_TOKEN_DETAIL"
+  printf '  statusline-bar ▸ Tokens & lines ▸ %s ▸ %s\n\n' "$id" "$TL_FIELD"
+  local items=() cur
+  case "$TL_FIELD" in
+    prefix)
+      items=("(inherit global)" "${_PREFIXES[@]}")
+      cur="$(jq -r --arg id "$id" '.tokens[$id].prefix // "(inherit global)"' <<<"$CONFIG_JSON")" ;;
+    format)
+      items=("(inherit default)")
+      while IFS= read -r f; do items+=("$f"); done < <( jq -r --arg id "$id" '.[$id].applicable_formats[]' <<<"$TOKENS_JSON" )
+      cur="$(jq -r --arg id "$id" '.tokens[$id].format // "(inherit default)"' <<<"$CONFIG_JSON")" ;;
+    bar_style)
+      items=("(inherit global)" blocks heavy line braille dots arrows ascii gradient)
+      cur="$(jq -r --arg id "$id" '.tokens[$id].bar_style // "(inherit global)"' <<<"$CONFIG_JSON")" ;;
+    separator_after)
+      items=("(use global)" "${_SEPARATORS[@]}")
+      cur="$(jq -r --arg id "$id" '.tokens[$id].separator_after // "(use global)"' <<<"$CONFIG_JSON")" ;;
+  esac
+  TL_FIELD_ITEMS=("${items[@]}")
+  local i name marker
+  for ((i=0; i<${#items[@]}; i++)); do
+    name="${items[$i]}"
+    marker="  "; (( i == WIZARD_CURSOR )) && marker="› "
+    [[ "$name" == "$cur" ]] && marker+="● " || marker+="  "
+    printf '%s%s\n' "$marker" "$name"
+  done
+  printf -- '─%.0s' {1..60}; printf '\n'
+  printf '  ↑↓ navigate (wraps)   Enter select   Esc cancel\n'
+}
+
+_wiz_handle_token_field() {
+  local size=${#TL_FIELD_ITEMS[@]}
+  case "$KEY" in
+    up)
+      if (( WIZARD_CURSOR > 0 )); then WIZARD_CURSOR=$((WIZARD_CURSOR-1))
+      else WIZARD_CURSOR=$((size-1)); fi ;;
+    down)
+      if (( WIZARD_CURSOR < size-1 )); then WIZARD_CURSOR=$((WIZARD_CURSOR+1))
+      else WIZARD_CURSOR=0; fi ;;
+    enter)
+      local id="$WIZARD_TOKEN_DETAIL" v="${TL_FIELD_ITEMS[$WIZARD_CURSOR]}"
+      if [[ "$v" == "(inherit global)" || "$v" == "(inherit default)" || "$v" == "(use global)" ]]; then
+        # Delete the override
+        CONFIG_JSON="$(jq --arg id "$id" --arg f "$TL_FIELD" '
+          if .tokens[$id]? then .tokens[$id] |= del(.[$f]) else . end
+        ' <<<"$CONFIG_JSON")"
+      else
+        CONFIG_JSON="$(jq --arg id "$id" --arg f "$TL_FIELD" --arg v "$v" '
+          .tokens[$id][$f] = $v
+        ' <<<"$CONFIG_JSON")"
+      fi
+      WIZARD_DIRTY=1
+      _wiz_pop ;;
+    esc|left) _wiz_pop ;;
+  esac
+}
+
+_wiz_handle_sep_picker() {
+  local size=${#_SEP_PICKER[@]}
+  case "$KEY" in
+    up)
+      if (( WIZARD_CURSOR > 0 )); then WIZARD_CURSOR=$((WIZARD_CURSOR-1))
+      else WIZARD_CURSOR=$((size-1)); fi ;;
+    down)
+      if (( WIZARD_CURSOR < size-1 )); then WIZARD_CURSOR=$((WIZARD_CURSOR+1))
+      else WIZARD_CURSOR=0; fi ;;
+    enter)
+      local choice="${_SEP_PICKER[$WIZARD_CURSOR]}"
+      if [[ "$choice" == "(use global)" ]]; then
+        CONFIG_JSON="$(jq --arg id "$TL_SEP_PICKER_TOKEN" '
+          if .tokens[$id]? then .tokens[$id] |= del(.separator_after) else . end
+        ' <<<"$CONFIG_JSON")"
+      else
+        CONFIG_JSON="$(jq --arg id "$TL_SEP_PICKER_TOKEN" --arg v "$choice" '
+          .tokens[$id].separator_after = $v
+        ' <<<"$CONFIG_JSON")"
+      fi
+      WIZARD_DIRTY=1
+      _wiz_pop ;;
+    esc|left) _wiz_pop ;;
+  esac
+}
 
 run_wizard() {
   if [[ -z "${CONFIG_JSON:-}" ]]; then load_config; fi
@@ -1643,8 +2280,11 @@ run_wizard() {
       bar)       _wiz_draw_bar ;;
       empty)     _wiz_draw_empty ;;
       depth)     _wiz_draw_depth ;;
-      lines)     _wiz_draw_lines ;;
-      tokens)    _wiz_draw_tokens ;;
+      tokens_lines) _wiz_draw_tokens_lines ;;
+      token_picker) _wiz_draw_token_picker ;;
+      sep_picker)   _wiz_draw_sep_picker ;;
+      token_detail) _wiz_draw_token_detail ;;
+      token_field)  _wiz_draw_token_field ;;
     esac
     _wiz_next_key
     # Global shortcuts (apply on any screen)
@@ -1672,8 +2312,11 @@ run_wizard() {
       bar)       _wiz_handle_bar ;;
       empty)     _wiz_handle_empty ;;
       depth)     _wiz_handle_depth ;;
-      lines)     _wiz_handle_lines ;;
-      tokens)    _wiz_handle_tokens ;;
+      tokens_lines) _wiz_handle_tokens_lines ;;
+      token_picker) _wiz_handle_token_picker ;;
+      sep_picker)   _wiz_handle_sep_picker ;;
+      token_detail) _wiz_handle_token_detail ;;
+      token_field)  _wiz_handle_token_field ;;
     esac
   done
 

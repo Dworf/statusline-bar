@@ -216,3 +216,15 @@ post_wizard_save_theme() {
 # Then 's' saves. Use $'\n' for enter.
 CASE_ENV="STATUSLINE_BAR_CONFIG=/tmp/sbar-wsave.json TERM=xterm-256color STATUSLINE_BAR_FAKE_MEMORY=50 STATUSLINE_BAR_FAKE_LOAD=1.0 STATUSLINE_BAR_FAKE_BATTERY=92 HOSTNAME_OVERRIDE=Mac STATUSLINE_BAR_FORCE_NERD=no" \
   run_case wizard_save_theme "" "" --wizard --tui-script "$(printf 'D\nDDDDD\ns')"
+
+# Tokens & lines: enter the screen, drop into tokens zone, navigate, quit.
+# DDDDD\n  → main cursor 0→5 (T&L), enter → tabs zone
+# D       → enter tokens zone
+# DD      → step down two rows (token 1 → separator → token 2)
+# q       → quit
+pre_wizard_tokens_lines_nav() {
+  rm -f /tmp/sbar-tl.json
+  cp /Users/david/Documents/Projects/statusline_bar/statusline-bar/test/configs/default-preset.json /tmp/sbar-tl.json
+}
+CASE_ENV="STATUSLINE_BAR_CONFIG=/tmp/sbar-tl.json TERM=xterm-256color STATUSLINE_BAR_FAKE_MEMORY=50 STATUSLINE_BAR_FAKE_LOAD=1.0 STATUSLINE_BAR_FAKE_BATTERY=92 HOSTNAME_OVERRIDE=Mac STATUSLINE_BAR_FORCE_NERD=no MOCK_GIT_STATE=in_repo STATUSLINE_BAR_FAKE_NOW=9999999999" \
+  run_case wizard_tokens_lines_nav "" "" --wizard --tui-script "$(printf 'DDDDD\nDDDq')"
