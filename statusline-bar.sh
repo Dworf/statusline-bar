@@ -1079,12 +1079,344 @@ render_all() {
 }
 
 # ============================================================
-# SECTION: Wizard stub (replaced in Phase 10)
+# SECTION: TUI primitives
 # ============================================================
 
+tui_init() {
+  tput smcup        # alternate screen
+  tput civis        # hide cursor
+  stty -echo 2>/dev/null
+  trap tui_cleanup EXIT INT TERM
+}
+tui_cleanup() {
+  tput rmcup 2>/dev/null || true
+  tput cnorm 2>/dev/null || true
+  stty echo 2>/dev/null || true
+}
+tui_clear() { tput clear; tput cup 0 0; }
+
+# Read one key. Sets $KEY to a logical name:
+#   up, down, left, right, enter, esc, char:<X>, save, reset, quit, backspace
+tui_read_key() {
+  local ch
+  IFS= read -rsn1 ch
+  case "$ch" in
+    "") KEY=enter; return ;;
+    $'\x1b')
+      local rest
+      if IFS= read -rsn2 -t 0.05 rest; then
+        case "$rest" in
+          "[A") KEY=up;    return ;;
+          "[B") KEY=down;  return ;;
+          "[C") KEY=right; return ;;
+          "[D") KEY=left;  return ;;
+        esac
+      fi
+      KEY=esc; return ;;
+    $'\x7f') KEY=backspace; return ;;
+    s|S) KEY=save; return ;;
+    r|R) KEY=reset; return ;;
+    q|Q) KEY=quit; return ;;
+    *) KEY="char:$ch"; return ;;
+  esac
+}
+
+# ============================================================
+# SECTION: Wizard
+# ============================================================
+
+WIZARD_STACK=()
+WIZARD_CURSOR=0
+WIZARD_DIRTY=0
+WIZARD_TUI_SCRIPT=""
+
+_wiz_next_key() {
+  if [[ -n "$WIZARD_TUI_SCRIPT" ]]; then
+    local c="${WIZARD_TUI_SCRIPT:0:1}"
+    WIZARD_TUI_SCRIPT="${WIZARD_TUI_SCRIPT:1}"
+    # Single-char protocol for scripted input (tests):
+    #   D=down  U=up  L=left  R=right  \n=enter
+    #   s=save  r=reset  q=quit  ESC=esc
+    case "$c" in
+      q) KEY=quit ;;
+      s) KEY=save ;;
+      r) KEY=reset ;;
+      D) KEY=down ;;
+      U) KEY=up ;;
+      L) KEY=left ;;
+      R) KEY=right ;;
+      $'\n') KEY=enter ;;
+      $'\x1b') KEY=esc ;;
+      "") KEY=quit ;;
+      *) KEY="char:$c" ;;
+    esac
+    return
+  fi
+  tui_read_key
+}
+
+_wiz_top() {
+  echo "${WIZARD_STACK[$(( ${#WIZARD_STACK[@]} - 1 ))]}"
+}
+_wiz_pop() {
+  local last=$(( ${#WIZARD_STACK[@]} - 1 ))
+  unset 'WIZARD_STACK[last]'
+  WIZARD_CURSOR=0
+}
+_wiz_push() {
+  WIZARD_STACK+=("$1")
+  WIZARD_CURSOR=0
+}
+
+# Render a one-line preview using the current $CONFIG_JSON.
+_wiz_preview_line() {
+  INPUT_JSON="$EXAMPLES_INPUT_JSON" \
+    COLOR_DEPTH=none \
+    NOW_EPOCH=9999999999 \
+    MOCK_GIT_STATE=out_of_repo \
+    render_all
+}
+
+_wiz_draw_main() {
+  tui_clear
+  local theme preset prefix sep bar lines
+  theme="$(jq -r '.theme' <<<"$CONFIG_JSON")"
+  preset="$(jq -r '.preset // "(custom)"' <<<"$CONFIG_JSON")"
+  prefix="$(jq -r '.global.prefix_style' <<<"$CONFIG_JSON")"
+  sep="$(jq -r '.global.separator' <<<"$CONFIG_JSON")"
+  bar="$(jq -r '.global.bar_style // "(theme default)"' <<<"$CONFIG_JSON")"
+  lines="$(jq -r '.lines | length' <<<"$CONFIG_JSON")"
+
+  printf '  statusline-bar ▸ Main menu\n\n'
+  local items=("Preset" "Theme" "Prefix style" "Separator" "Bar style" "Lines" "Tokens" "Empty data" "Color depth")
+  local vals=("$preset" "$theme" "$prefix" "$sep" "$bar" "$lines lines" "39 tokens" "$(jq -r '.global.empty_behavior // "hide"' <<<"$CONFIG_JSON")" "$(jq -r '.global.color_depth // "auto"' <<<"$CONFIG_JSON")")
+  local i
+  for ((i=0; i<${#items[@]}; i++)); do
+    if (( i == WIZARD_CURSOR )); then printf '› '; else printf '  '; fi
+    printf '%-14s  [%s]\n' "${items[$i]}" "${vals[$i]}"
+  done
+  printf '\n  Save (s)  Reset (r)  Quit (q)\n'
+  printf -- '─%.0s' {1..60}; printf '\n'
+  printf '  Preview:\n'
+  _wiz_preview_line
+  printf '\n'
+  printf -- '─%.0s' {1..60}; printf '\n'
+  printf '  ↑↓ navigate   Enter select   Esc back   s save   r reset   q quit\n'
+}
+
+_wiz_handle_main() {
+  case "$KEY" in
+    up)   (( WIZARD_CURSOR > 0 )) && WIZARD_CURSOR=$((WIZARD_CURSOR-1)) ;;
+    down) (( WIZARD_CURSOR < 8 )) && WIZARD_CURSOR=$((WIZARD_CURSOR+1)) ;;
+    enter|right)
+      case "$WIZARD_CURSOR" in
+        0) _wiz_push preset ;;
+        1) _wiz_push theme ;;
+        2) _wiz_push prefix ;;
+        3) _wiz_push separator ;;
+        4) _wiz_push bar ;;
+        5) _wiz_push lines ;;
+        6) _wiz_push tokens ;;
+        7) _wiz_push empty ;;
+        8) _wiz_push depth ;;
+      esac ;;
+  esac
+}
+
+# Generic selection-screen helper used by preset/theme/prefix/sep/bar/empty/depth.
+# Args: <title> <items-array-name> <current-getter-jq-expr> <jq-set-fn-name>
+# This is too unwieldy to factor cleanly in bash 3.2 — we inline each screen below.
+
+_wiz_draw_select() {  # title, current_value, items[]...
+  local title="$1" cur="$2"; shift 2
+  local items=("$@")
+  tui_clear
+  printf '  %s\n\n' "$title"
+  local i name marker
+  for ((i=0; i<${#items[@]}; i++)); do
+    name="${items[$i]}"
+    marker="  "
+    (( i == WIZARD_CURSOR )) && marker="› "
+    if [[ "$name" == "$cur" || "${name#\(}" != "$name" && "$cur" == "null" ]]; then
+      marker+="● "
+    else
+      marker+="  "
+    fi
+    printf '%s%s\n' "$marker" "$name"
+  done
+  printf '\n  Preview:\n  '
+  _wiz_preview_line
+  printf '\n'
+}
+
+# Each selection screen is wrapped as a small draw+handle pair using a shared list.
+_PRESETS=(minimum compact default modern fancy everything maximum)
+_THEMES=(default dark light graphite solarized dracula nord gruvbox tokyo-night catppuccin)
+_PREFIXES=(none label emoji nerd ascii emoji+label label+emoji nerd+label)
+_SEPARATORS=(space pipe slash dot vbar dash bullet diamond arrow tri star sparkle gear check heart music chevron slant chevron_thin)
+_BARS=("(theme default)" blocks heavy line braille dots arrows ascii gradient)
+_EMPTY=(hide placeholder)
+_DEPTH=(auto truecolor 256 16 none)
+
+_wiz_select_handle() {  # items_array_name jq_set_expression
+  local arr_name="$1" set_expr="$2"
+  local size_var="${arr_name}[@]"
+  local size=$(eval "echo \${#${arr_name}[@]}")
+  case "$KEY" in
+    up)   (( WIZARD_CURSOR > 0 )) && WIZARD_CURSOR=$((WIZARD_CURSOR-1)) ;;
+    down) (( WIZARD_CURSOR < size-1 )) && WIZARD_CURSOR=$((WIZARD_CURSOR+1)) ;;
+    enter)
+      local v
+      eval "v=\${${arr_name}[$WIZARD_CURSOR]}"
+      if [[ "$v" == "(theme default)" ]]; then
+        CONFIG_JSON="$(jq '.global.bar_style=null' <<<"$CONFIG_JSON")"
+      else
+        CONFIG_JSON="$(jq --arg v "$v" "$set_expr" <<<"$CONFIG_JSON")"
+      fi
+      WIZARD_DIRTY=1
+      _wiz_pop ;;
+    esc|left) _wiz_pop ;;
+  esac
+}
+
+_wiz_draw_preset() {
+  local cur; cur="$(jq -r '.preset // ""' <<<"$CONFIG_JSON")"
+  _wiz_draw_select "Preset" "$cur" "${_PRESETS[@]}"
+}
+_wiz_handle_preset() {
+  case "$KEY" in
+    up)   (( WIZARD_CURSOR > 0 )) && WIZARD_CURSOR=$((WIZARD_CURSOR-1)) ;;
+    down) (( WIZARD_CURSOR < ${#_PRESETS[@]}-1 )) && WIZARD_CURSOR=$((WIZARD_CURSOR+1)) ;;
+    enter)
+      local v="${_PRESETS[$WIZARD_CURSOR]}"
+      CONFIG_JSON="$(jq --arg p "$v" --argjson presets "$PRESETS_JSON" \
+        '.preset=$p | .lines=$presets[$p].lines' <<<"$CONFIG_JSON")"
+      WIZARD_DIRTY=1; _wiz_pop ;;
+    esc|left) _wiz_pop ;;
+  esac
+}
+
+_wiz_draw_theme() {
+  local cur; cur="$(jq -r '.theme' <<<"$CONFIG_JSON")"
+  _wiz_draw_select "Theme" "$cur" "${_THEMES[@]}"
+}
+_wiz_handle_theme() { _wiz_select_handle _THEMES '.theme=$v'; }
+
+_wiz_draw_prefix() {
+  local cur; cur="$(jq -r '.global.prefix_style' <<<"$CONFIG_JSON")"
+  _wiz_draw_select "Prefix style" "$cur" "${_PREFIXES[@]}"
+}
+_wiz_handle_prefix() { _wiz_select_handle _PREFIXES '.global.prefix_style=$v'; }
+
+_wiz_draw_separator() {
+  local cur; cur="$(jq -r '.global.separator' <<<"$CONFIG_JSON")"
+  _wiz_draw_select "Separator" "$cur" "${_SEPARATORS[@]}"
+}
+_wiz_handle_separator() { _wiz_select_handle _SEPARATORS '.global.separator=$v'; }
+
+_wiz_draw_bar() {
+  local cur; cur="$(jq -r '.global.bar_style // ""' <<<"$CONFIG_JSON")"
+  [[ -z "$cur" || "$cur" == "null" ]] && cur="(theme default)"
+  _wiz_draw_select "Bar style" "$cur" "${_BARS[@]}"
+}
+_wiz_handle_bar() { _wiz_select_handle _BARS '.global.bar_style=$v'; }
+
+_wiz_draw_empty() {
+  local cur; cur="$(jq -r '.global.empty_behavior // "hide"' <<<"$CONFIG_JSON")"
+  _wiz_draw_select "Empty data" "$cur" "${_EMPTY[@]}"
+}
+_wiz_handle_empty() { _wiz_select_handle _EMPTY '.global.empty_behavior=$v'; }
+
+_wiz_draw_depth() {
+  local cur; cur="$(jq -r '.global.color_depth // "auto"' <<<"$CONFIG_JSON")"
+  _wiz_draw_select "Color depth" "$cur" "${_DEPTH[@]}"
+}
+_wiz_handle_depth() { _wiz_select_handle _DEPTH '.global.color_depth=$v'; }
+
+_wiz_draw_lines() {
+  tui_clear
+  printf '  Lines (advanced)\n\n'
+  printf '  Editing the lines array via TUI is coming in v0.1.1.\n'
+  printf '  For now, edit your config file directly:\n\n'
+  printf '    %s\n\n' "${CONFIG_PATH:-(no config file — run :save first)}"
+  printf '  Or pick a preset from the main menu; presets define the lines.\n\n'
+  printf '  Press Esc or q to go back.\n'
+}
+_wiz_handle_lines() { case "$KEY" in esc|left|quit) _wiz_pop ;; esac; }
+
+_wiz_draw_tokens() {
+  tui_clear
+  printf '  Tokens (advanced)\n\n'
+  printf '  Per-token overrides via TUI are coming in v0.1.1.\n'
+  printf '  For now, edit your config file directly:\n\n'
+  printf '    %s\n\n' "${CONFIG_PATH:-(no config file — run :save first)}"
+  printf '  Set tokens.<id>.prefix / format / bar_style / separator_after.\n\n'
+  printf '  Press Esc or q to go back.\n'
+}
+_wiz_handle_tokens() { case "$KEY" in esc|left|quit) _wiz_pop ;; esac; }
+
 run_wizard() {
-  echo "statusline-bar: wizard not yet implemented (coming in v0.1.0 final)" >&2
-  exit 1
+  if [[ -z "${CONFIG_JSON:-}" ]]; then load_config; fi
+  WIZARD_STACK=(main)
+  WIZARD_CURSOR=0
+  WIZARD_DIRTY=0
+  WIZARD_TUI_SCRIPT="${OPT_TUI_SCRIPT:-}"
+  local scripted=0
+  [[ -n "$WIZARD_TUI_SCRIPT" ]] && scripted=1
+
+  if (( ! scripted )); then
+    tui_init
+  fi
+
+  while (( ${#WIZARD_STACK[@]} > 0 )); do
+    local screen; screen="$(_wiz_top)"
+    case "$screen" in
+      main)      _wiz_draw_main ;;
+      preset)    _wiz_draw_preset ;;
+      theme)     _wiz_draw_theme ;;
+      prefix)    _wiz_draw_prefix ;;
+      separator) _wiz_draw_separator ;;
+      bar)       _wiz_draw_bar ;;
+      empty)     _wiz_draw_empty ;;
+      depth)     _wiz_draw_depth ;;
+      lines)     _wiz_draw_lines ;;
+      tokens)    _wiz_draw_tokens ;;
+    esac
+    _wiz_next_key
+    # Global shortcuts (apply on any screen)
+    case "$KEY" in
+      save)
+        save_config "${CONFIG_PATH:-$(_default_config_path)}" "$CONFIG_JSON"
+        WIZARD_DIRTY=0
+        break ;;
+      reset)
+        CONFIG_JSON="$(build_default_config)"
+        WIZARD_DIRTY=1
+        continue ;;
+      quit)
+        # On main: quit immediately. On submenu: pop back to main.
+        if [[ "$screen" == "main" ]]; then break
+        else _wiz_pop; fi
+        continue ;;
+    esac
+    case "$screen" in
+      main)      _wiz_handle_main ;;
+      preset)    _wiz_handle_preset ;;
+      theme)     _wiz_handle_theme ;;
+      prefix)    _wiz_handle_prefix ;;
+      separator) _wiz_handle_separator ;;
+      bar)       _wiz_handle_bar ;;
+      empty)     _wiz_handle_empty ;;
+      depth)     _wiz_handle_depth ;;
+      lines)     _wiz_handle_lines ;;
+      tokens)    _wiz_handle_tokens ;;
+    esac
+  done
+
+  if (( ! scripted )); then
+    tui_cleanup
+  fi
+  return 0
 }
 
 # ============================================================
@@ -1227,6 +1559,8 @@ main() {
         fi ;;
       --only)
         _i=$((_i+1)); ONLY="${!_i}"; export ONLY ;;
+      --tui-script)
+        _i=$((_i+1)); OPT_TUI_SCRIPT="${!_i}" ;;
       --examples-all-count)
         examples_all | wc -l | tr -d ' '
         exit 0 ;;

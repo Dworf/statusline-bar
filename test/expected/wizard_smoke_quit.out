@@ -1,0 +1,18 @@
+[H[2J[1;1H  statusline-bar ▸ Main menu
+
+› Preset          [default]
+  Theme           [default]
+  Prefix style    [emoji]
+  Separator       [pipe]
+  Bar style       [(theme default)]
+  Lines           [1 lines]
+  Tokens          [39 tokens]
+  Empty data      [hide]
+  Color depth     [none]
+
+  Save (s)  Reset (r)  Quit (q)
+────────────────────────────────────────────────────────────
+  Preview:
+🤖 Opus 4.7 (1M)
+────────────────────────────────────────────────────────────
+  ↑↓ navigate   Enter select   Esc back   s save   r reset   q quit

@@ -96,6 +96,17 @@ run_case() {
     return
   fi
   if diff -u "$expected_path" "$actual_path" > /dev/null; then
+    # Run post-hook if defined; it can FAIL the case.
+    local post_fn="post_${id}"
+    if declare -F "$post_fn" >/dev/null; then
+      local post_out
+      if ! post_out="$("$post_fn")"; then
+        echo "$post_out"
+        FAIL=$((FAIL+1))
+        FAILED_IDS+=("$id")
+        return
+      fi
+    fi
     PASS=$((PASS+1))
   else
     echo "FAIL $id"
