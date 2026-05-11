@@ -196,7 +196,7 @@ post_wizard_smoke_quit() {
     return 1
   fi
 }
-CASE_ENV="STATUSLINE_BAR_CONFIG=/tmp/sbar-wizard-test.json TERM=xterm-256color STATUSLINE_BAR_FAKE_MEMORY=50 STATUSLINE_BAR_FAKE_LOAD=1.0 STATUSLINE_BAR_FAKE_BATTERY=92 HOSTNAME_OVERRIDE=Mac" \
+CASE_ENV="STATUSLINE_BAR_CONFIG=/tmp/sbar-wizard-test.json TERM=xterm-256color STATUSLINE_BAR_FAKE_MEMORY=50 STATUSLINE_BAR_FAKE_LOAD=1.0 STATUSLINE_BAR_FAKE_BATTERY=92 HOSTNAME_OVERRIDE=Mac STATUSLINE_BAR_FORCE_NERD=no" \
   run_case wizard_smoke_quit "" "" --wizard --tui-script q
 
 pre_wizard_save_theme() {
@@ -214,5 +214,5 @@ post_wizard_save_theme() {
 # Main cursor starts at 0 (Preset). Down once → 1 (Theme). Enter → theme screen.
 # Theme cursor starts at 0 (default). Down 5 times → dracula. Enter. Pop to main.
 # Then 's' saves. Use $'\n' for enter.
-CASE_ENV="STATUSLINE_BAR_CONFIG=/tmp/sbar-wsave.json TERM=xterm-256color STATUSLINE_BAR_FAKE_MEMORY=50 STATUSLINE_BAR_FAKE_LOAD=1.0 STATUSLINE_BAR_FAKE_BATTERY=92 HOSTNAME_OVERRIDE=Mac" \
+CASE_ENV="STATUSLINE_BAR_CONFIG=/tmp/sbar-wsave.json TERM=xterm-256color STATUSLINE_BAR_FAKE_MEMORY=50 STATUSLINE_BAR_FAKE_LOAD=1.0 STATUSLINE_BAR_FAKE_BATTERY=92 HOSTNAME_OVERRIDE=Mac STATUSLINE_BAR_FORCE_NERD=no" \
   run_case wizard_save_theme "" "" --wizard --tui-script "$(printf 'D\nDDDDD\ns')"

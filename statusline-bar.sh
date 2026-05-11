@@ -1153,6 +1153,29 @@ WIZARD_CURSOR=0
 WIZARD_DIRTY=0
 WIZARD_TUI_SCRIPT=""
 WIZARD_COLOR_DEPTH="none"
+WIZARD_NERD_FONT="unknown"
+
+# Format a per-item hint about Nerd-font availability. Used in the example
+# column of submenus where the item requires (or would benefit from) a
+# Nerd Font.
+#   $1 = "needed" (the chars truly need a Nerd Font to render right)
+#        or "placeholder" (the v0.1.0 glyph map is empty so the prefix
+#        looks the same regardless of font; track detection but flag the
+#        v0.1.1 follow-up)
+_nerd_hint() {
+  local kind="$1"
+  case "$WIZARD_NERD_FONT" in
+    yes)
+      case "$kind" in
+        placeholder) echo "(Nerd Font ✓ — glyphs land in v0.1.1)" ;;
+        *)           echo "(Nerd Font ✓ detected)" ;;
+      esac ;;
+    no)
+      echo "(Nerd Font ✗ — install: nerdfonts.com)" ;;
+    *)
+      echo "(Nerd Font: status unknown)" ;;
+  esac
+}
 
 _wiz_next_key() {
   # OPT_TUI_SCRIPT (set once by the parser) signals scripted mode. WIZARD_TUI_SCRIPT
@@ -1381,38 +1404,49 @@ _PRESETS_EX=(
   "4 lines · 29 tokens (detailed)"
 )
 
-_PREFIXES_EX=(
-  "Opus"
-  "Model: Opus"
-  "🤖 Opus"
-  " Opus"
-  "[M] Opus"
-  "🤖 Model: Opus"
-  "Model 🤖 Opus"
-  " Model: Opus"
-)
+# _PREFIXES_EX and _SEPARATORS_EX are rebuilt at wizard start (so the
+# Nerd-Font status hint reflects the current detection result).
+_PREFIXES_EX=()
+_SEPARATORS_EX=()
 
-_SEPARATORS_EX=(
-  "a  b  c"
-  "a | b | c"
-  "a / b / c"
-  "a · b · c"
-  "a │ b │ c"
-  "a ─ b ─ c"
-  "a • b • c"
-  "a ◆ b ◆ c"
-  "a ▸ b ▸ c"
-  "a ▶ b ▶ c"
-  "a ★ b ★ c"
-  "a ✦ b ✦ c"
-  "a ⚙ b ⚙ c"
-  "a ✓ b ✓ c"
-  "a ♥ b ♥ c"
-  "a ♪ b ♪ c"
-  "a  b  c (needs Nerd Font)"
-  "a  b  c (needs Nerd Font)"
-  "a  b  c (needs Nerd Font)"
-)
+_build_prefix_examples() {
+  local hint; hint="$(_nerd_hint placeholder)"
+  _PREFIXES_EX=(
+    "Opus"
+    "Model: Opus"
+    "🤖 Opus"
+    "Opus  $hint"
+    "[M] Opus"
+    "🤖 Model: Opus"
+    "Model 🤖 Opus"
+    "Model: Opus  $hint"
+  )
+}
+
+_build_separator_examples() {
+  local hint; hint="$(_nerd_hint needed)"
+  _SEPARATORS_EX=(
+    "a  b  c"
+    "a | b | c"
+    "a / b / c"
+    "a · b · c"
+    "a │ b │ c"
+    "a ─ b ─ c"
+    "a • b • c"
+    "a ◆ b ◆ c"
+    "a ▸ b ▸ c"
+    "a ▶ b ▶ c"
+    "a ★ b ★ c"
+    "a ✦ b ✦ c"
+    "a ⚙ b ⚙ c"
+    "a ✓ b ✓ c"
+    "a ♥ b ♥ c"
+    "a ♪ b ♪ c"
+    "a  b  c  $hint"
+    "a  b  c  $hint"
+    "a  b  c  $hint"
+  )
+}
 
 _BARS_EX=(
   ""
@@ -1589,7 +1623,10 @@ run_wizard() {
   else
     WIZARD_COLOR_DEPTH="$(detect_color_depth)"
   fi
+  WIZARD_NERD_FONT="$(detect_nerd_font)"
   _build_theme_examples
+  _build_prefix_examples
+  _build_separator_examples
 
   if (( ! scripted )); then
     tui_init
