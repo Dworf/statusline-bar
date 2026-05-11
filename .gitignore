@@ -1,0 +1,21 @@
+# Editor & OS junk
+.DS_Store
+*.swp
+*.swo
+*~
+
+# Local-only files
+*.local.json
+claude-input.json
+
+# Brainstorm & spec artifacts (live in parent dir but be defensive)
+.superpowers/
+
+# Reference clones (live in parent dir)
+examples/
+
+# Reference legacy script (lives in parent dir)
+statusline_bar_old.sh
+
+# Test artifacts that shouldn't be committed
+test/actual/
