@@ -65,7 +65,7 @@ read -r -d '' BAR_STYLES_JSON <<'JSON' || true
   "blocks":   { "fill":"█",   "empty":"░",   "gradient":false },
   "heavy":    { "fill":"▰",   "empty":"▱",   "gradient":false },
   "line":     { "fill":"━",   "empty":"─",   "gradient":false },
-  "braille":  { "fill":"⣿",   "empty":"⡀",   "gradient":false },
+  "braille":  { "fill":"⣿",   "empty":"⣀",   "gradient":false },
   "dots":     { "fill":"●",   "empty":"○",   "gradient":false },
   "arrows":   { "fill":"▶",   "empty":"▷",   "gradient":false },
   "ascii":    { "fill":"#",        "empty":".",        "gradient":false },
@@ -376,6 +376,127 @@ color_reset() {
   esac
 }
 
+# ============================================================
+# SECTION: Startup theme cache
+# ============================================================
+# Prime THEME_<theme>_<field> shell vars in one jq pass. Bash 3.2: no
+# associative arrays, so we use dynamic var names via eval.
+_prime_caches() {
+  local line
+  while IFS= read -r line; do
+    eval "$line"
+  done < <(
+    jq -r '
+      to_entries[] as $t |
+      ($t.value | to_entries[]) as $f |
+      "THEME_" + ($t.key | gsub("-"; "_")) + "_" + $f.key + "=" + ($f.value | @sh)
+    ' <<<"$THEMES_JSON"
+  )
+}
+_prime_caches
+
+# ============================================================
+# SECTION: Format primitives
+# ============================================================
+
+# fmt_duration_ms <ms> → "<d>d <h>h <m>m <s>s" with leading-zero units dropped.
+fmt_duration_ms() {
+  local ms="$1"
+  if [[ -z "$ms" || "$ms" -le 0 ]]; then echo "0s"; return; fi
+  local total=$(( ms / 1000 ))
+  local d=$(( total / 86400 ))
+  local h=$(( (total % 86400) / 3600 ))
+  local m=$(( (total % 3600) / 60 ))
+  local s=$(( total % 60 ))
+  if   (( d > 0 )); then echo "${d}d ${h}h ${m}m ${s}s"
+  elif (( h > 0 )); then echo "${h}h ${m}m ${s}s"
+  elif (( m > 0 )); then echo "${m}m ${s}s"
+  else                    echo "${s}s"
+  fi
+}
+
+# fmt_percent <num> → "N%" (rounded to integer).
+fmt_percent() {
+  local n="$1"
+  awk -v v="$n" 'BEGIN { printf "%d%%", int((v+0) + 0.5) }'
+}
+
+# ============================================================
+# SECTION: Progressbar
+# ============================================================
+
+_bar_fill_char()   { jq -r --arg s "$1" '.[$s].fill' <<<"$BAR_STYLES_JSON"; }
+_bar_empty_char()  { jq -r --arg s "$1" '.[$s].empty' <<<"$BAR_STYLES_JSON"; }
+_bar_is_gradient() { [[ "$(jq -r --arg s "$1" '.[$s].gradient' <<<"$BAR_STYLES_JSON")" == "true" ]]; }
+_bar_eighth()      { jq -r --arg s "$1" --argjson i "$2" '.[$s].eighths[$i]' <<<"$BAR_STYLES_JSON"; }
+
+# render_bar <pct> <style> <width> → bar string (no newline).
+render_bar() {
+  local pct="$1" style="${2:-blocks}" width="${3:-10}"
+  if _bar_is_gradient "$style"; then
+    local eighths
+    eighths="$(awk -v p="$pct" -v w="$width" 'BEGIN { printf "%d", int((p*w*8/100) + 0.5) }')"
+    if (( eighths < 0 )); then eighths=0; fi
+    local max=$(( width * 8 ))
+    if (( eighths > max )); then eighths="$max"; fi
+    local full=$(( eighths / 8 ))
+    local rem=$(( eighths % 8 ))
+    local partial_count=$(( rem > 0 ? 1 : 0 ))
+    local empty=$(( width - full - partial_count ))
+    local i out=""
+    for ((i=0; i<full; i++)); do out+="█"; done
+    if (( rem > 0 )); then out+="$(_bar_eighth "$style" "$rem")"; fi
+    for ((i=0; i<empty; i++)); do out+=" "; done
+    printf '%s' "$out"
+    return
+  fi
+  local filled
+  filled="$(awk -v p="$pct" -v w="$width" 'BEGIN { printf "%d", int((p*w/100) + 0.5) }')"
+  if (( filled < 0 )); then filled=0; fi
+  if (( filled > width )); then filled="$width"; fi
+  local empty=$(( width - filled ))
+  local fchar echar i out=""
+  fchar="$(_bar_fill_char "$style")"
+  echar="$(_bar_empty_char "$style")"
+  for ((i=0; i<filled; i++)); do out+="$fchar"; done
+  for ((i=0; i<empty; i++)); do out+="$echar"; done
+  printf '%s' "$out"
+}
+
+# ============================================================
+# SECTION: Prefix dispatcher
+# ============================================================
+
+apply_prefix() {
+  local id="$1" style="$2" value="$3"
+  case "$style" in
+    none) printf '%s' "$value" ;;
+    label|emoji|nerd|ascii)
+      local p
+      p="$(jq -r --arg id "$id" --arg s "$style" '.[$id].prefix[$s]' <<<"$TOKENS_JSON")"
+      if [[ -z "$p" ]]; then printf '%s' "$value"
+      else printf '%s %s' "$p" "$value"
+      fi ;;
+    emoji+label)
+      local pe pl
+      pe="$(jq -r --arg id "$id" '.[$id].prefix.emoji' <<<"$TOKENS_JSON")"
+      pl="$(jq -r --arg id "$id" '.[$id].prefix.label' <<<"$TOKENS_JSON")"
+      printf '%s %s %s' "$pe" "$pl" "$value" ;;
+    label+emoji)
+      local pe pl
+      pe="$(jq -r --arg id "$id" '.[$id].prefix.emoji' <<<"$TOKENS_JSON")"
+      pl="$(jq -r --arg id "$id" '.[$id].prefix.label' <<<"$TOKENS_JSON")"
+      pl="${pl%:}"
+      printf '%s %s %s' "$pl" "$pe" "$value" ;;
+    nerd+label)
+      local pn pl
+      pn="$(jq -r --arg id "$id" '.[$id].prefix.nerd' <<<"$TOKENS_JSON")"
+      pl="$(jq -r --arg id "$id" '.[$id].prefix.label' <<<"$TOKENS_JSON")"
+      printf '%s %s %s' "$pn" "$pl" "$value" ;;
+    *) printf '%s' "$value" ;;
+  esac
+}
+
 main() {
   # --dump-data is a test hook surfacing the embedded data tables.
   if [[ "${1:-}" == "--dump-data" ]]; then
@@ -415,6 +536,18 @@ main() {
     # Emit escaped form so expected files are diff-friendly.
     color_fg "$2" "$_depth" | sed 's/\x1b/\\033/g'
     echo
+    exit 0
+  fi
+  if [[ "${1:-}" == "--dump-format" ]]; then
+    case "${2:-}" in
+      duration) fmt_duration_ms "${3:-0}"; exit 0 ;;
+      percent)  fmt_percent "${3:-0}"; echo; exit 0 ;;
+      bar)      render_bar "${3:-0}" "${4:-blocks}" "${5:-10}"; echo; exit 0 ;;
+      *) echo "unknown --dump-format kind: ${2:-}" >&2; exit 2 ;;
+    esac
+  fi
+  if [[ "${1:-}" == "--dump-prefix" ]]; then
+    apply_prefix "$2" "$3" "$4"; echo
     exit 0
   fi
   case "${1:-}" in
