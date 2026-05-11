@@ -9,7 +9,31 @@ Customizable Claude Code statusline. Single bash file, no JavaScript, no network
 
 ## Why
 
-Claude Code lets you set any command as its statusline. This script turns the JSON it pipes you into a configurable 1–4 line display — presets, themes, progressbars, per-token overrides — without dragging in Node, Rust, Python, or a daemon.
+The Claude Code ecosystem already has a dozen excellent statuslines, each great at one thing. We wanted **one tool** that:
+
+- ships every useful field — model, cost, context %, cache hit ratio, rate limits (5h + 7d) with countdowns, git branch + status + ahead/behind, vim mode, agent name, session id, plus zero-cost local readouts (clock, battery, memory, load average, hostname)
+- looks great out of the box (7 presets, 10 themes, 8 progress-bar styles, truecolor support)
+- is **trivial to install** — one bash file + `jq`, no Node, no Rust, no Python, no daemon
+- stays customizable down to the smallest detail (per-token prefix, format, bar style, and separator-after overrides)
+
+## Features
+
+- **Single file**, ~1,750 lines of bash 3.2+. Drop it anywhere on `$PATH`.
+- **Up to 4 lines** of statusline, each a freely-arranged token sequence.
+- **39 tokens**: 26 from Claude Code's stdin JSON + 6 from `git` + 7 from local OS.
+- **9 format variants** per token: `value`, `percent`, `progressbar`, `progressbar+percent`, `countdown`, `remaining`, `progressbar+percent+countdown`, `combined`, `flag`.
+- **7 presets**: `minimum`, `compact`, `default`, `modern`, `fancy`, `everything`, `maximum`.
+- **10 themes**: `default`, `dark`, `light`, `graphite`, `solarized`, `dracula`, `nord`, `gruvbox`, `tokyo-night`, `catppuccin`.
+- **8 progress-bar styles**: `blocks`, `heavy`, `line`, `braille`, `dots`, `arrows`, `ascii`, `gradient` (sub-character precision via eighths).
+- **8 prefix styles**: `none`, `label`, `emoji`, `nerd`, `ascii` + `emoji+label`, `label+emoji`, `nerd+label`.
+- **19 separators** across 4 families: ASCII (3), Unicode (10), Decorative (3), Powerline / Nerd-Font (3).
+- **Interactive TUI wizard** with always-visible live preview pane.
+- **Auto-detected color depth** (truecolor / 256 / 16 / none) with `$NO_COLOR` honored.
+- **Threshold-based coloring** with sane defaults — battery inverts (low % = critical), memory uses a relaxed table (80% is normal).
+- **Configurable empty-data handling** (`hide` or `placeholder`).
+- **JSON Schema** shipped at the repo root + `$schema` field in the auto-created config — VS Code, Cursor, JetBrains, and Neovim's LSP all give you autocomplete and inline docs while editing.
+- **Project-level config** at `./.statusline-bar.json` overrides home-dir config.
+- **No network calls.** Ever.
 
 ## Install
 
@@ -118,4 +142,5 @@ MIT — see LICENSE.
 
 ## Acknowledgements
 
-Inspired by and shaped after surveying 13 community statusline projects: `cc-statusline`, `CCometixLine`, `ccstatusline`, `claude-code-statusline`, `claude-code-statusline_x`, `claude-code-usage-bar`, `claude-hud`, `claude-statusline`, `claude-statusline-powerline`, `ClaudeCodeStatusLine`, `Best-ClaudeCode-statusline`, `oh-my-claude`, and `claude-statusline_x`. Thanks to all the authors.
+- **Anthropic** for [Claude Code](https://claude.com/product/claude-code) and the open statusline interface that makes this possible.
+- The broader **Claude Code statusline community** — the many open-source statusline projects whose presets, layouts, themes, progress-bar styles, and rendering ideas inspired this one.
