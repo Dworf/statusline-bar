@@ -164,3 +164,13 @@ expect_exit_check_bad_preset=1
 run_case check_bad_preset    "" check-bad-preset.json --check
 expect_exit_check_unknown_token=1
 run_case check_unknown_token "" check-unknown-token.json --check
+
+# Phase 8: e2e render via the main render path (no --dump-*)
+CASE_ENV="MOCK_GIT_STATE=in_repo STATUSLINE_BAR_FAKE_NOW=9999999999 XDG_CONFIG_HOME=/tmp/sbar-noop HOME=/tmp/sbar-noop" \
+  run_case e2e_default_preset sample-input.json default-preset.json
+
+# Phase 8: --preset and --theme one-shot overrides
+CASE_ENV="MOCK_GIT_STATE=in_repo STATUSLINE_BAR_FAKE_NOW=9999999999 XDG_CONFIG_HOME=/tmp/sbar-noop HOME=/tmp/sbar-noop" \
+  run_case override_preset_minimum sample-input.json default-preset.json --preset minimum
+CASE_ENV="MOCK_GIT_STATE=in_repo STATUSLINE_BAR_FAKE_NOW=9999999999 XDG_CONFIG_HOME=/tmp/sbar-noop HOME=/tmp/sbar-noop" \
+  run_case override_theme_dracula  sample-input.json default-preset.json --theme dracula

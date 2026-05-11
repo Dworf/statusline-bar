@@ -1036,18 +1036,47 @@ render_all() {
   done
 }
 
+# ============================================================
+# SECTION: Wizard / Examples stubs (replaced in Phases 9 & 10)
+# ============================================================
+
+run_wizard() {
+  echo "statusline-bar: wizard not yet implemented (coming in v0.1.0 final)" >&2
+  exit 1
+}
+run_examples() {
+  echo "statusline-bar: --examples not yet implemented (coming in v0.1.0 final)" >&2
+  exit 1
+}
+
 main() {
-  # Minimal pre-parse of --config so dump hooks see the right path. Strips
-  # --config PATH from "$@" so the rest of dispatch sees only its own args.
-  # (Full CLI parser comes in Phase 8.)
-  local _args=() _i
-  for (( _i=1; _i<=$#; _i++ )); do
+  # Full argument parser. Sets OPT_* globals and strips parsed flags from "$@".
+  OPT_HELP=0 OPT_VERSION=0 OPT_WIZARD=0 OPT_EXAMPLES=0 OPT_EXAMPLES_MODE=""
+  OPT_CHECK=0 OPT_PRESET="" OPT_THEME="" OPT_NO_COLOR=0
+  local _args=() _i=1
+  while (( _i <= $# )); do
     case "${!_i}" in
+      -h|--help)    OPT_HELP=1 ;;
+      -V|--version) OPT_VERSION=1 ;;
+      -c|--wizard)  OPT_WIZARD=1 ;;
+      --check)      OPT_CHECK=1 ;;
+      --no-color)   OPT_NO_COLOR=1 ;;
       --config)
-        _i=$((_i+1))
-        CONFIG_PATH="${!_i}" ;;
+        _i=$((_i+1)); CONFIG_PATH="${!_i}" ;;
+      --preset)
+        _i=$((_i+1)); OPT_PRESET="${!_i}" ;;
+      --theme)
+        _i=$((_i+1)); OPT_THEME="${!_i}" ;;
+      --examples)
+        OPT_EXAMPLES=1
+        local next_idx=$((_i+1))
+        if (( next_idx <= $# )) && [[ "${!next_idx}" != -* ]]; then
+          OPT_EXAMPLES_MODE="${!next_idx}"
+          _i=$next_idx
+        fi ;;
       *) _args+=("${!_i}") ;;
     esac
+    _i=$((_i+1))
   done
   set -- "${_args[@]}"
   # --dump-data is a test hook surfacing the embedded data tables.
@@ -1177,15 +1206,51 @@ main() {
     render_all; echo
     exit 0
   fi
-  case "${1:-}" in
-    -h|--help) print_help; exit 0 ;;
-    -V|--version) print_version; exit 0 ;;
-    *)
-      # No render yet; later tasks add stdin handling.
-      print_help >&2
-      exit 1
-      ;;
-  esac
+  # Standard flag exits
+  (( OPT_HELP ))    && { print_help; exit 0; }
+  (( OPT_VERSION )) && { print_version; exit 0; }
+  (( OPT_CHECK ))   && { if check_config; then exit 0; else exit 1; fi; }
+  (( OPT_WIZARD ))  && { run_wizard; exit $?; }
+  (( OPT_EXAMPLES )) && { run_examples "$OPT_EXAMPLES_MODE"; exit $?; }
+  (( OPT_NO_COLOR )) && export NO_COLOR=1
+
+  # Render path
+  if [[ -t 0 ]]; then
+    # No piped data → prompt
+    echo -n "No piped data detected. Set up config? (y/n) " >&2
+    local ans; read -r ans
+    case "$ans" in
+      y|Y|yes) run_wizard; exit $? ;;
+      *) print_help; exit 0 ;;
+    esac
+  fi
+
+  INPUT_JSON="$(cat)"
+  load_config
+
+  # One-shot overrides
+  if [[ -n "$OPT_PRESET" ]]; then
+    CONFIG_JSON="$(jq --arg p "$OPT_PRESET" --argjson presets "$PRESETS_JSON" \
+      '.preset=$p | .lines=$presets[$p].lines' <<<"$CONFIG_JSON")"
+  fi
+  if [[ -n "$OPT_THEME" ]]; then
+    CONFIG_JSON="$(jq --arg t "$OPT_THEME" '.theme=$t' <<<"$CONFIG_JSON")"
+  fi
+
+  # First-run auto-create (silent; ignore write errors)
+  if [[ -z "${CONFIG_PATH:-}" ]]; then
+    save_config "$(_default_config_path)" "$CONFIG_JSON" 2>/dev/null || true
+  fi
+
+  # Resolve color depth from config or detection
+  local _cfg_depth; _cfg_depth="$(jq -r '.global.color_depth // "auto"' <<<"$CONFIG_JSON")"
+  if [[ "$_cfg_depth" == "auto" ]]; then
+    COLOR_DEPTH="$(detect_color_depth)"
+  else
+    COLOR_DEPTH="$_cfg_depth"
+  fi
+  NOW_EPOCH="${STATUSLINE_BAR_FAKE_NOW:-$(date +%s)}"
+  render_all
 }
 
 main "$@"
