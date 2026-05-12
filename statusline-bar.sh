@@ -14,24 +14,24 @@ VERSION="0.3.0"
 read -r -d '' THEMES_JSON <<'JSON' || true
 {
   "default":          { "good":"#3fb950","warn":"#d29922","crit":"#f85149","dim":"#8b949e","accent":"",       "bar_style":"blocks" },
-  "solarized":        { "good":"#859900","warn":"#b58900","crit":"#dc322f","dim":"#586e75","accent":"#268bd2","bar_style":"heavy"  },
+  "solarized":        { "good":"#859900","warn":"#b58900","crit":"#dc322f","dim":"#586e75","accent":"#2aa198","bar_style":"heavy"  },
   "graphite":         { "good":"bold",   "warn":"normal","crit":"normal","dim":"dim",    "accent":"bold",    "bar_style":"ascii"  },
 
   "light":            { "good":"#1a7f37","warn":"#bf8700","crit":"#cf222e","dim":"#57606a","accent":"#0969da","bar_style":"blocks" },
-  "solarized-light":  { "good":"#859900","warn":"#b58900","crit":"#dc322f","dim":"#93a1a1","accent":"#268bd2","bar_style":"heavy"  },
-  "catppuccin-latte": { "good":"#40a02b","warn":"#df8e1d","crit":"#d20f39","dim":"#6c6f85","accent":"#1e66f5","bar_style":"blocks" },
-  "tokyo-day":        { "good":"#587539","warn":"#8c6c3e","crit":"#f52a65","dim":"#848cb5","accent":"#2e7de9","bar_style":"blocks" },
-  "ayu-light":        { "good":"#86b300","warn":"#fa8d3e","crit":"#f07171","dim":"#828c99","accent":"#399ee6","bar_style":"blocks" },
+  "solarized-light":  { "good":"#859900","warn":"#b58900","crit":"#dc322f","dim":"#93a1a1","accent":"#d33682","bar_style":"heavy"  },
+  "catppuccin-latte": { "good":"#40a02b","warn":"#df8e1d","crit":"#d20f39","dim":"#6c6f85","accent":"#fe640b","bar_style":"blocks" },
+  "tokyo-day":        { "good":"#587539","warn":"#8c6c3e","crit":"#f52a65","dim":"#848cb5","accent":"#b14a87","bar_style":"blocks" },
+  "ayu-light":        { "good":"#86b300","warn":"#fa8d3e","crit":"#f07171","dim":"#828c99","accent":"#a37acc","bar_style":"blocks" },
 
   "dark":             { "good":"#00ff87","warn":"#ffaf00","crit":"#ff5f5f","dim":"#6a737d","accent":"#5fafff","bar_style":"blocks" },
-  "dracula":          { "good":"#50fa7b","warn":"#f1fa8c","crit":"#ff5555","dim":"#6272a4","accent":"#bd93f9","bar_style":"blocks" },
+  "dracula":          { "good":"#50fa7b","warn":"#f1fa8c","crit":"#ff5555","dim":"#6272a4","accent":"#ff79c6","bar_style":"blocks" },
   "nord":             { "good":"#a3be8c","warn":"#ebcb8b","crit":"#bf616a","dim":"#4c566a","accent":"#88c0d0","bar_style":"heavy"  },
-  "gruvbox":          { "good":"#98971a","warn":"#d79921","crit":"#cc241d","dim":"#7c6f64","accent":"#458588","bar_style":"heavy"  },
-  "tokyo-night":      { "good":"#9ece6a","warn":"#e0af68","crit":"#f7768e","dim":"#565f89","accent":"#7aa2f7","bar_style":"blocks" },
-  "catppuccin":       { "good":"#a6e3a1","warn":"#f9e2af","crit":"#f38ba8","dim":"#6c7086","accent":"#89b4fa","bar_style":"blocks" },
-  "one-dark":         { "good":"#98c379","warn":"#e5c07b","crit":"#e06c75","dim":"#5c6370","accent":"#61afef","bar_style":"blocks" },
+  "gruvbox":          { "good":"#98971a","warn":"#d79921","crit":"#cc241d","dim":"#7c6f64","accent":"#d65d0e","bar_style":"heavy"  },
+  "tokyo-night":      { "good":"#9ece6a","warn":"#e0af68","crit":"#f7768e","dim":"#565f89","accent":"#7dcfff","bar_style":"blocks" },
+  "catppuccin":       { "good":"#a6e3a1","warn":"#f9e2af","crit":"#f38ba8","dim":"#6c7086","accent":"#f5c2e7","bar_style":"blocks" },
+  "one-dark":         { "good":"#98c379","warn":"#e5c07b","crit":"#e06c75","dim":"#5c6370","accent":"#c678dd","bar_style":"blocks" },
   "rose-pine":        { "good":"#9ccfd8","warn":"#f6c177","crit":"#eb6f92","dim":"#908caa","accent":"#c4a7e7","bar_style":"blocks" },
-  "monokai":          { "good":"#a6e22e","warn":"#e6db74","crit":"#f92672","dim":"#75715e","accent":"#66d9ef","bar_style":"blocks" }
+  "monokai":          { "good":"#a6e22e","warn":"#e6db74","crit":"#f92672","dim":"#75715e","accent":"#fd971f","bar_style":"blocks" }
 }
 JSON
 
