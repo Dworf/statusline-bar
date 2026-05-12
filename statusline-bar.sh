@@ -177,15 +177,15 @@ read -r -d '' TOKENS_JSON <<'JSON' || true
   "api_duration": { "source":"claude", "default_prefix":"emoji", "default_format":"value", "applicable_formats":["value"],
              "prefix": { "none":"", "label":"API:", "emoji":"📡", "nerd":"", "ascii":"[A]" } },
   "lines_added": { "source":"claude", "default_prefix":"emoji", "default_format":"value", "applicable_formats":["value"],
-             "prefix": { "none":"", "label":"+:", "emoji":"➕", "nerd":"", "ascii":"+" } },
+             "prefix": { "none":"", "label":"Added:", "emoji":"➕", "nerd":"", "ascii":"+" } },
   "lines_removed": { "source":"claude", "default_prefix":"emoji", "default_format":"value", "applicable_formats":["value"],
-             "prefix": { "none":"", "label":"-:", "emoji":"➖", "nerd":"", "ascii":"-" } },
+             "prefix": { "none":"", "label":"Removed:", "emoji":"➖", "nerd":"", "ascii":"-" } },
   "rl_5h": { "source":"claude", "default_prefix":"label", "default_format":"progressbar+percent+countdown",
              "applicable_formats":["value","percent","progressbar","progressbar+percent","countdown","remaining","progressbar+percent+countdown"],
-             "prefix": { "none":"", "label":"5h", "emoji":"⏱️ 5h", "nerd":"", "ascii":"[5h]" } },
+             "prefix": { "none":"", "label":"5h", "emoji":"🕔", "nerd":"", "ascii":"[5h]" } },
   "rl_7d": { "source":"claude", "default_prefix":"label", "default_format":"progressbar+percent+countdown",
              "applicable_formats":["value","percent","progressbar","progressbar+percent","countdown","remaining","progressbar+percent+countdown"],
-             "prefix": { "none":"", "label":"7d", "emoji":"⏱️ 7d", "nerd":"", "ascii":"[7d]" } },
+             "prefix": { "none":"", "label":"7d", "emoji":"🕖", "nerd":"", "ascii":"[7d]" } },
   "thinking": { "source":"claude", "default_prefix":"emoji", "default_format":"value", "applicable_formats":["value","flag"],
              "prefix": { "none":"", "label":"Think:", "emoji":"💭", "nerd":"", "ascii":"[?]" } },
   "effort": { "source":"claude", "default_prefix":"emoji", "default_format":"value", "applicable_formats":["value"],
@@ -193,7 +193,7 @@ read -r -d '' TOKENS_JSON <<'JSON' || true
   "output_style": { "source":"claude", "default_prefix":"emoji", "default_format":"value", "applicable_formats":["value"],
              "prefix": { "none":"", "label":"Style:", "emoji":"🎨", "nerd":"", "ascii":"[Y]" } },
   "version": { "source":"claude", "default_prefix":"emoji", "default_format":"value", "applicable_formats":["value"],
-             "prefix": { "none":"", "label":"v", "emoji":"🏷", "nerd":"", "ascii":"[V]" } },
+             "prefix": { "none":"", "label":"Version:", "emoji":"🏷", "nerd":"", "ascii":"[V]" } },
   "fast_mode": { "source":"claude", "default_prefix":"emoji", "default_format":"flag", "applicable_formats":["flag","value"],
              "prefix": { "none":"", "label":"Fast", "emoji":"⚡", "nerd":"", "ascii":"[F]" } },
   "exceeds_200k": { "source":"claude", "default_prefix":"emoji", "default_format":"flag", "applicable_formats":["flag","value"],
@@ -641,7 +641,23 @@ tok_exceeds_200k() { jq -r '.exceeds_200k_tokens  | if . == null then empty else
 _git_workspace() {
   jq -r '.workspace.current_dir // .cwd // empty' <<<"$INPUT_JSON"
 }
+# Helper: run a git invocation in the workspace dir, or directly (without
+# cd) when MOCK_GIT_STATE is set — the mock binary on PATH responds to the
+# env var regardless of cwd. The cd is only meaningful for real git.
+_git_run() {
+  if [[ -n "${MOCK_GIT_STATE:-}" ]]; then
+    git "$@" 2>/dev/null
+    return
+  fi
+  local d; d="$(_git_workspace)"
+  [[ -z "$d" ]] && return 1
+  ( cd "$d" 2>/dev/null && git "$@" 2>/dev/null )
+}
 _git_check() {
+  if [[ -n "${MOCK_GIT_STATE:-}" ]]; then
+    git rev-parse --git-dir >/dev/null 2>&1
+    return $?
+  fi
   local d; d="$(_git_workspace)"
   [[ -z "$d" ]] && return 1
   ( cd "$d" 2>/dev/null && git rev-parse --git-dir >/dev/null 2>&1 )
@@ -649,23 +665,19 @@ _git_check() {
 
 tok_git_branch() {
   _git_check || return
-  local d; d="$(_git_workspace)"
-  ( cd "$d" && git branch --show-current 2>/dev/null )
+  _git_run branch --show-current
 }
 tok_git_staged() {
   _git_check || return
-  local d; d="$(_git_workspace)"
-  ( cd "$d" && git diff --cached --numstat 2>/dev/null | wc -l | tr -d ' ' )
+  _git_run diff --cached --numstat | wc -l | tr -d ' '
 }
 tok_git_modified() {
   _git_check || return
-  local d; d="$(_git_workspace)"
-  ( cd "$d" && git diff --numstat 2>/dev/null | wc -l | tr -d ' ' )
+  _git_run diff --numstat | wc -l | tr -d ' '
 }
 tok_git_untracked() {
   _git_check || return
-  local d; d="$(_git_workspace)"
-  ( cd "$d" && git ls-files --others --exclude-standard 2>/dev/null | wc -l | tr -d ' ' )
+  _git_run ls-files --others --exclude-standard | wc -l | tr -d ' '
 }
 tok_git_status() {
   _git_check || return
@@ -673,9 +685,8 @@ tok_git_status() {
 }
 tok_git_ahead_behind() {
   _git_check || return
-  local d; d="$(_git_workspace)"
   local raw a b
-  raw="$( cd "$d" && git rev-list --left-right --count @{u}...HEAD 2>/dev/null )"
+  raw="$(_git_run rev-list --left-right --count @{u}...HEAD)"
   [[ -z "$raw" ]] && return
   a="$(echo "$raw" | awk '{print $1}')"
   b="$(echo "$raw" | awk '{print $2}')"
@@ -1889,19 +1900,22 @@ _wiz_draw_tokens_lines() {
       printf '  s save   r reset   Esc back\n'
     else
       printf '  ↑↓ navigate   ←→ switch line   Shift+↑↓ move   Enter edit\n'
-      printf '  a add   d delete   m mark   s save   r reset   Esc back\n'
+      printf '  a add   c change   d delete   m mark   s save   r reset   Esc back\n'
     fi
   fi
   _wiz_help_tooltip tokens_lines
 }
 
 # Unsaved-changes prompt shown when quitting the wizard with dirty config.
-# Echoes one of: save | discard | cancel.
+# Sets $WIZARD_PROMPT_RESULT to one of: save | discard | cancel.
+# Does NOT use $(...) — that would capture the prompt's display output and
+# the user would see nothing on the terminal. Sets a global instead.
 # In scripted mode, an exhausted input buffer means "the script intends to
 # stop here" — treat it as discard so we don't infinite-loop reading nothing.
+WIZARD_PROMPT_RESULT=""
 _wiz_dirty_prompt() {
   if [[ -n "${OPT_TUI_SCRIPT:-}" && -z "$WIZARD_TUI_SCRIPT" ]]; then
-    echo "discard"; return
+    WIZARD_PROMPT_RESULT="discard"; return
   fi
   tui_clear
   printf '\n  Unsaved changes detected.\n\n'
@@ -1910,9 +1924,9 @@ _wiz_dirty_prompt() {
   printf '        c (or any other key) to keep editing\n'
   _wiz_next_key
   case "$KEY" in
-    save|char:s|char:S) echo "save" ;;
-    char:d|char:D)      echo "discard" ;;
-    *)                  echo "cancel" ;;
+    save|char:s|char:S) WIZARD_PROMPT_RESULT="save" ;;
+    char:d|char:D)      WIZARD_PROMPT_RESULT="discard" ;;
+    *)                  WIZARD_PROMPT_RESULT="cancel" ;;
   esac
 }
 
@@ -2132,8 +2146,17 @@ _wiz_handle_tokens_lines() {
         _wiz_push sep_picker "$_sep_idx"
       fi ;;
     char:a)
+      TL_PICKER_MODE="add"
       _tl_build_picker
       _wiz_push token_picker 0 ;;
+    char:c)
+      # Replace the focused token with another from the catalog.
+      if (( count == 0 )) || (( TL_TOKEN_ROW % 2 != 0 )); then return; fi
+      TL_PICKER_MODE="replace"
+      _tl_build_picker
+      local _cur_tok; _cur_tok="$(_tl_token_at "$TL_TOKEN_ROW")"
+      local _pidx; _pidx="$(_index_of TOK_PICKER_LIST "$_cur_tok")"
+      _wiz_push token_picker "$_pidx" ;;
     char:d)
       if (( count == 0 )); then return; fi
       _tl_delete_token_at_cursor ;;
@@ -2196,20 +2219,32 @@ _tl_paste_mark() {
 TOK_PICKER_LIST=()    # ordered ids
 TOK_PICKER_GROUPS=()  # parallel: source label for each id (for grouping display)
 TOK_PICKER_SAMPLES=() # parallel: full render sample (emoji + value, etc.)
+TL_PICKER_MODE="add"  # "add" (insert after cursor) or "replace" (swap focused token)
 
 _tl_build_picker() {
   TOK_PICKER_LIST=(); TOK_PICKER_GROUPS=(); TOK_PICKER_SAMPLES=()
   # Force emoji+label so the picker shows icon + label + value (richer than
   # plain emoji, easier to identify each token at a glance).
   local picker_cfg; picker_cfg="$(jq '.global.prefix_style="emoji+label"' <<<"$CONFIG_JSON")"
+  # Enrich the synthetic input so flag tokens (fast_mode, exceeds_200k) and
+  # optional fields (vim, agent, git_worktree) show what they look like
+  # when present. Without this, those tokens render as empty in the picker.
+  local picker_input
+  picker_input="$(jq '
+    .fast_mode = true
+    | .exceeds_200k_tokens = true
+    | .vim = {"mode":"NORMAL"}
+    | .agent = {"name":"demo-agent"}
+    | .workspace.git_worktree = "feature-x"
+  ' <<<"$EXAMPLES_INPUT_JSON")"
   local id src sample
   while IFS= read -r id; do
     src="$(jq -r --arg id "$id" '.[$id].source' <<<"$TOKENS_JSON")"
-    sample="$(INPUT_JSON="$EXAMPLES_INPUT_JSON" \
+    sample="$(INPUT_JSON="$picker_input" \
       CONFIG_JSON="$picker_cfg" \
       COLOR_DEPTH="$WIZARD_COLOR_DEPTH" \
       NOW_EPOCH=9999999999 \
-      MOCK_GIT_STATE=out_of_repo \
+      MOCK_GIT_STATE=in_repo \
       render_token "$id")"
     TOK_PICKER_LIST+=("$id")
     TOK_PICKER_GROUPS+=("$src")
@@ -2265,7 +2300,11 @@ _token_description() {
 
 _wiz_draw_token_picker() {
   tui_clear
-  printf '  statusline-bar ▸ Tokens & lines ▸ Add token\n\n'
+  if [[ "${TL_PICKER_MODE:-add}" == "replace" ]]; then
+    printf '  statusline-bar ▸ Tokens & lines ▸ Change token\n\n'
+  else
+    printf '  statusline-bar ▸ Tokens & lines ▸ Add token\n\n'
+  fi
   # Set of ids already used somewhere in any line
   local used_ids
   used_ids="$(jq -r '[.lines[][]] | unique | join(" ")' <<<"$CONFIG_JSON")"
@@ -2299,9 +2338,21 @@ _wiz_handle_token_picker() {
       if (( WIZARD_CURSOR < size-1 )); then WIZARD_CURSOR=$((WIZARD_CURSOR+1))
       else WIZARD_CURSOR=0; fi ;;
     enter)
-      _tl_insert_token "${TOK_PICKER_LIST[$WIZARD_CURSOR]}"
+      local chosen="${TOK_PICKER_LIST[$WIZARD_CURSOR]}"
+      if [[ "${TL_PICKER_MODE:-add}" == "replace" ]]; then
+        local tok_idx=$(( TL_TOKEN_ROW / 2 ))
+        CONFIG_JSON="$(jq --argjson l "$TL_ACTIVE_LINE" --argjson j "$tok_idx" --arg id "$chosen" '
+          .lines[$l][$j] = $id
+        ' <<<"$CONFIG_JSON")"
+        WIZARD_DIRTY=1
+      else
+        _tl_insert_token "$chosen"
+      fi
+      TL_PICKER_MODE="add"
       _wiz_pop ;;
-    esc|left) _wiz_pop ;;
+    esc|left)
+      TL_PICKER_MODE="add"
+      _wiz_pop ;;
   esac
 }
 
@@ -2664,21 +2715,28 @@ run_wizard() {
         CONFIG_JSON="$(build_default_config)"
         WIZARD_DIRTY=1
         continue ;;
-      quit)
-        # On submenu: pop back to main. On main: quit, but if there are
-        # unsaved changes prompt to save / discard / cancel first.
-        if [[ "$screen" != "main" ]]; then _wiz_pop; continue; fi
-        if (( WIZARD_DIRTY )); then
-          local _choice
-          _choice="$(_wiz_dirty_prompt)"
-          case "$_choice" in
-            save) save_config "${CONFIG_PATH:-$(_default_config_path)}" "$CONFIG_JSON"
-                  WIZARD_DIRTY=0; break ;;
-            discard) break ;;
-            cancel|*) continue ;;
-          esac
-        fi
-        break ;;
+      quit|esc)
+        # On a submenu: pop back to main.
+        # On main: trigger the quit flow (with dirty-check if needed).
+        # Esc on a submenu falls through to its own pop handler below.
+        if [[ "$KEY" == "esc" && "$screen" != "main" ]]; then
+          : # let per-screen handler do the pop
+        elif [[ "$screen" != "main" ]]; then
+          _wiz_pop; continue
+        else
+          # Main: quit (with dirty prompt if needed)
+          if (( WIZARD_DIRTY )); then
+            _wiz_dirty_prompt
+            case "$WIZARD_PROMPT_RESULT" in
+              save) save_config "${CONFIG_PATH:-$(_default_config_path)}" "$CONFIG_JSON"
+                    WIZARD_DIRTY=0; break ;;
+              discard) break ;;
+              cancel|*) continue ;;
+            esac
+          else
+            break
+          fi
+        fi ;;
     esac
     case "$screen" in
       main)      _wiz_handle_main ;;
