@@ -364,7 +364,8 @@ Flags:
   -V, --version             print version
   -w, --wizard              enter setup wizard
   -e, --examples            print a catalog of presets / themes / prefixes /
-                            separators / bar styles, with samples
+                            separators / bar styles / tokens / lines, with
+                            live samples for each
   -c, --check               validate config and exit
       --config PATH         use this config file instead of default
       --preset NAME         one-shot render with this preset
@@ -3182,42 +3183,138 @@ _render_sample() {
     render_all
 }
 
+# Render a single token in isolation. Used by the Tokens section so each
+# row shows exactly one token's output. Mocks git + fake OS values so the
+# git and OS tokens render with real-looking data instead of placeholders.
+_render_token_alone() {
+  local tok="$1" cfg
+  cfg="$(build_default_config | jq --arg t "$tok" '
+    .preset = "minimum"
+    | .global.prefix_style = "emoji"
+    | .global.separator = "pipe"
+    | .global.bar_style = null
+    | .global.empty_behavior = "placeholder"
+    | .lines = [[$t]]
+    | .tokens = {}
+  ')"
+  INPUT_JSON="$EXAMPLES_INPUT_JSON" \
+    CONFIG_JSON="$cfg" \
+    COLOR_DEPTH="$(detect_color_depth)" \
+    NOW_EPOCH=9999999999 \
+    MOCK_GIT_STATE=in_repo \
+    STATUSLINE_BAR_FAKE_BATTERY=92 \
+    STATUSLINE_BAR_FAKE_MEMORY=45 \
+    STATUSLINE_BAR_FAKE_LOAD=1.2 \
+    STATUSLINE_BAR_FAKE_NOW=9999999999 \
+    HOSTNAME_OVERRIDE=mac \
+    render_all
+}
+
+# Render an arbitrary lines layout (used by the Lines section to demo
+# 1/2/3/4-line statuslines). $1 is a JSON array of lines (each line a
+# JSON array of token ids), e.g. '[["model","cost"],["git_branch"]]'.
+_render_lines_only() {
+  local lines_json="$1" cfg
+  cfg="$(build_default_config | jq --argjson lines "$lines_json" '
+    .preset = "minimum"
+    | .global.prefix_style = "emoji"
+    | .global.separator = "pipe"
+    | .global.bar_style = null
+    | .lines = $lines
+    | .tokens = {}
+  ')"
+  INPUT_JSON="$EXAMPLES_INPUT_JSON" \
+    CONFIG_JSON="$cfg" \
+    COLOR_DEPTH="$(detect_color_depth)" \
+    NOW_EPOCH=9999999999 \
+    MOCK_GIT_STATE=in_repo \
+    STATUSLINE_BAR_FAKE_BATTERY=92 \
+    STATUSLINE_BAR_FAKE_MEMORY=45 \
+    STATUSLINE_BAR_FAKE_LOAD=1.2 \
+    STATUSLINE_BAR_FAKE_NOW=9999999999 \
+    HOSTNAME_OVERRIDE=mac \
+    render_all
+}
+
 examples_catalog() {
   local only="${ONLY:-all}"
-  local p t ps s b
+  local p t ps s b tok line_cfg
+
   if [[ "$only" == "all" || "$only" == "presets" ]]; then
-    echo "## Presets"
+    echo "## Presets  (factory layouts; switch via --preset NAME)"
     for p in minimum compact focus coder default modern rates claude fancy everything maximum; do
       printf '[ %-10s ] %s\n' "$p" "$(_render_sample "$p" default emoji pipe null | head -n 1)"
     done
     echo
   fi
+
   if [[ "$only" == "all" || "$only" == "themes" ]]; then
-    echo "## Themes"
+    echo "## Themes  (color palettes; switch via --theme NAME — only colors change)"
     for t in default solarized graphite light solarized-light catppuccin-latte tokyo-day ayu-light garden dark dracula nord gruvbox tokyo-night catppuccin one-dark rose-pine monokai mocha silver ocean; do
-      printf '[ %-16s ] %s\n' "$t" "$(_render_sample minimum "$t" emoji pipe null | head -n 1)"
+      printf '[ %-16s ] %s\n' "$t" "$(_render_sample default "$t" emoji pipe null | head -n 1)"
     done
     echo
   fi
+
   if [[ "$only" == "all" || "$only" == "prefixes" ]]; then
-    echo "## Prefix styles"
+    echo "## Prefix styles  (how each token is labeled; tokens.<id>.prefix to override per token)"
     for ps in none label emoji nerd ascii emoji+label label+emoji nerd+label; do
       printf '[ %-12s ] %s\n' "$ps" "$(_render_sample minimum default "$ps" pipe null | head -n 1)"
     done
     echo
   fi
+
   if [[ "$only" == "all" || "$only" == "separators" ]]; then
-    echo "## Separators"
+    echo "## Separators  (string between tokens on the same line)"
     for s in space pipe slash dot vbar dash bullet diamond arrow tri star sparkle gear check heart music chevron slant chevron_thin; do
       printf '[ %-12s ] %s\n' "$s" "$(_render_sample minimum default emoji "$s" null | head -n 1)"
     done
     echo
   fi
+
   if [[ "$only" == "all" || "$only" == "bars" ]]; then
-    echo "## Bar styles"
+    echo "## Bar styles  (used by progressbar/context/rate-limit tokens)"
     for b in blocks heavy line braille dots arrows ascii gradient gradient_dots gradient_fade gradient_shade gradient_braille; do
-      printf '[ %-10s ] %s\n' "$b" "$(_render_sample fancy default emoji pipe "$b" | sed -n '1p')"
+      printf '[ %-16s ] %s\n' "$b" "$(_render_sample fancy default emoji pipe "$b" | sed -n '1p')"
     done
+    echo
+  fi
+
+  if [[ "$only" == "all" || "$only" == "tokens" ]]; then
+    echo "## Tokens  (42 total — pick any combination via Tokens & lines wizard)"
+    echo
+    echo "### Claude session (29 tokens, read from stdin JSON)"
+    for tok in model session_name session_id context tokens_input tokens_output context_size context_remaining cache_hit cost duration api_duration lines_added lines_removed rl_5h rl_7d thinking effort output_style version fast_mode exceeds_200k dir worktree vim_mode agent_name added_dirs git_worktree transcript; do
+      printf '[ %-18s ] %s\n' "$tok" "$(_render_token_alone "$tok" | head -n 1)"
+    done
+    echo
+    echo "### Git (6 tokens, populated when cwd is inside a git repo)"
+    for tok in git_branch git_status git_staged git_modified git_untracked git_ahead_behind; do
+      printf '[ %-18s ] %s\n' "$tok" "$(_render_token_alone "$tok" | head -n 1)"
+    done
+    echo
+    echo "### Local OS (7 tokens, from the machine running the statusline)"
+    for tok in clock date hostname user battery memory load; do
+      printf '[ %-18s ] %s\n' "$tok" "$(_render_token_alone "$tok" | head -n 1)"
+    done
+    echo
+  fi
+
+  if [[ "$only" == "all" || "$only" == "lines" ]]; then
+    echo "## Lines  (1–4 lines per statusline; edit via Tokens & lines wizard)"
+    echo
+    echo "### 1 line"
+    _render_lines_only '[["model","context","cost"]]'
+    echo
+    echo "### 2 lines"
+    _render_lines_only '[["model","context","cost","duration"],["thinking","effort","git_branch","git_status"]]'
+    echo
+    echo "### 3 lines"
+    _render_lines_only '[["model","context","cost"],["rl_5h","rl_7d","duration"],["git_branch","clock","battery"]]'
+    echo
+    echo "### 4 lines (max)"
+    _render_lines_only '[["model","session_name","context"],["cost","duration","api_duration","cache_hit"],["git_branch","git_status","lines_added","lines_removed"],["clock","date","battery","memory","load"]]'
+    echo
   fi
 }
 

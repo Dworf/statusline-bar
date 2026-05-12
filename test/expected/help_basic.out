@@ -11,7 +11,8 @@ Flags:
   -V, --version             print version
   -w, --wizard              enter setup wizard
   -e, --examples            print a catalog of presets / themes / prefixes /
-                            separators / bar styles, with samples
+                            separators / bar styles / tokens / lines, with
+                            live samples for each
   -c, --check               validate config and exit
       --config PATH         use this config file instead of default
       --preset NAME         one-shot render with this preset

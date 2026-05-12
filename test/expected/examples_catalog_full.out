@@ -1,4 +1,4 @@
-## Presets
+## Presets  (factory layouts; switch via --preset NAME)
 [ minimum    ] 🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40
 [ compact    ] 🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40 | 🌿 — | ⏳ 3m 50s | 🕔 5h 50%
 [ focus      ] 🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💭 true | 💪 xhigh | 💰 $0.40
@@ -11,30 +11,30 @@
 [ everything ] 🤖 Opus 4.7 (1M context) | 📝 Browse | 🔖 browse00 | 🧠 50% (49k/100k) | 📥 49k | 📤 50 | 🪟 100k | 🆓 50%
 [ maximum    ] 🤖 Opus 4.7 (1M context) | 📝 Browse | 🔖 browse00 | 🧠 █████░░░░░ 50% (49k/100k) | 📥 49k | 📤 50 | 🪟 100k | 🆓 █████░░░░░ 50%
 
-## Themes
-[ default          ] 🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40
-[ solarized        ] 🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40
-[ graphite         ] 🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40
-[ light            ] 🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40
-[ solarized-light  ] 🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40
-[ catppuccin-latte ] 🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40
-[ tokyo-day        ] 🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40
-[ ayu-light        ] 🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40
-[ garden           ] 🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40
-[ dark             ] 🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40
-[ dracula          ] 🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40
-[ nord             ] 🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40
-[ gruvbox          ] 🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40
-[ tokyo-night      ] 🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40
-[ catppuccin       ] 🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40
-[ one-dark         ] 🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40
-[ rose-pine        ] 🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40
-[ monokai          ] 🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40
-[ mocha            ] 🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40
-[ silver           ] 🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40
-[ ocean            ] 🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40
+## Themes  (color palettes; switch via --theme NAME — only colors change)
+[ default          ] 🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40 | 🕔 5h █████░░░░░ 50% 🔄 0s | 🕖 7d █████░░░░░ 50% 🔄 0s
+[ solarized        ] 🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40 | 🕔 5h ▰▰▰▰▰▱▱▱▱▱ 50% 🔄 0s | 🕖 7d ▰▰▰▰▰▱▱▱▱▱ 50% 🔄 0s
+[ graphite         ] 🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40 | 🕔 5h #####..... 50% 🔄 0s | 🕖 7d #####..... 50% 🔄 0s
+[ light            ] 🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40 | 🕔 5h █████░░░░░ 50% 🔄 0s | 🕖 7d █████░░░░░ 50% 🔄 0s
+[ solarized-light  ] 🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40 | 🕔 5h ▰▰▰▰▰▱▱▱▱▱ 50% 🔄 0s | 🕖 7d ▰▰▰▰▰▱▱▱▱▱ 50% 🔄 0s
+[ catppuccin-latte ] 🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40 | 🕔 5h █████░░░░░ 50% 🔄 0s | 🕖 7d █████░░░░░ 50% 🔄 0s
+[ tokyo-day        ] 🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40 | 🕔 5h █████░░░░░ 50% 🔄 0s | 🕖 7d █████░░░░░ 50% 🔄 0s
+[ ayu-light        ] 🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40 | 🕔 5h █████░░░░░ 50% 🔄 0s | 🕖 7d █████░░░░░ 50% 🔄 0s
+[ garden           ] 🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40 | 🕔 5h █████░░░░░ 50% 🔄 0s | 🕖 7d █████░░░░░ 50% 🔄 0s
+[ dark             ] 🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40 | 🕔 5h █████░░░░░ 50% 🔄 0s | 🕖 7d █████░░░░░ 50% 🔄 0s
+[ dracula          ] 🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40 | 🕔 5h █████░░░░░ 50% 🔄 0s | 🕖 7d █████░░░░░ 50% 🔄 0s
+[ nord             ] 🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40 | 🕔 5h ▰▰▰▰▰▱▱▱▱▱ 50% 🔄 0s | 🕖 7d ▰▰▰▰▰▱▱▱▱▱ 50% 🔄 0s
+[ gruvbox          ] 🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40 | 🕔 5h ▰▰▰▰▰▱▱▱▱▱ 50% 🔄 0s | 🕖 7d ▰▰▰▰▰▱▱▱▱▱ 50% 🔄 0s
+[ tokyo-night      ] 🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40 | 🕔 5h █████░░░░░ 50% 🔄 0s | 🕖 7d █████░░░░░ 50% 🔄 0s
+[ catppuccin       ] 🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40 | 🕔 5h █████░░░░░ 50% 🔄 0s | 🕖 7d █████░░░░░ 50% 🔄 0s
+[ one-dark         ] 🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40 | 🕔 5h █████░░░░░ 50% 🔄 0s | 🕖 7d █████░░░░░ 50% 🔄 0s
+[ rose-pine        ] 🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40 | 🕔 5h █████░░░░░ 50% 🔄 0s | 🕖 7d █████░░░░░ 50% 🔄 0s
+[ monokai          ] 🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40 | 🕔 5h █████░░░░░ 50% 🔄 0s | 🕖 7d █████░░░░░ 50% 🔄 0s
+[ mocha            ] 🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40 | 🕔 5h ▰▰▰▰▰▱▱▱▱▱ 50% 🔄 0s | 🕖 7d ▰▰▰▰▰▱▱▱▱▱ 50% 🔄 0s
+[ silver           ] 🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40 | 🕔 5h ━━━━━───── 50% 🔄 0s | 🕖 7d ━━━━━───── 50% 🔄 0s
+[ ocean            ] 🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40 | 🕔 5h ▰▰▰▰▰▱▱▱▱▱ 50% 🔄 0s | 🕖 7d ▰▰▰▰▰▱▱▱▱▱ 50% 🔄 0s
 
-## Prefix styles
+## Prefix styles  (how each token is labeled; tokens.<id>.prefix to override per token)
 [ none         ] Opus 4.7 (1M context) | 50% (49k/100k) | $0.40
 [ label        ] Model: Opus 4.7 (1M context) | Ctx: 50% (49k/100k) | Cost: $0.40
 [ emoji        ] 🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40
@@ -44,7 +44,7 @@
 [ label+emoji  ] Model 🤖 Opus 4.7 (1M context) | Ctx 🧠 50% (49k/100k) | Cost 💰 $0.40
 [ nerd+label   ]  Model: Opus 4.7 (1M context) |  Ctx: 50% (49k/100k) |  Cost: $0.40
 
-## Separators
+## Separators  (string between tokens on the same line)
 [ space        ] 🤖 Opus 4.7 (1M context)  🧠 50% (49k/100k)  💰 $0.40
 [ pipe         ] 🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40
 [ slash        ] 🤖 Opus 4.7 (1M context) / 🧠 50% (49k/100k) / 💰 $0.40
@@ -65,16 +65,83 @@
 [ slant        ] 🤖 Opus 4.7 (1M context)  🧠 50% (49k/100k)  💰 $0.40
 [ chevron_thin ] 🤖 Opus 4.7 (1M context)  🧠 50% (49k/100k)  💰 $0.40
 
-## Bar styles
-[ blocks     ] 🤖 Opus 4.7 (1M context) | 🧠 █████░░░░░ 50% | 💰 $0.40 | ⏳ 3m 50s
-[ heavy      ] 🤖 Opus 4.7 (1M context) | 🧠 ▰▰▰▰▰▱▱▱▱▱ 50% | 💰 $0.40 | ⏳ 3m 50s
-[ line       ] 🤖 Opus 4.7 (1M context) | 🧠 ━━━━━───── 50% | 💰 $0.40 | ⏳ 3m 50s
-[ braille    ] 🤖 Opus 4.7 (1M context) | 🧠 ⣿⣿⣿⣿⣿⣀⣀⣀⣀⣀ 50% | 💰 $0.40 | ⏳ 3m 50s
-[ dots       ] 🤖 Opus 4.7 (1M context) | 🧠 ●●●●●○○○○○ 50% | 💰 $0.40 | ⏳ 3m 50s
-[ arrows     ] 🤖 Opus 4.7 (1M context) | 🧠 ▶▶▶▶▶▷▷▷▷▷ 50% | 💰 $0.40 | ⏳ 3m 50s
-[ ascii      ] 🤖 Opus 4.7 (1M context) | 🧠 #####..... 50% | 💰 $0.40 | ⏳ 3m 50s
-[ gradient   ] 🤖 Opus 4.7 (1M context) | 🧠 █████      50% | 💰 $0.40 | ⏳ 3m 50s
-[ gradient_dots ] 🤖 Opus 4.7 (1M context) | 🧠 █████····· 50% | 💰 $0.40 | ⏳ 3m 50s
-[ gradient_fade ] 🤖 Opus 4.7 (1M context) | 🧠 █████┄┄┄┄┄ 50% | 💰 $0.40 | ⏳ 3m 50s
-[ gradient_shade ] 🤖 Opus 4.7 (1M context) | 🧠 █████░░░░░ 50% | 💰 $0.40 | ⏳ 3m 50s
+## Bar styles  (used by progressbar/context/rate-limit tokens)
+[ blocks           ] 🤖 Opus 4.7 (1M context) | 🧠 █████░░░░░ 50% | 💰 $0.40 | ⏳ 3m 50s
+[ heavy            ] 🤖 Opus 4.7 (1M context) | 🧠 ▰▰▰▰▰▱▱▱▱▱ 50% | 💰 $0.40 | ⏳ 3m 50s
+[ line             ] 🤖 Opus 4.7 (1M context) | 🧠 ━━━━━───── 50% | 💰 $0.40 | ⏳ 3m 50s
+[ braille          ] 🤖 Opus 4.7 (1M context) | 🧠 ⣿⣿⣿⣿⣿⣀⣀⣀⣀⣀ 50% | 💰 $0.40 | ⏳ 3m 50s
+[ dots             ] 🤖 Opus 4.7 (1M context) | 🧠 ●●●●●○○○○○ 50% | 💰 $0.40 | ⏳ 3m 50s
+[ arrows           ] 🤖 Opus 4.7 (1M context) | 🧠 ▶▶▶▶▶▷▷▷▷▷ 50% | 💰 $0.40 | ⏳ 3m 50s
+[ ascii            ] 🤖 Opus 4.7 (1M context) | 🧠 #####..... 50% | 💰 $0.40 | ⏳ 3m 50s
+[ gradient         ] 🤖 Opus 4.7 (1M context) | 🧠 █████      50% | 💰 $0.40 | ⏳ 3m 50s
+[ gradient_dots    ] 🤖 Opus 4.7 (1M context) | 🧠 █████····· 50% | 💰 $0.40 | ⏳ 3m 50s
+[ gradient_fade    ] 🤖 Opus 4.7 (1M context) | 🧠 █████┄┄┄┄┄ 50% | 💰 $0.40 | ⏳ 3m 50s
+[ gradient_shade   ] 🤖 Opus 4.7 (1M context) | 🧠 █████░░░░░ 50% | 💰 $0.40 | ⏳ 3m 50s
 [ gradient_braille ] 🤖 Opus 4.7 (1M context) | 🧠 █████····· 50% | 💰 $0.40 | ⏳ 3m 50s
+
+## Tokens  (42 total — pick any combination via Tokens & lines wizard)
+
+### Claude session (29 tokens, read from stdin JSON)
+[ model              ] 🤖 Opus 4.7 (1M context)
+[ session_name       ] 📝 Browse
+[ session_id         ] 🔖 browse00
+[ context            ] 🧠 50% (49k/100k)
+[ tokens_input       ] 📥 49k
+[ tokens_output      ] 📤 50
+[ context_size       ] 🪟 100k
+[ context_remaining  ] 🆓 50%
+[ cache_hit          ] 💾 97%
+[ cost               ] 💰 $0.40
+[ duration           ] ⏳ 3m 50s
+[ api_duration       ] 📡 39s
+[ lines_added        ] ➕ +128
+[ lines_removed      ] ➖ -42
+[ rl_5h              ] 🕔 5h █████░░░░░ 50% 🔄 0s
+[ rl_7d              ] 🕖 7d █████░░░░░ 50% 🔄 0s
+[ thinking           ] 💭 true
+[ effort             ] 💪 xhigh
+[ output_style       ] 🎨 default
+[ version            ] 🏷️ 2.1.139
+[ fast_mode          ] 
+[ exceeds_200k       ] 
+[ dir                ] 📁 example_dir
+[ worktree           ] 🌳 main
+[ vim_mode           ] ⌨️ —
+[ agent_name         ] 🤝 —
+[ added_dirs         ] 📂 0
+[ git_worktree       ] 🌲 —
+[ transcript         ] 📜 null
+
+### Git (6 tokens, populated when cwd is inside a git repo)
+[ git_branch         ] 🌿 feat/wizard
+[ git_status         ] 📊 +3 ~5 ?2
+[ git_staged         ] ➕ 3
+[ git_modified       ] ✏️ 5
+[ git_untracked      ] ❓ 2
+[ git_ahead_behind   ] 🔀 ↑2 ↓1
+
+### Local OS (7 tokens, from the machine running the statusline)
+[ clock              ] 🕒 17:46
+[ date               ] 📅 2286-11-20
+[ hostname           ] 🖥️ mac
+[ user               ] 👤 david
+[ battery            ] 🔋 92%
+[ memory             ] 🧬 45%
+[ load               ] 📊 1.2
+
+## Lines  (1–4 lines per statusline; edit via Tokens & lines wizard)
+
+### 1 line
+🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40
+### 2 lines
+🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40 | ⏳ 3m 50s
+💭 true | 💪 xhigh | 🌿 feat/wizard | 📊 +3 ~5 ?2
+### 3 lines
+🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40
+🕔 5h █████░░░░░ 50% 🔄 0s | 🕖 7d █████░░░░░ 50% 🔄 0s | ⏳ 3m 50s
+🌿 feat/wizard | 🕒 17:46 | 🔋 92%
+### 4 lines (max)
+🤖 Opus 4.7 (1M context) | 📝 Browse | 🧠 50% (49k/100k)
+💰 $0.40 | ⏳ 3m 50s | 📡 39s | 💾 97%
+🌿 feat/wizard | 📊 +3 ~5 ?2 | ➕ +128 | ➖ -42
+🕒 17:46 | 📅 2286-11-20 | 🔋 92% | 🧬 45% | 📊 1.2
