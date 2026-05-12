@@ -227,19 +227,19 @@ read -r -d '' TOKENS_JSON <<'JSON' || true
              "prefix": { "none":"", "label":"Cache:", "emoji":"💾", "nerd":"", "ascii":"[H]" } },
   "cost": { "source":"claude", "default_prefix":"emoji", "default_format":"value", "applicable_formats":["value","per_hour","with_rate"],
              "prefix": { "none":"", "label":"Cost:", "emoji":"💰", "nerd":"", "ascii":"[$]" } },
-  "duration": { "source":"claude", "default_prefix":"emoji", "default_format":"value", "applicable_formats":["value"],
+  "duration": { "source":"claude", "default_prefix":"emoji", "default_format":"value", "applicable_formats":["value","short"],
              "prefix": { "none":"", "label":"Time:", "emoji":"⏳", "nerd":"", "ascii":"[T]" } },
-  "api_duration": { "source":"claude", "default_prefix":"emoji", "default_format":"value", "applicable_formats":["value"],
+  "api_duration": { "source":"claude", "default_prefix":"emoji", "default_format":"value", "applicable_formats":["value","short"],
              "prefix": { "none":"", "label":"API:", "emoji":"📡", "nerd":"", "ascii":"[A]" } },
   "lines_added": { "source":"claude", "default_prefix":"emoji", "default_format":"value", "applicable_formats":["value","count"],
              "prefix": { "none":"", "label":"Added:", "emoji":"➕", "nerd":"", "ascii":"+" } },
   "lines_removed": { "source":"claude", "default_prefix":"emoji", "default_format":"value", "applicable_formats":["value","count"],
              "prefix": { "none":"", "label":"Removed:", "emoji":"➖", "nerd":"", "ascii":"-" } },
   "rl_5h": { "source":"claude", "default_prefix":"label", "default_format":"progressbar+percent+countdown",
-             "applicable_formats":["value","percent","progressbar","progressbar+percent","countdown","remaining","progressbar+percent+countdown","progressbar+percent+remaining"],
+             "applicable_formats":["value","percent","progressbar","progressbar+percent","countdown","countdown_short","remaining","remaining_short","progressbar+percent+countdown","progressbar+percent+countdown_short","progressbar+percent+remaining","progressbar+percent+remaining_short"],
              "prefix": { "none":"", "label":"5h", "emoji":"🕔 5h", "nerd":" 5h", "ascii":"[5h]" } },
   "rl_7d": { "source":"claude", "default_prefix":"label", "default_format":"progressbar+percent+countdown",
-             "applicable_formats":["value","percent","progressbar","progressbar+percent","countdown","remaining","progressbar+percent+countdown","progressbar+percent+remaining"],
+             "applicable_formats":["value","percent","progressbar","progressbar+percent","countdown","countdown_short","remaining","remaining_short","progressbar+percent+countdown","progressbar+percent+countdown_short","progressbar+percent+remaining","progressbar+percent+remaining_short"],
              "prefix": { "none":"", "label":"7d", "emoji":"🕖 7d", "nerd":" 7d", "ascii":"[7d]" } },
   "thinking": { "source":"claude", "default_prefix":"emoji", "default_format":"value", "applicable_formats":["value","flag"],
              "prefix": { "none":"", "label":"Think:", "emoji":"💭", "nerd":"", "ascii":"[?]" } },
@@ -307,17 +307,24 @@ JSON
 read -r -d '' EXAMPLES_INPUT_JSON <<'JSON' || true
 {
   "session_id": "browse001",
-  "transcript_path": "/dev/null",
+  "transcript_path": "/tmp/example_dir/.claude/projects/browse/browse001.jsonl",
   "session_name": "Browse",
   "model": { "id": "claude-opus-4-7[1m]", "display_name": "Opus 4.7 (1M context)" },
-  "workspace": { "current_dir": "/tmp/example_dir", "added_dirs": [] },
+  "workspace": {
+    "current_dir": "/tmp/example_dir",
+    "project_dir": "/tmp/example_dir",
+    "added_dirs": [],
+    "git_worktree": "/tmp/example_dir/feature"
+  },
   "effort": { "level": "xhigh" },
   "thinking": { "enabled": true },
   "output_style": { "name": "default" },
   "version": "2.1.139",
-  "fast_mode": false,
-  "exceeds_200k_tokens": false,
+  "fast_mode": true,
+  "exceeds_200k_tokens": true,
   "worktree": { "name": "main" },
+  "vim": { "mode": "INSERT" },
+  "agent": { "name": "Explore" },
   "cost": {
     "total_cost_usd": 0.40,
     "total_duration_ms": 230000,
@@ -339,8 +346,8 @@ read -r -d '' EXAMPLES_INPUT_JSON <<'JSON' || true
     }
   },
   "rate_limits": {
-    "five_hour": { "used_percentage": 50, "resets_at": 9999999999 },
-    "seven_day": { "used_percentage": 50, "resets_at": 9999999999 }
+    "five_hour": { "used_percentage": 50, "resets_at": 1778534893 },
+    "seven_day": { "used_percentage": 50, "resets_at": 1778962800 }
   }
 }
 JSON
@@ -538,6 +545,39 @@ fmt_duration_ms() {
   elif (( h > 0 )); then echo "${h}h ${m}m ${s}s"
   elif (( m > 0 )); then echo "${m}m ${s}s"
   else                    echo "${s}s"
+  fi
+}
+
+# fmt_duration_ms_short <ms> → top 2 units ("5d 2h", "3h 25m", "17m 13s").
+# Useful when full precision is too noisy for a statusline glance.
+fmt_duration_ms_short() {
+  local ms="$1"
+  if [[ -z "$ms" || "$ms" -le 0 ]]; then echo "0s"; return; fi
+  local total=$(( ms / 1000 ))
+  local d=$(( total / 86400 ))
+  local h=$(( (total % 86400) / 3600 ))
+  local m=$(( (total % 3600) / 60 ))
+  local s=$(( total % 60 ))
+  if   (( d > 0 )); then echo "${d}d ${h}h"
+  elif (( h > 0 )); then echo "${h}h ${m}m"
+  elif (( m > 0 )); then echo "${m}m ${s}s"
+  else                    echo "${s}s"
+  fi
+}
+
+# fmt_duration_ms_compact <ms> → drops seconds entirely (3h 25m, 5d 2h 17m).
+# When the value is under 1 minute, shows "<1m" rather than 0m.
+fmt_duration_ms_compact() {
+  local ms="$1"
+  if [[ -z "$ms" || "$ms" -le 0 ]]; then echo "<1m"; return; fi
+  local total=$(( ms / 1000 ))
+  local d=$(( total / 86400 ))
+  local h=$(( (total % 86400) / 3600 ))
+  local m=$(( (total % 3600) / 60 ))
+  if   (( d > 0 )); then echo "${d}d ${h}h ${m}m"
+  elif (( h > 0 )); then echo "${h}h ${m}m"
+  elif (( m > 0 )); then echo "${m}m"
+  else                    echo "<1m"
   fi
 }
 
@@ -907,12 +947,19 @@ apply_format() {
       # display_name. "Opus 4.7 (1M context)" → "Opus 4.7".
       # For numeric tokens (tokens_input/output, context_size): render
       # a human-friendly short form ("202378" → "202k", "1000000" → "1M").
+      # For duration / api_duration: top-2 duration units (e.g. "1h 35m").
       case "$id" in
         model)
           local _dn; _dn="$(jq -r '.model.display_name // ""' <<<"$INPUT_JSON")"
           printf '%s' "$(_strip_trailing_paren "$_dn")" ;;
         tokens_input|tokens_output|context_size)
           _fmt_short "$raw" ;;
+        duration)
+          local _ms; _ms="$(jq -r '.cost.total_duration_ms // 0' <<<"$INPUT_JSON")"
+          fmt_duration_ms_short "$_ms" ;;
+        api_duration)
+          local _ms; _ms="$(jq -r '.cost.total_api_duration_ms // 0' <<<"$INPUT_JSON")"
+          fmt_duration_ms_short "$_ms" ;;
         *) printf '%s' "$raw" ;;
       esac ;;
     id)
@@ -1040,6 +1087,36 @@ apply_format() {
         "$(render_bar "$p" "$bar_style" "$bar_width")" \
         "$(fmt_percent "$p")" \
         "$(fmt_duration_ms $(( diff * 1000 )))" ;;
+    countdown_short)
+      [[ -z "$raw" ]] && return
+      local r="${raw##*|}"
+      local diff=$(( r - now ))
+      (( diff < 0 )) && diff=0
+      fmt_duration_ms_short $(( diff * 1000 )) ;;
+    remaining_short)
+      [[ -z "$raw" ]] && return
+      local r="${raw##*|}"
+      local diff=$(( r - now ))
+      (( diff < 0 )) && diff=0
+      printf 'in %s' "$(fmt_duration_ms_short $(( diff * 1000 )))" ;;
+    "progressbar+percent+countdown_short")
+      [[ -z "$raw" ]] && return
+      local p="${raw%%|*}" r="${raw##*|}"
+      local diff=$(( r - now ))
+      (( diff < 0 )) && diff=0
+      printf '%s %s 🔄 %s' \
+        "$(render_bar "$p" "$bar_style" "$bar_width")" \
+        "$(fmt_percent "$p")" \
+        "$(fmt_duration_ms_short $(( diff * 1000 )))" ;;
+    "progressbar+percent+remaining_short")
+      [[ -z "$raw" ]] && return
+      local p="${raw%%|*}" r="${raw##*|}"
+      local diff=$(( r - now ))
+      (( diff < 0 )) && diff=0
+      printf '%s %s 🔄 in %s' \
+        "$(render_bar "$p" "$bar_style" "$bar_width")" \
+        "$(fmt_percent "$p")" \
+        "$(fmt_duration_ms_short $(( diff * 1000 )))" ;;
     combined)
       # git_status: "+s|~m|?u" → "+s ~m ?u"
       [[ -z "$raw" ]] && return
@@ -1668,7 +1745,7 @@ _index_of() {
 _wiz_preview_line() {
   INPUT_JSON="$EXAMPLES_INPUT_JSON" \
     COLOR_DEPTH="$WIZARD_COLOR_DEPTH" \
-    NOW_EPOCH=9999999999 \
+    NOW_EPOCH=1778522580 \
     MOCK_GIT_STATE=out_of_repo \
     render_all
 }
@@ -1689,7 +1766,7 @@ _wiz_preview_with() {
   INPUT_JSON="$EXAMPLES_INPUT_JSON" \
     CONFIG_JSON="$cfg" \
     COLOR_DEPTH="$WIZARD_COLOR_DEPTH" \
-    NOW_EPOCH=9999999999 \
+    NOW_EPOCH=1778522580 \
     MOCK_GIT_STATE=out_of_repo \
     render_all
 }
@@ -2602,7 +2679,7 @@ _tl_build_picker() {
     sample="$(INPUT_JSON="$picker_input" \
       CONFIG_JSON="$picker_cfg" \
       COLOR_DEPTH="$WIZARD_COLOR_DEPTH" \
-      NOW_EPOCH=9999999999 \
+      NOW_EPOCH=1778522580 \
       MOCK_GIT_STATE=in_repo \
       render_token "$id")"
     TOK_PICKER_LIST+=("$id")
@@ -2759,7 +2836,7 @@ _wiz_draw_sep_picker() {
   INPUT_JSON="$EXAMPLES_INPUT_JSON" \
     CONFIG_JSON="$cfg" \
     COLOR_DEPTH="$WIZARD_COLOR_DEPTH" \
-    NOW_EPOCH=9999999999 \
+    NOW_EPOCH=1778522580 \
     MOCK_GIT_STATE=out_of_repo \
     RENDER_HIGHLIGHT_ID="$TL_SEP_PICKER_TOKEN" \
     render_all
@@ -2922,7 +2999,7 @@ _wiz_draw_token_field() {
   INPUT_JSON="$EXAMPLES_INPUT_JSON" \
     CONFIG_JSON="$cfg" \
     COLOR_DEPTH="$WIZARD_COLOR_DEPTH" \
-    NOW_EPOCH=9999999999 \
+    NOW_EPOCH=1778522580 \
     MOCK_GIT_STATE=out_of_repo \
     RENDER_HIGHLIGHT_ID="$id" \
     render_all
@@ -2952,7 +3029,7 @@ _build_token_field_examples() {
     out="$(INPUT_JSON="$EXAMPLES_INPUT_JSON" \
       CONFIG_JSON="$cfg" \
       COLOR_DEPTH="$WIZARD_COLOR_DEPTH" \
-      NOW_EPOCH=9999999999 \
+      NOW_EPOCH=1778522580 \
       MOCK_GIT_STATE=out_of_repo \
       render_token "$id")"
     TL_FIELD_EX+=("$out")
@@ -3177,14 +3254,16 @@ _render_sample() {
   depth="$(detect_color_depth)"
   # Pin clock / battery / memory / load to fake values so the catalog
   # renders the same output every time (otherwise OS tokens drift
-  # between runs and break snapshot tests). NOW=9999999999 also makes
-  # the date/clock output deterministic.
+  # between runs and break snapshot tests). NOW=1778522580 anchors
+  # date/clock to 2026-05-11 18:03 UTC; rate-limit resets_at in
+  # EXAMPLES_INPUT_JSON are set a few hours / a few days ahead so
+  # countdowns render meaningfully (instead of "0s").
   INPUT_JSON="$EXAMPLES_INPUT_JSON" \
     CONFIG_JSON="$cfg" \
     COLOR_DEPTH="$depth" \
-    NOW_EPOCH=9999999999 \
+    NOW_EPOCH=1778522580 \
     MOCK_GIT_STATE=out_of_repo \
-    STATUSLINE_BAR_FAKE_NOW=9999999999 \
+    STATUSLINE_BAR_FAKE_NOW=1778522580 \
     STATUSLINE_BAR_FAKE_BATTERY=92 \
     STATUSLINE_BAR_FAKE_MEMORY=45 \
     STATUSLINE_BAR_FAKE_LOAD=1.2 \
@@ -3209,12 +3288,12 @@ _render_token_alone() {
   INPUT_JSON="$EXAMPLES_INPUT_JSON" \
     CONFIG_JSON="$cfg" \
     COLOR_DEPTH="$(detect_color_depth)" \
-    NOW_EPOCH=9999999999 \
+    NOW_EPOCH=1778522580 \
     MOCK_GIT_STATE=in_repo \
     STATUSLINE_BAR_FAKE_BATTERY=92 \
     STATUSLINE_BAR_FAKE_MEMORY=45 \
     STATUSLINE_BAR_FAKE_LOAD=1.2 \
-    STATUSLINE_BAR_FAKE_NOW=9999999999 \
+    STATUSLINE_BAR_FAKE_NOW=1778522580 \
     HOSTNAME_OVERRIDE=mac \
     render_all
 }
@@ -3248,6 +3327,35 @@ _print_token_row() {
     pad=1
   fi
   printf '[ %-18s ] %s%*s   ⓘ %s\n' "$tok" "$rendered" "$pad" "" "$desc"
+}
+
+# Render one row of bar-style samples — the same bar at 25 / 75 / 95%,
+# each picking up the threshold color (good / warn / crit). Used by the
+# Bar styles catalog section so the focus is purely on bar character +
+# fill + color, not on other tokens.
+_render_bar_showcase() {
+  local bar="$1" out="" pct cfg input rendered
+  for pct in 25 75 95; do
+    input="$(jq --arg p "$pct" '.context_window.used_percentage = ($p|tonumber)' <<<"$EXAMPLES_INPUT_JSON")"
+    cfg="$(build_default_config | jq --arg b "$bar" '
+      .preset = "minimum"
+      | .global.prefix_style = "none"
+      | .global.separator = "space"
+      | .global.bar_style = $b
+      | .lines = [["context"]]
+      | .tokens = { "context": { "format": "progressbar+percent" } }
+    ')"
+    rendered="$(INPUT_JSON="$input" CONFIG_JSON="$cfg" \
+      COLOR_DEPTH="$(detect_color_depth)" \
+      NOW_EPOCH=1778522580 \
+      render_all)"
+    if [[ -z "$out" ]]; then
+      out="$rendered"
+    else
+      out="$out   $rendered"
+    fi
+  done
+  printf '%s' "$out"
 }
 
 # Build the inline color swatch shown next to each theme in the catalog:
@@ -3315,9 +3423,9 @@ examples_catalog() {
   fi
 
   if [[ "$only" == "all" || "$only" == "bars" ]]; then
-    echo "## Bar styles  (used by progressbar/context/rate-limit tokens)"
+    echo "## Bar styles  (each row: same bar at 25 / 75 / 95% — green good, yellow warn, red crit)"
     for b in blocks heavy line braille dots arrows ascii gradient gradient_dots gradient_fade gradient_shade gradient_braille; do
-      printf '[ %-16s ] %s\n' "$b" "$(_render_sample fancy default emoji pipe "$b" | sed -n '1p')"
+      printf '[ %-16s ] %s\n' "$b" "$(_render_bar_showcase "$b")"
     done
     echo
   fi

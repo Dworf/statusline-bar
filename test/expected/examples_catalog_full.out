@@ -8,31 +8,31 @@
 
 [ coder      ] 🤖 Opus 4.7 (1M context) | 🌿 — | 📊 — | ➕ +128 | ➖ -42 | ⏳ 3m 50s
 
-[ default    ] 🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40 | 🕔 5h █████░░░░░ 50% 🔄 0s | 🕖 7d █████░░░░░ 50% 🔄 0s
+[ default    ] 🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40 | 🕔 5h █████░░░░░ 50% 🔄 3h 25m 13s | 🕖 7d █████░░░░░ 50% 🔄 5d 2h 17m 0s
 [ default    ] 💭 true | 💪 xhigh | 📁 example_dir | 🌳 main | 🌿 — | 📊 — | 🔀 — | ➕ +128 | ➖ -42 | ⏳ 3m 50s
 
 [ modern     ] 🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 🌿 — | ➕ — | ✏️ — | 💰 $0.40
 [ modern     ] 🕔 5h █████░░░░░ 50% | 🕖 7d █████░░░░░ 50% | ⏳ 3m 50s
 
 [ rates      ] 🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40
-[ rates      ] 🕔 5h █████░░░░░ 50% 🔄 0s | 🕖 7d █████░░░░░ 50% 🔄 0s | 💾 ██████████ 97% | 📡 39s
+[ rates      ] 🕔 5h █████░░░░░ 50% 🔄 3h 25m 13s | 🕖 7d █████░░░░░ 50% 🔄 5d 2h 17m 0s | 💾 ██████████ 97% | 📡 39s
 
 [ claude     ] 🤖 Opus 4.7 (1M context) | 📝 Browse | 🧠 50% (49k/100k) | 💰 $0.40 | ⏳ 3m 50s
-[ claude     ] 💭 true | 💪 xhigh | 🎨 default | 🏷️ 2.1.139
+[ claude     ] 💭 true | 💪 xhigh | 🎨 default | ⚡️ | 🏷️ 2.1.139
 
 [ fancy      ] 🤖 Opus 4.7 (1M context) | 🧠 █████░░░░░ 50% | 💰 $0.40 | ⏳ 3m 50s
-[ fancy      ] 🕔 5h █████░░░░░ 50% 🔄 0s | 🕖 7d █████░░░░░ 50% 🔄 0s
-[ fancy      ] 📁 example_dir | 🌿 — | 📊 — | 💭 true | 💪 xhigh | 🔋 █████████░ 92% | 🕒 17:46
+[ fancy      ] 🕔 5h █████░░░░░ 50% 🔄 3h 25m 13s | 🕖 7d █████░░░░░ 50% 🔄 5d 2h 17m 0s
+[ fancy      ] 📁 example_dir | 🌿 — | 📊 — | 💭 true | 💪 xhigh | 🔋 █████████░ 92% | 🕒 18:03
 
 [ everything ] 🤖 Opus 4.7 (1M context) | 📝 Browse | 🔖 browse00 | 🧠 50% (49k/100k) | 📥 49k | 📤 50 | 🪟 100k | 🆓 50%
-[ everything ] 💾 97% | 💰 $0.40 | 📡 39s | 🕔 5h █████░░░░░ 50% 🔄 0s | 🕖 7d █████░░░░░ 50% 🔄 0s | 💭 true | 💪 xhigh | 🎨 default | 🏷️ 2.1.139 | 🤝 — | ⌨️ —
-[ everything ] 📁 example_dir | 🌳 main | 📂 0 | 🌲 — | 📜 null | 🌿 — | 📊 — | ➕ — | ✏️ — | ❓ — | 🔀 — | ➕ +128 | ➖ -42
-[ everything ] ⏳ 3m 50s | 🕒 17:46 | 📅 2286-11-20 | 🖥️ mac | 👤 david | 🔋 92% | 🧬 45% | 📊 1.2
+[ everything ] 💾 97% | 💰 $0.40 | 📡 39s | 🕔 5h █████░░░░░ 50% 🔄 3h 25m 13s | 🕖 7d █████░░░░░ 50% 🔄 5d 2h 17m 0s | 💭 true | 💪 xhigh | 🎨 default | 🏷️ 2.1.139 | 🤝 Explore | ⌨️ INSERT | ⚡️ | 📈
+[ everything ] 📁 example_dir | 🌳 main | 📂 0 | 🌲 /tmp/example_dir/feature | 📜 browse001.jsonl | 🌿 — | 📊 — | ➕ — | ✏️ — | ❓ — | 🔀 — | ➕ +128 | ➖ -42
+[ everything ] ⏳ 3m 50s | 🕒 18:03 | 📅 2026-05-11 | 🖥️ mac | 👤 david | 🔋 92% | 🧬 45% | 📊 1.2
 
 [ maximum    ] 🤖 Opus 4.7 (1M context) | 📝 Browse | 🔖 browse00 | 🧠 █████░░░░░ 50% (49k/100k) | 📥 49k | 📤 50 | 🪟 100k | 🆓 █████░░░░░ 50%
-[ maximum    ] 💾 ██████████ 97% | 💰 $0.40 | 📡 39s | 🕔 5h █████░░░░░ 50% 🔄 0s | 🕖 7d █████░░░░░ 50% 🔄 0s | 💭 true | 💪 xhigh | 🎨 default | 🏷️ 2.1.139 | 🤝 — | ⌨️ —
-[ maximum    ] 📁 example_dir | 🌳 main | 📂 0 | 🌲 — | 📜 null | 🌿 — | 📊 — | ➕ — | ✏️ — | ❓ — | 🔀 — | ➕ +128 | ➖ -42
-[ maximum    ] ⏳ 3m 50s | 🕒 17:46 | 📅 2286-11-20 | 🖥️ mac | 👤 david | 🔋 █████████░ 92% | 🧬 █████░░░░░ 45% | 📊 1.2
+[ maximum    ] 💾 ██████████ 97% | 💰 $0.40 | 📡 39s | 🕔 5h █████░░░░░ 50% 🔄 3h 25m 13s | 🕖 7d █████░░░░░ 50% 🔄 5d 2h 17m 0s | 💭 true | 💪 xhigh | 🎨 default | 🏷️ 2.1.139 | 🤝 Explore | ⌨️ INSERT | ⚡️ | 📈
+[ maximum    ] 📁 example_dir | 🌳 main | 📂 0 | 🌲 /tmp/example_dir/feature | 📜 browse001.jsonl | 🌿 — | 📊 — | ➕ — | ✏️ — | ❓ — | 🔀 — | ➕ +128 | ➖ -42
+[ maximum    ] ⏳ 3m 50s | 🕒 18:03 | 📅 2026-05-11 | 🖥️ mac | 👤 david | 🔋 █████████░ 92% | 🧬 █████░░░░░ 45% | 📊 1.2
 
 ## Themes  (color palettes; switch via --theme NAME — only colors change)
                        good warn crit text   sample
@@ -89,19 +89,19 @@
 [ slant        ] 🤖 Opus 4.7 (1M context)  🧠 50% (49k/100k)  💰 $0.40
 [ chevron_thin ] 🤖 Opus 4.7 (1M context)  🧠 50% (49k/100k)  💰 $0.40
 
-## Bar styles  (used by progressbar/context/rate-limit tokens)
-[ blocks           ] 🤖 Opus 4.7 (1M context) | 🧠 █████░░░░░ 50% | 💰 $0.40 | ⏳ 3m 50s
-[ heavy            ] 🤖 Opus 4.7 (1M context) | 🧠 ▰▰▰▰▰▱▱▱▱▱ 50% | 💰 $0.40 | ⏳ 3m 50s
-[ line             ] 🤖 Opus 4.7 (1M context) | 🧠 ━━━━━───── 50% | 💰 $0.40 | ⏳ 3m 50s
-[ braille          ] 🤖 Opus 4.7 (1M context) | 🧠 ⣿⣿⣿⣿⣿⣀⣀⣀⣀⣀ 50% | 💰 $0.40 | ⏳ 3m 50s
-[ dots             ] 🤖 Opus 4.7 (1M context) | 🧠 ●●●●●○○○○○ 50% | 💰 $0.40 | ⏳ 3m 50s
-[ arrows           ] 🤖 Opus 4.7 (1M context) | 🧠 ▶▶▶▶▶▷▷▷▷▷ 50% | 💰 $0.40 | ⏳ 3m 50s
-[ ascii            ] 🤖 Opus 4.7 (1M context) | 🧠 #####..... 50% | 💰 $0.40 | ⏳ 3m 50s
-[ gradient         ] 🤖 Opus 4.7 (1M context) | 🧠 █████      50% | 💰 $0.40 | ⏳ 3m 50s
-[ gradient_dots    ] 🤖 Opus 4.7 (1M context) | 🧠 █████····· 50% | 💰 $0.40 | ⏳ 3m 50s
-[ gradient_fade    ] 🤖 Opus 4.7 (1M context) | 🧠 █████┄┄┄┄┄ 50% | 💰 $0.40 | ⏳ 3m 50s
-[ gradient_shade   ] 🤖 Opus 4.7 (1M context) | 🧠 █████░░░░░ 50% | 💰 $0.40 | ⏳ 3m 50s
-[ gradient_braille ] 🤖 Opus 4.7 (1M context) | 🧠 █████····· 50% | 💰 $0.40 | ⏳ 3m 50s
+## Bar styles  (each row: same bar at 25 / 75 / 95% — green good, yellow warn, red crit)
+[ blocks           ] ███░░░░░░░ 25%   ████████░░ 75%   ██████████ 95%
+[ heavy            ] ▰▰▰▱▱▱▱▱▱▱ 25%   ▰▰▰▰▰▰▰▰▱▱ 75%   ▰▰▰▰▰▰▰▰▰▰ 95%
+[ line             ] ━━━─────── 25%   ━━━━━━━━── 75%   ━━━━━━━━━━ 95%
+[ braille          ] ⣿⣿⣿⣀⣀⣀⣀⣀⣀⣀ 25%   ⣿⣿⣿⣿⣿⣿⣿⣿⣀⣀ 75%   ⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿ 95%
+[ dots             ] ●●●○○○○○○○ 25%   ●●●●●●●●○○ 75%   ●●●●●●●●●● 95%
+[ arrows           ] ▶▶▶▷▷▷▷▷▷▷ 25%   ▶▶▶▶▶▶▶▶▷▷ 75%   ▶▶▶▶▶▶▶▶▶▶ 95%
+[ ascii            ] ###....... 25%   ########.. 75%   ########## 95%
+[ gradient         ] ██▌        25%   ███████▌   75%   █████████▌ 95%
+[ gradient_dots    ] ██▌······· 25%   ███████▌·· 75%   █████████▌ 95%
+[ gradient_fade    ] ██▒┄┄┄┄┄┄┄ 25%   ███████▒┄┄ 75%   █████████▒ 95%
+[ gradient_shade   ] ██▓░░░░░░░ 25%   ███████▓░░ 75%   █████████▓ 95%
+[ gradient_braille ] ██⡇······· 25%   ███████⡇·· 75%   █████████⡇ 95%
 
 ## Tokens  (42 total — pick any combination via Tokens & lines wizard)
 
@@ -120,21 +120,21 @@
 [ api_duration       ] 📡 39s                               ⓘ Time spent waiting for API responses
 [ lines_added        ] ➕ +128                               ⓘ Lines of code added in this session (+128)
 [ lines_removed      ] ➖ -42                                ⓘ Lines of code removed in this session (-42)
-[ rl_5h              ] 🕔 5h █████░░░░░ 50% 🔄 0s     ⓘ 5-hour rate limit % + reset countdown
-[ rl_7d              ] 🕖 7d █████░░░░░ 50% 🔄 0s     ⓘ 7-day rate limit % + reset countdown
+[ rl_5h              ] 🕔 5h █████░░░░░ 50% 🔄 3h 25m 13s    ⓘ 5-hour rate limit % + reset countdown
+[ rl_7d              ] 🕖 7d █████░░░░░ 50% 🔄 5d 2h 17m 0s    ⓘ 7-day rate limit % + reset countdown
 [ thinking           ] 💭 true                              ⓘ Whether extended thinking is enabled
 [ effort             ] 💪 xhigh                             ⓘ Current reasoning effort (low/medium/high/xhigh/max)
 [ output_style       ] 🎨 default                           ⓘ Active output style name
 [ version            ] 🏷️ 2.1.139                          ⓘ Claude Code version
-[ fast_mode          ]                                      ⓘ Fast mode flag (shows only when true)
-[ exceeds_200k       ]                                      ⓘ Token-count-over-200k flag (shows only when true)
+[ fast_mode          ] ⚡️                                  ⓘ Fast mode flag (shows only when true)
+[ exceeds_200k       ] 📈                                   ⓘ Token-count-over-200k flag (shows only when true)
 [ dir                ] 📁 example_dir                       ⓘ Workspace directory basename
 [ worktree           ] 🌳 main                              ⓘ Worktree name (--worktree sessions only)
-[ vim_mode           ] ⌨️ —                               ⓘ Current vim mode (NORMAL/INSERT/VISUAL)
-[ agent_name         ] 🤝 —                                 ⓘ Name of the running --agent
+[ vim_mode           ] ⌨️ INSERT                           ⓘ Current vim mode (NORMAL/INSERT/VISUAL)
+[ agent_name         ] 🤝 Explore                           ⓘ Name of the running --agent
 [ added_dirs         ] 📂 0                                 ⓘ Count of dirs added via /add-dir
-[ git_worktree       ] 🌲 —                                 ⓘ Git worktree name (set for any linked worktree)
-[ transcript         ] 📜 null                              ⓘ Basename of the transcript file
+[ git_worktree       ] 🌲 /tmp/example_dir/feature          ⓘ Git worktree name (set for any linked worktree)
+[ transcript         ] 📜 browse001.jsonl                   ⓘ Basename of the transcript file
 
 ### Git (6 tokens, populated when cwd is inside a git repo)
 [ git_branch         ] 🌿 feat/wizard                       ⓘ Current git branch name
@@ -145,8 +145,8 @@
 [ git_ahead_behind   ] 🔀 ↑2 ↓1                            ⓘ Ahead/behind count vs upstream
 
 ### Local OS (7 tokens, from the machine running the statusline)
-[ clock              ] 🕒 17:46                             ⓘ Current time (HH:MM)
-[ date               ] 📅 2286-11-20                        ⓘ Current date (YYYY-MM-DD)
+[ clock              ] 🕒 18:03                             ⓘ Current time (HH:MM)
+[ date               ] 📅 2026-05-11                        ⓘ Current date (YYYY-MM-DD)
 [ hostname           ] 🖥️ mac                              ⓘ Short hostname
 [ user               ] 👤 david                             ⓘ Current user ($USER)
 [ battery            ] 🔋 92%                               ⓘ Battery % (low % = critical color)
