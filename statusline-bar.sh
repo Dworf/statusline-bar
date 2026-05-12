@@ -109,6 +109,14 @@ read -r -d '' PRESETS_JSON <<'JSON' || true
     "lines": [ ["model","context","cost","git_branch","duration","rl_5h"] ],
     "token_formats": { "rl_5h": "percent" }
   },
+  "focus": {
+    "lines": [ ["model","context","thinking","effort","cost"] ],
+    "token_formats": {}
+  },
+  "coder": {
+    "lines": [ ["model","git_branch","git_status","lines_added","lines_removed","duration"] ],
+    "token_formats": {}
+  },
   "default": {
     "lines": [
       ["model","context","cost","rl_5h","rl_7d"],
@@ -128,6 +136,24 @@ read -r -d '' PRESETS_JSON <<'JSON' || true
       "rl_5h": "progressbar+percent",
       "rl_7d": "progressbar+percent"
     }
+  },
+  "rates": {
+    "lines": [
+      ["model","context","cost"],
+      ["rl_5h","rl_7d","cache_hit","api_duration"]
+    ],
+    "token_formats": {
+      "rl_5h": "progressbar+percent+countdown",
+      "rl_7d": "progressbar+percent+countdown",
+      "cache_hit": "progressbar+percent"
+    }
+  },
+  "claude": {
+    "lines": [
+      ["model","session_name","context","cost","duration"],
+      ["thinking","effort","output_style","fast_mode","version"]
+    ],
+    "token_formats": {}
   },
   "fancy": {
     "lines": [
@@ -1168,7 +1194,7 @@ check_config() {
     return 1
   fi
   local preset; preset="$(jq -r '.preset // ""' <<<"$CONFIG_JSON")"
-  local valid_presets="minimum compact default modern fancy everything maximum"
+  local valid_presets="minimum compact focus coder default modern rates claude fancy everything maximum"
   if [[ -n "$preset" && "$preset" != "null" ]] && ! grep -qw "$preset" <<<"$valid_presets"; then
     echo "check: unknown preset \"$preset\" (expected: $(echo $valid_presets | tr ' ' ', '))"
     return 1
@@ -1472,8 +1498,12 @@ _TOOLTIPS_TOKEN_DETAIL=(
 _TOOLTIPS_PRESET=(
   "Minimum: 1 line, 3 tokens — model, context %, cost. Smallest possible statusline."
   "Compact: 1 line, 6 tokens — adds git branch, duration, and the 5h rate limit (as % only)."
+  "Focus: 1 line, 5 tokens — model + context + thinking/effort + cost. Quick activity glance."
+  "Coder: 1 line, 6 tokens — git-focused: model, branch, status, lines +/-, duration."
   "Default: 2 lines, 15 tokens — usage row on top; thinking / dir / git / counters / duration below."
   "Modern: 2 lines, 9 tokens — git staged/modified inline; rate-limit bars + duration on line 2."
+  "Rates: 2 lines, 7 tokens — context+cost on top; rate limits (with bars+countdown) + cache + api time below."
+  "Claude: 2 lines, 10 tokens — session info + cost/duration; claude state (thinking/effort/style/version) below."
   "Fancy: 3 lines, 13 tokens — context bar, rate-limit bars, OS chrome (battery, clock), git status."
   "Everything: 4 lines, all 42 tokens, each using its default format. Coverage over compactness."
   "Maximum: same 42 tokens as Everything, but with progress bars, countdowns, and combined views where applicable."
@@ -1794,7 +1824,7 @@ _wiz_draw_select() {  # title, current_value, mutation, examples-array-name, hea
 }
 
 # Each selection screen is wrapped as a small draw+handle pair using a shared list.
-_PRESETS=(minimum compact default modern fancy everything maximum)
+_PRESETS=(minimum compact focus coder default modern rates claude fancy everything maximum)
 # Theme list with inline section headers. Items starting with "__SEC__ "
 # render as group labels (no marker, no example, dimmed) and are skipped
 # by cursor navigation. The grouping matches terminal compatibility:
@@ -1821,8 +1851,12 @@ _DEPTH=(auto truecolor 256 16 none)
 _PRESETS_EX=(
   "1 line · 3 tokens"
   "1 line · 6 tokens"
+  "1 line · 5 tokens"
+  "1 line · 6 tokens"
   "2 lines · 15 tokens"
   "2 lines · 9 tokens"
+  "2 lines · 7 tokens"
+  "2 lines · 10 tokens"
   "3 lines · 13 tokens"
   "4 lines · 42 tokens"
   "4 lines · 42 tokens (detailed)"
@@ -3153,7 +3187,7 @@ examples_catalog() {
   local p t ps s b
   if [[ "$only" == "all" || "$only" == "presets" ]]; then
     echo "## Presets"
-    for p in minimum compact default modern fancy everything maximum; do
+    for p in minimum compact focus coder default modern rates claude fancy everything maximum; do
       printf '[ %-10s ] %s\n' "$p" "$(_render_sample "$p" default emoji pipe null | head -n 1)"
     done
     echo

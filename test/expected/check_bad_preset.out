@@ -1,1 +1,1 @@
-check: unknown preset "nope" (expected: minimum,compact,default,modern,fancy,everything,maximum)
+check: unknown preset "nope" (expected: minimum,compact,focus,coder,default,modern,rates,claude,fancy,everything,maximum)

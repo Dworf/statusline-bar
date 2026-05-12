@@ -1,8 +1,12 @@
 ## Presets
 [ minimum    ] 🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40
 [ compact    ] 🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40 | 🌿 — | ⏳ 3m 50s | 🕔 5h 50%
+[ focus      ] 🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💭 true | 💪 xhigh | 💰 $0.40
+[ coder      ] 🤖 Opus 4.7 (1M context) | 🌿 — | 📊 — | ➕ +128 | ➖ -42 | ⏳ 3m 50s
 [ default    ] 🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40 | 🕔 5h █████░░░░░ 50% 🔄 0s | 🕖 7d █████░░░░░ 50% 🔄 0s
 [ modern     ] 🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 🌿 — | ➕ — | ✏️ — | 💰 $0.40
+[ rates      ] 🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40
+[ claude     ] 🤖 Opus 4.7 (1M context) | 📝 Browse | 🧠 50% (49k/100k) | 💰 $0.40 | ⏳ 3m 50s
 [ fancy      ] 🤖 Opus 4.7 (1M context) | 🧠 █████░░░░░ 50% | 💰 $0.40 | ⏳ 3m 50s
 [ everything ] 🤖 Opus 4.7 (1M context) | 📝 Browse | 🔖 browse00 | 🧠 50% (49k/100k) | 📥 49k | 📤 50 | 🪟 100k | 🆓 50%
 [ maximum    ] 🤖 Opus 4.7 (1M context) | 📝 Browse | 🔖 browse00 | 🧠 █████░░░░░ 50% (49k/100k) | 📥 49k | 📤 50 | 🪟 100k | 🆓 █████░░░░░ 50%
