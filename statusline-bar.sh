@@ -3210,48 +3210,50 @@ _render_token_alone() {
     render_all
 }
 
-# Render an arbitrary lines layout (used by the Lines section to demo
-# 1/2/3/4-line statuslines). $1 is a JSON array of lines (each line a
-# JSON array of token ids), e.g. '[["model","cost"],["git_branch"]]'.
-_render_lines_only() {
-  local lines_json="$1" cfg
-  cfg="$(build_default_config | jq --argjson lines "$lines_json" '
-    .preset = "minimum"
-    | .global.prefix_style = "emoji"
-    | .global.separator = "pipe"
-    | .global.bar_style = null
-    | .lines = $lines
-    | .tokens = {}
-  ')"
-  INPUT_JSON="$EXAMPLES_INPUT_JSON" \
-    CONFIG_JSON="$cfg" \
-    COLOR_DEPTH="$(detect_color_depth)" \
-    NOW_EPOCH=9999999999 \
-    MOCK_GIT_STATE=in_repo \
-    STATUSLINE_BAR_FAKE_BATTERY=92 \
-    STATUSLINE_BAR_FAKE_MEMORY=45 \
-    STATUSLINE_BAR_FAKE_LOAD=1.2 \
-    STATUSLINE_BAR_FAKE_NOW=9999999999 \
-    HOSTNAME_OVERRIDE=mac \
-    render_all
+# Build the inline color swatch shown next to each theme in the catalog:
+# "● ● ● Aa" with the good/warn/crit/accent colors applied. Matches the
+# layout the wizard's theme picker uses on its right-hand column.
+_theme_swatch() {
+  local t="$1" depth="$2"
+  local good warn crit accent reset
+  good="$(_theme_var "$t" good)"
+  warn="$(_theme_var "$t" warn)"
+  crit="$(_theme_var "$t" crit)"
+  accent="$(_theme_var "$t" accent)"
+  reset="$(color_reset "$depth")"
+  printf '%s●%s %s●%s %s●%s %sAa%s' \
+    "$(color_fg "$good"   "$depth")" "$reset" \
+    "$(color_fg "$warn"   "$depth")" "$reset" \
+    "$(color_fg "$crit"   "$depth")" "$reset" \
+    "$(color_fg "$accent" "$depth")" "$reset"
 }
 
 examples_catalog() {
   local only="${ONLY:-all}"
-  local p t ps s b tok line_cfg
+  local p t ps s b tok line depth
+  depth="$(detect_color_depth)"
 
   if [[ "$only" == "all" || "$only" == "presets" ]]; then
     echo "## Presets  (factory layouts; switch via --preset NAME)"
-    for p in minimum compact focus coder default modern rates claude fancy everything maximum; do
-      printf '[ %-10s ] %s\n' "$p" "$(_render_sample "$p" default emoji pipe null | head -n 1)"
-    done
     echo
+    for p in minimum compact focus coder default modern rates claude fancy everything maximum; do
+      # `; echo` adds a trailing newline so `read` doesn't drop the last
+      # line — render_all itself doesn't append one.
+      while IFS= read -r line; do
+        printf '[ %-10s ] %s\n' "$p" "$line"
+      done < <(_render_sample "$p" default emoji pipe null; echo)
+      echo
+    done
   fi
 
   if [[ "$only" == "all" || "$only" == "themes" ]]; then
     echo "## Themes  (color palettes; switch via --theme NAME — only colors change)"
+    echo "                       good warn crit text   sample"
     for t in default solarized graphite light solarized-light catppuccin-latte tokyo-day ayu-light garden dark dracula nord gruvbox tokyo-night catppuccin one-dark rose-pine monokai mocha silver ocean; do
-      printf '[ %-16s ] %s\n' "$t" "$(_render_sample default "$t" emoji pipe null | head -n 1)"
+      printf '[ %-16s ] %s   %s\n' \
+        "$t" \
+        "$(_theme_swatch "$t" "$depth")" \
+        "$(_render_sample minimum "$t" emoji pipe null | head -n 1)"
     done
     echo
   fi
@@ -3286,44 +3288,32 @@ examples_catalog() {
     echo "### Claude session (29 tokens, read from stdin JSON)"
     for tok in model session_name session_id context tokens_input tokens_output context_size context_remaining cache_hit cost duration api_duration lines_added lines_removed rl_5h rl_7d thinking effort output_style version fast_mode exceeds_200k dir worktree vim_mode agent_name added_dirs git_worktree transcript; do
       printf '[ %-18s ] %s\n' "$tok" "$(_render_token_alone "$tok" | head -n 1)"
+      printf '                       ⓘ %s\n' "$(_token_description "$tok")"
     done
     echo
     echo "### Git (6 tokens, populated when cwd is inside a git repo)"
     for tok in git_branch git_status git_staged git_modified git_untracked git_ahead_behind; do
       printf '[ %-18s ] %s\n' "$tok" "$(_render_token_alone "$tok" | head -n 1)"
+      printf '                       ⓘ %s\n' "$(_token_description "$tok")"
     done
     echo
     echo "### Local OS (7 tokens, from the machine running the statusline)"
     for tok in clock date hostname user battery memory load; do
       printf '[ %-18s ] %s\n' "$tok" "$(_render_token_alone "$tok" | head -n 1)"
+      printf '                       ⓘ %s\n' "$(_token_description "$tok")"
     done
-    echo
-  fi
-
-  if [[ "$only" == "all" || "$only" == "lines" ]]; then
-    echo "## Lines  (1–4 lines per statusline; edit via Tokens & lines wizard)"
-    echo
-    echo "### 1 line"
-    _render_lines_only '[["model","context","cost"]]'
-    echo
-    echo "### 2 lines"
-    _render_lines_only '[["model","context","cost","duration"],["thinking","effort","git_branch","git_status"]]'
-    echo
-    echo "### 3 lines"
-    _render_lines_only '[["model","context","cost"],["rl_5h","rl_7d","duration"],["git_branch","clock","battery"]]'
-    echo
-    echo "### 4 lines (max)"
-    _render_lines_only '[["model","session_name","context"],["cost","duration","api_duration","cache_hit"],["git_branch","git_status","lines_added","lines_removed"],["clock","date","battery","memory","load"]]'
     echo
   fi
 }
 
 run_examples() {
-  # The interactive and combinatorial-all modes were dropped in v0.3.0 —
-  # catalog mode covers the same need and is fast / predictable. The
-  # accepted argument is preserved for backwards compatibility (any value
-  # routes to the same catalog).
-  examples_catalog
+  # Argument names a single catalog section to print
+  # (presets|themes|prefixes|separators|bars|tokens), or empty/"all" for
+  # the full catalog. examples_catalog reads $ONLY to decide which
+  # sections to emit; the historic combinatorial-all and interactive
+  # modes from earlier releases are gone — the catalog covers them.
+  local mode="${1:-all}"
+  ONLY="$mode" examples_catalog
 }
 
 main() {
