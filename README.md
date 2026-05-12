@@ -20,8 +20,8 @@ The Claude Code ecosystem already has a dozen excellent statuslines, each great 
 
 - **Single file**, ~3,000 lines of bash 3.2+. Drop it anywhere on `$PATH`.
 - **Up to 4 lines** of statusline, each a freely-arranged token sequence.
-- **39 tokens**: 26 from Claude Code's stdin JSON + 6 from `git` + 7 from local OS.
-- **9 format variants** per token: `value`, `percent`, `progressbar`, `progressbar+percent`, `countdown`, `remaining`, `progressbar+percent+countdown`, `combined`, `flag`.
+- **42 tokens**: 29 from Claude Code's stdin JSON + 6 from `git` + 7 from local OS.
+- **Many format variants** per token — bars, percents, countdowns, combined views, compact model names, hourly cost projections, etc. Each token advertises only the formats that make sense for its data.
 - **7 presets**: `minimum`, `compact`, `default`, `modern`, `fancy`, `everything`, `maximum`.
 - **10 themes**: `default`, `dark`, `light`, `graphite`, `solarized`, `dracula`, `nord`, `gruvbox`, `tokyo-night`, `catppuccin`.
 - **8 progress-bar styles**: `blocks`, `heavy`, `line`, `braille`, `dots`, `arrows`, `ascii`, `gradient` (sub-character precision via eighths).
@@ -103,13 +103,13 @@ Prints a catalog: one sample per preset, theme, prefix style, separator, and bar
 
 ## Reference
 
-- **39 tokens** — 26 from Claude stdin (model, context, cost, rate limits, vim mode, agent name, session id, …) + 6 git + 7 OS (clock, battery, memory, load, …)
+- **42 tokens** — 29 from Claude stdin (model, context, cost, rate limits, token counts, vim mode, agent name, session id, …) + 6 git + 7 OS (clock, battery, memory, load, …)
 - **7 presets** — `minimum`, `compact`, `default`, `modern`, `fancy`, `everything`, `maximum`
 - **10 themes** — `default`, `dark`, `light`, `graphite`, `solarized`, `dracula`, `nord`, `gruvbox`, `tokyo-night`, `catppuccin`
 - **8 prefix styles** — `none`, `label`, `emoji`, `nerd`, `ascii` + `emoji+label`, `label+emoji`, `nerd+label`
 - **19 separators** — ASCII (3), Unicode (10), Decorative (3), Powerline (3)
 - **8 bar styles** — `blocks`, `heavy`, `line`, `braille`, `dots`, `arrows`, `ascii`, `gradient`
-- **9 formats** — `value`, `percent`, `progressbar`, `progressbar+percent`, `countdown`, `remaining`, `progressbar+percent+countdown`, `combined`, `flag`
+- **Token-specific formats** — base set (`value`, `percent`, `progressbar`, `progressbar+percent`, `countdown`, `remaining`, `combined`, `flag`, …) plus richer per-token formats: bars-with-countdown, hourly cost projections, model-name shorteners, token-count combos.
 
 Globals can be overridden per-token via `tokens.<id>.prefix`, `.format`, `.bar_style`, `.separator_after`.
 
@@ -161,7 +161,7 @@ Flags:
   - Token rows + **inline separator rows** (always visible, labeled `↓ pipe (global)` or `↓ star (override)`).
   - `a` add a token, `c` change the token at cursor, `d` delete, `m` mark for cross-line move, `p` paste, `Shift+↑↓` move within a line, Enter on a token opens its detail screen, Enter on a separator row opens a separator picker scoped to that one position (with a `(use global)` row that clears the override).
   - `←`/`→` from inside the tokens zone also cycle through lines + the `+` tab (no need to climb back up).
-- **Token picker**: 39 tokens grouped by source (Claude stdin / git / OS), each row showing a live `emoji+label` sample rendered with synthetic data (e.g. `🤖 Model: Opus 4.7 (1M)`, `🕔 5h █████░░░░░ 50% 🔄 0s`). `✓` marks tokens already used somewhere. Cursor on a row tooltips its one-line description ("context_pct — % of context window used (formatted 4%)" etc.). Used by both `a add` and `c change`.
+- **Token picker**: 42 tokens grouped by source (Claude stdin / git / OS), each row showing a live `emoji+label` sample rendered with synthetic data (e.g. `🤖 Model: Opus 4.7 (1M context)`, `🕔 5h █████░░░░░ 50% 🔄 0s`). `✓` marks tokens already used somewhere. Cursor on a row tooltips its one-line description. Used by both `a add` and `c change`.
 - **Token detail screen** for per-token overrides: `prefix`, `format`, `bar_style`, and `Reset to defaults`. Each sub-picker opens with the cursor on the currently-active value, and the right-side example column renders the actual token under that option so you can compare outputs directly. `r` resets just this token (screen-aware shortcut).
 - **Preview highlighting** redesigned. The focused token / separator no longer reverse-video-inverts colors (which lied about how it would actually render). Now the focused content is **underlined** and wrapped in bold-bright-yellow `▶ ◀` markers — colors stay accurate.
 - **Unsaved-changes prompt** when you press `q` or `Esc` on the main menu with edits pending — choose `s` save+quit, `d` discard+quit, or any other key to cancel and keep editing. Previously the prompt wasn't reachable because of a subshell-captured-output bug.

@@ -13,8 +13,10 @@
   },
   "lines": [
     [
-      "context_bar"
+      "context"
     ]
   ],
-  "tokens": {}
+  "tokens": {
+    "context": { "format": "progressbar+percent" }
+  }
 }

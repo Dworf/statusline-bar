@@ -81,9 +81,12 @@ run_case tok_duration      sample-input.json "" --dump-token duration
 run_case tok_api_duration  sample-input.json "" --dump-token api_duration
 
 # Phase 5: percent tokens
-run_case tok_context_pct sample-input.json "" --dump-token context_pct
-run_case tok_context_bar sample-input.json "" --dump-token context_bar
-run_case tok_cache_hit   sample-input.json "" --dump-token cache_hit
+run_case tok_context           sample-input.json "" --dump-token context
+run_case tok_tokens_input      sample-input.json "" --dump-token tokens_input
+run_case tok_tokens_output     sample-input.json "" --dump-token tokens_output
+run_case tok_context_size      sample-input.json "" --dump-token context_size
+run_case tok_context_remaining sample-input.json "" --dump-token context_remaining
+run_case tok_cache_hit         sample-input.json "" --dump-token cache_hit
 
 # Phase 5: rate-limit tokens
 run_case tok_rl_5h sample-input.json "" --dump-token rl_5h
@@ -118,8 +121,8 @@ CASE_ENV="STATUSLINE_BAR_FORCE_NO_LOAD=1"       run_case tok_load_missing     sa
 
 # Phase 6: apply_format
 run_case fmt_value             "" "" --apply-format model       value                            "Opus" blocks 10 0
-run_case fmt_percent_apply     "" "" --apply-format context_pct percent                          "4"    blocks 10 0
-run_case fmt_bar_apply         "" "" --apply-format context_pct progressbar                      "50"   blocks 10 0
+run_case fmt_percent_apply     "" "" --apply-format context     percent                          "4"    blocks 10 0
+run_case fmt_bar_apply         "" "" --apply-format context     progressbar                      "50"   blocks 10 0
 run_case fmt_rl_combined_apply "" "" --apply-format rl_5h       progressbar+percent+countdown    "0|3600" blocks 10 0
 run_case fmt_flag_true         "" "" --apply-format thinking    flag                             "true"  blocks 10 0
 run_case fmt_flag_false        "" "" --apply-format thinking    flag                             "false" blocks 10 0
@@ -127,7 +130,7 @@ run_case fmt_combined_git      "" "" --apply-format git_status  combined        
 
 # Phase 6: render_token
 run_case render_token_model_default sample-input.json default-min.json --dump-render-token model
-run_case render_token_context_bar   sample-input.json ctx-bar.json     --dump-render-token context_bar
+run_case render_token_context_bar   sample-input.json ctx-bar.json     --dump-render-token context
 
 # Phase 6: render_line / render_all
 run_case render_line_default sample-input.json default-min.json --dump-render-line 0

@@ -8,14 +8,14 @@
     "separator": "pipe",
     "bar_style": null,
     "color_depth": "auto",
-    "empty_behavior": "hide",
+    "empty_behavior": "placeholder",
     "placeholder": "—",
     "bar_width": 10
   },
   "lines": [
     [
       "model",
-      "context_pct",
+      "context",
       "cost",
       "rl_5h",
       "rl_7d"

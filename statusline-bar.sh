@@ -81,16 +81,16 @@ JSON
 read -r -d '' PRESETS_JSON <<'JSON' || true
 {
   "minimum": {
-    "lines": [ ["model","context_pct","cost"] ],
+    "lines": [ ["model","context","cost"] ],
     "token_formats": {}
   },
   "compact": {
-    "lines": [ ["model","context_pct","cost","git_branch","duration","rl_5h"] ],
+    "lines": [ ["model","context","cost","git_branch","duration","rl_5h"] ],
     "token_formats": { "rl_5h": "percent" }
   },
   "default": {
     "lines": [
-      ["model","context_pct","cost","rl_5h","rl_7d"],
+      ["model","context","cost","rl_5h","rl_7d"],
       ["thinking","effort","dir","worktree","git_branch","lines_added","lines_removed","duration"]
     ],
     "token_formats": {
@@ -100,7 +100,7 @@ read -r -d '' PRESETS_JSON <<'JSON' || true
   },
   "modern": {
     "lines": [
-      ["model","context_pct","git_branch","git_staged","git_modified","cost"],
+      ["model","context","git_branch","git_staged","git_modified","cost"],
       ["rl_5h","rl_7d","duration"]
     ],
     "token_formats": {
@@ -110,11 +110,12 @@ read -r -d '' PRESETS_JSON <<'JSON' || true
   },
   "fancy": {
     "lines": [
-      ["model","context_bar","cost","duration"],
+      ["model","context","cost","duration"],
       ["rl_5h","rl_7d"],
       ["dir","git_branch","git_status","thinking","effort","battery","clock"]
     ],
     "token_formats": {
+      "context": "progressbar+percent",
       "rl_5h": "progressbar+percent+countdown",
       "rl_7d": "progressbar+percent+countdown",
       "battery": "progressbar+percent"
@@ -122,8 +123,8 @@ read -r -d '' PRESETS_JSON <<'JSON' || true
   },
   "everything": {
     "lines": [
-      ["model","session_name","session_id","context_pct","context_bar","cache_hit","cost","api_duration"],
-      ["rl_5h","rl_7d","thinking","effort","output_style","version","agent_name","vim_mode","fast_mode","exceeds_200k"],
+      ["model","session_name","session_id","context","tokens_input","tokens_output","context_size","context_remaining"],
+      ["cache_hit","cost","api_duration","rl_5h","rl_7d","thinking","effort","output_style","version","agent_name","vim_mode","fast_mode","exceeds_200k"],
       ["dir","worktree","added_dirs","git_worktree","transcript","git_branch","git_status","git_staged","git_modified","git_untracked","git_ahead_behind","lines_added","lines_removed"],
       ["duration","clock","date","hostname","user","battery","memory","load"]
     ],
@@ -131,13 +132,14 @@ read -r -d '' PRESETS_JSON <<'JSON' || true
   },
   "maximum": {
     "lines": [
-      ["model","session_name","session_id","context_pct","context_bar","cache_hit","cost","api_duration"],
-      ["rl_5h","rl_7d","thinking","effort","output_style","version","agent_name","vim_mode","fast_mode","exceeds_200k"],
+      ["model","session_name","session_id","context","tokens_input","tokens_output","context_size","context_remaining"],
+      ["cache_hit","cost","api_duration","rl_5h","rl_7d","thinking","effort","output_style","version","agent_name","vim_mode","fast_mode","exceeds_200k"],
       ["dir","worktree","added_dirs","git_worktree","transcript","git_branch","git_status","git_staged","git_modified","git_untracked","git_ahead_behind","lines_added","lines_removed"],
       ["duration","clock","date","hostname","user","battery","memory","load"]
     ],
     "token_formats": {
-      "context_pct": "progressbar+percent",
+      "context": "progressbar+percent+tokens",
+      "context_remaining": "progressbar+percent",
       "cache_hit": "progressbar+percent",
       "rl_5h": "progressbar+percent+countdown",
       "rl_7d": "progressbar+percent+countdown",
@@ -157,16 +159,22 @@ JSON
 
 read -r -d '' TOKENS_JSON <<'JSON' || true
 {
-  "model": { "source":"claude", "default_prefix":"emoji", "default_format":"value", "applicable_formats":["value","short","id","id_short"],
+  "model": { "source":"claude", "default_prefix":"emoji", "default_format":"value", "applicable_formats":["value","compact","short","id","id_short"],
              "prefix": { "none":"", "label":"Model:", "emoji":"🤖", "nerd":"", "ascii":"[M]" } },
   "session_name": { "source":"claude", "default_prefix":"emoji", "default_format":"value", "applicable_formats":["value"],
              "prefix": { "none":"", "label":"Session:", "emoji":"📝", "nerd":"", "ascii":"[S]" } },
-  "context_pct": { "source":"claude", "default_prefix":"emoji", "default_format":"percent",
-             "applicable_formats":["value","percent","progressbar","progressbar+percent"],
+  "context": { "source":"claude", "default_prefix":"emoji", "default_format":"percent",
+             "applicable_formats":["value","percent","progressbar","progressbar+percent","tokens","tokens+size","percent+tokens","progressbar+percent+tokens"],
              "prefix": { "none":"", "label":"Ctx:", "emoji":"🧠", "nerd":"", "ascii":"[C]" } },
-  "context_bar": { "source":"claude", "default_prefix":"emoji", "default_format":"progressbar+percent",
+  "tokens_input": { "source":"claude", "default_prefix":"emoji", "default_format":"short", "applicable_formats":["value","short"],
+             "prefix": { "none":"", "label":"In:", "emoji":"📥", "nerd":"", "ascii":"[in]" } },
+  "tokens_output": { "source":"claude", "default_prefix":"emoji", "default_format":"short", "applicable_formats":["value","short"],
+             "prefix": { "none":"", "label":"Out:", "emoji":"📤", "nerd":"", "ascii":"[out]" } },
+  "context_size": { "source":"claude", "default_prefix":"emoji", "default_format":"short", "applicable_formats":["value","short"],
+             "prefix": { "none":"", "label":"CtxMax:", "emoji":"🪟", "nerd":"", "ascii":"[CW]" } },
+  "context_remaining": { "source":"claude", "default_prefix":"emoji", "default_format":"percent",
              "applicable_formats":["value","percent","progressbar","progressbar+percent"],
-             "prefix": { "none":"", "label":"Ctx:", "emoji":"🧠", "nerd":"", "ascii":"[C]" } },
+             "prefix": { "none":"", "label":"Free:", "emoji":"🆓", "nerd":"", "ascii":"[F]" } },
   "cache_hit": { "source":"claude", "default_prefix":"emoji", "default_format":"percent",
              "applicable_formats":["value","percent","progressbar","progressbar+percent"],
              "prefix": { "none":"", "label":"Cache:", "emoji":"💾", "nerd":"", "ascii":"[H]" } },
@@ -502,6 +510,33 @@ _strip_trailing_paren() {
   printf '%s' "$s"
 }
 
+# _strip_paren_context <s> → drop just the word " context" (and any
+# surrounding whitespace) from inside the trailing (...) group. The
+# parens stay. Used by the model `compact` format:
+# "Opus 4.7 (1M context)" → "Opus 4.7 (1M)".
+_strip_paren_context() {
+  printf '%s' "$1" | sed -E 's/\(([^()]*)[[:space:]]+context[[:space:]]*\)$/(\1)/'
+}
+
+# _fmt_short <n> → human-readable abbreviation for token counts:
+# < 1000 stays as integer; ≥ 1000 → "12k" / "999k"; ≥ 1000000 → "1.2M"
+# / "10M" (trailing .0 elided). Used by tokens_input/output, context_size,
+# and the context token's combined token-count formats.
+_fmt_short() {
+  awk -v n="$1" 'BEGIN {
+    if (n+0 <= 0) { printf "0"; exit }
+    if (n >= 1000000) {
+      v = n / 1000000.0
+      if (v == int(v)) printf "%dM", v
+      else printf "%.1fM", v
+    } else if (n >= 1000) {
+      printf "%dk", n / 1000
+    } else {
+      printf "%d", n
+    }
+  }'
+}
+
 # ============================================================
 # SECTION: Progressbar
 # ============================================================
@@ -631,8 +666,19 @@ tok_api_duration() {
 }
 
 # Percent tokens — emit raw integer (0-100); format applied by composition.
-tok_context_pct() { jq -r '.context_window.used_percentage // empty' <<<"$INPUT_JSON"; }
-tok_context_bar() { tok_context_pct; }
+tok_context() { jq -r '.context_window.used_percentage // empty' <<<"$INPUT_JSON"; }
+tok_tokens_input()      { jq -r '.context_window.total_input_tokens  // empty' <<<"$INPUT_JSON"; }
+tok_tokens_output()     { jq -r '.context_window.total_output_tokens // empty' <<<"$INPUT_JSON"; }
+tok_context_size()      { jq -r '.context_window.context_window_size // empty' <<<"$INPUT_JSON"; }
+tok_context_remaining() {
+  # Prefer .remaining_percentage when present; otherwise derive from used.
+  local r u
+  r="$(jq -r '.context_window.remaining_percentage // empty' <<<"$INPUT_JSON")"
+  if [[ -n "$r" ]]; then printf '%s' "$r"; return; fi
+  u="$(jq -r '.context_window.used_percentage // empty' <<<"$INPUT_JSON")"
+  [[ -z "$u" ]] && return
+  awk -v u="$u" 'BEGIN { printf "%d", 100 - (u+0) }'
+}
 tok_cache_hit() {
   local r c i
   r="$(jq -r '.context_window.current_usage.cache_read_input_tokens // 0' <<<"$INPUT_JSON")"
@@ -797,14 +843,27 @@ apply_format() {
   local id="$1" fmt="$2" raw="$3" bar_style="$4" bar_width="$5" now="$6"
   case "$fmt" in
     value) printf '%s' "$raw" ;;
+    compact)
+      # Model-only today: drop the " context" qualifier from inside the
+      # trailing (...) of display_name. "Opus 4.7 (1M context)" → "Opus 4.7
+      # (1M)". Other tokens pass through unchanged.
+      case "$id" in
+        model)
+          local _dn; _dn="$(jq -r '.model.display_name // ""' <<<"$INPUT_JSON")"
+          printf '%s' "$(_strip_paren_context "$_dn")" ;;
+        *) printf '%s' "$raw" ;;
+      esac ;;
     short)
-      # Model-only today: strip a trailing (...) or [...] modifier from
-      # display_name. "Opus 4.7 (1M context)" → "Opus 4.7". Other tokens
-      # pass through unchanged.
+      # For model: strip a trailing (...) or [...] modifier from
+      # display_name. "Opus 4.7 (1M context)" → "Opus 4.7".
+      # For numeric tokens (tokens_input/output, context_size): render
+      # a human-friendly short form ("202378" → "202k", "1000000" → "1M").
       case "$id" in
         model)
           local _dn; _dn="$(jq -r '.model.display_name // ""' <<<"$INPUT_JSON")"
           printf '%s' "$(_strip_trailing_paren "$_dn")" ;;
+        tokens_input|tokens_output|context_size)
+          _fmt_short "$raw" ;;
         *) printf '%s' "$raw" ;;
       esac ;;
     id)
@@ -826,6 +885,53 @@ apply_format() {
       # Strip a leading +/- sign (e.g. lines_added "+128" → "128",
       # lines_removed "-42" → "42"). Other values pass through unchanged.
       printf '%s' "${raw#[+-]}" ;;
+    tokens)
+      # context-only: short-form of total_input_tokens ("202k").
+      case "$id" in
+        context)
+          local _it; _it="$(jq -r '.context_window.total_input_tokens // 0' <<<"$INPUT_JSON")"
+          _fmt_short "$_it" ;;
+        *) printf '%s' "$raw" ;;
+      esac ;;
+    "tokens+size")
+      # context-only: used / window-size short forms ("202k/1M").
+      case "$id" in
+        context)
+          local _it _sz
+          _it="$(jq -r '.context_window.total_input_tokens // 0' <<<"$INPUT_JSON")"
+          _sz="$(jq -r '.context_window.context_window_size // 0' <<<"$INPUT_JSON")"
+          printf '%s/%s' "$(_fmt_short "$_it")" "$(_fmt_short "$_sz")" ;;
+        *) printf '%s' "$raw" ;;
+      esac ;;
+    "percent+tokens")
+      # context-only: "20% (202k/1M)".
+      case "$id" in
+        context)
+          [[ -z "$raw" ]] && return
+          local _p="${raw%%|*}" _it _sz
+          _it="$(jq -r '.context_window.total_input_tokens // 0' <<<"$INPUT_JSON")"
+          _sz="$(jq -r '.context_window.context_window_size // 0' <<<"$INPUT_JSON")"
+          printf '%s (%s/%s)' \
+            "$(fmt_percent "$_p")" \
+            "$(_fmt_short "$_it")" \
+            "$(_fmt_short "$_sz")" ;;
+        *) printf '%s' "$raw" ;;
+      esac ;;
+    "progressbar+percent+tokens")
+      # context-only: bar + "20% (202k/1M)".
+      case "$id" in
+        context)
+          [[ -z "$raw" ]] && return
+          local _p="${raw%%|*}" _it _sz
+          _it="$(jq -r '.context_window.total_input_tokens // 0' <<<"$INPUT_JSON")"
+          _sz="$(jq -r '.context_window.context_window_size // 0' <<<"$INPUT_JSON")"
+          printf '%s %s (%s/%s)' \
+            "$(render_bar "$_p" "$bar_style" "$bar_width")" \
+            "$(fmt_percent "$_p")" \
+            "$(_fmt_short "$_it")" \
+            "$(_fmt_short "$_sz")" ;;
+        *) printf '%s' "$raw" ;;
+      esac ;;
     per_hour)
       # cost-only: project total_cost_usd over total_duration_ms to an
       # hourly burn rate ("$6.26/hr"). Blank if duration is missing/zero.
@@ -963,7 +1069,7 @@ build_default_config() {
       separator: "pipe",
       bar_style: null,
       color_depth: "auto",
-      empty_behavior: "hide",
+      empty_behavior: "placeholder",
       placeholder: "—",
       bar_width: 10
     },
@@ -1077,7 +1183,7 @@ _threshold_color() {
   local id="$1" raw="$2" theme="$3"
   local pct
   case "$id" in
-    context_pct|context_bar|cache_hit|rl_5h|rl_7d)
+    context|cache_hit|rl_5h|rl_7d)
       pct="${raw%%|*}"
       pct="$(awk -v v="$pct" 'BEGIN{printf "%d", v+0}')"
       if   (( pct >= 90 )); then _theme_var "$theme" crit
@@ -1128,7 +1234,7 @@ render_token() {
   local raw; raw="$("tok_${id}")"
 
   local empty_behavior placeholder
-  empty_behavior="$(jq -r '.global.empty_behavior // "hide"' <<<"$CONFIG_JSON")"
+  empty_behavior="$(jq -r '.global.empty_behavior // "placeholder"' <<<"$CONFIG_JSON")"
   placeholder="$(jq -r '.global.placeholder // "—"' <<<"$CONFIG_JSON")"
   if [[ -z "$raw" ]]; then
     if [[ "$empty_behavior" == "hide" ]]; then return; fi
@@ -1339,8 +1445,8 @@ _TOOLTIPS_PRESET=(
   "Default: 2 lines, 13 tokens — usage row on top; thinking / dir / git / counters / duration below."
   "Modern: 2 lines, 9 tokens — git staged/modified inline; rate-limit bars + duration on line 2."
   "Fancy: 3 lines, 13 tokens — context bar, rate-limit bars, OS chrome (battery, clock), git status."
-  "Everything: 4 lines, all 39 tokens, each using its default format. Coverage over compactness."
-  "Maximum: same 39 tokens as Everything, but with progress bars, countdowns, and combined views where applicable."
+  "Everything: 4 lines, all 42 tokens, each using its default format. Coverage over compactness."
+  "Maximum: same 42 tokens as Everything, but with progress bars, countdowns, and combined views where applicable."
 )
 
 # Count how many config fields differ from the built-in defaults. Used to
@@ -1540,7 +1646,7 @@ _wiz_draw_main() {
   printf '  statusline-bar ▸ Main\n\n'
   local total_tokens; total_tokens="$(jq -r '[.lines[][]] | length' <<<"$CONFIG_JSON")"
   local items=("Preset" "Theme" "Prefix style" "Separator" "Bar style" "Tokens & lines" "Empty data" "Color depth")
-  local vals=("$preset" "$theme" "$prefix" "$sep" "$bar" "$lines lines · $total_tokens tokens" "$(jq -r '.global.empty_behavior // "hide"' <<<"$CONFIG_JSON")" "$(jq -r '.global.color_depth // "auto"' <<<"$CONFIG_JSON")")
+  local vals=("$preset" "$theme" "$prefix" "$sep" "$bar" "$lines lines · $total_tokens tokens" "$(jq -r '.global.empty_behavior // "placeholder"' <<<"$CONFIG_JSON")" "$(jq -r '.global.color_depth // "auto"' <<<"$CONFIG_JSON")")
   # Conditional 9th row: appears only when something differs from defaults.
   local custom_count; custom_count="$(_wiz_count_customizations)"
   if (( custom_count > 0 )); then
@@ -1592,7 +1698,7 @@ _wiz_handle_main() {
              _wiz_push bar "$(_index_of _BARS "$cur")"
            fi ;;
         5) _wiz_push tokens_lines ;;
-        6) cur="$(jq -r '.global.empty_behavior // "hide"' <<<"$CONFIG_JSON")"
+        6) cur="$(jq -r '.global.empty_behavior // "placeholder"' <<<"$CONFIG_JSON")"
            _wiz_push empty     "$(_index_of _EMPTY      "$cur")" ;;
         7) cur="$(jq -r '.global.color_depth // "auto"' <<<"$CONFIG_JSON")"
            _wiz_push depth     "$(_index_of _DEPTH      "$cur")" ;;
@@ -1839,7 +1945,7 @@ _wiz_draw_bar() {
 _wiz_handle_bar() { _wiz_select_handle _BARS '.global.bar_style=$v'; }
 
 _wiz_draw_empty() {
-  local cur; cur="$(jq -r '.global.empty_behavior // "hide"' <<<"$CONFIG_JSON")"
+  local cur; cur="$(jq -r '.global.empty_behavior // "placeholder"' <<<"$CONFIG_JSON")"
   _wiz_draw_select "Empty data" "$cur" '.global.empty_behavior=$v' _EMPTY_EX "" "${_EMPTY[@]}"
 }
 _wiz_handle_empty() { _wiz_select_handle _EMPTY '.global.empty_behavior=$v'; }
@@ -2348,7 +2454,7 @@ _tl_paste_mark() {
 # ============================================================
 # SECTION: Token picker (Tokens & Lines → press 'a')
 # ============================================================
-# Full-screen grouped list of all 39 tokens. Pressing Enter inserts the
+# Full-screen grouped list of all 42 tokens. Pressing Enter inserts the
 # selected token after the cursor in the calling Tokens & Lines screen.
 
 TOK_PICKER_LIST=()    # ordered ids
@@ -2392,8 +2498,11 @@ _token_description() {
   case "$1" in
     model)            echo "Current Claude model display name" ;;
     session_name)     echo "Custom session name set via --name or /rename" ;;
-    context_pct)      echo "% of context window used (formatted as 4%)" ;;
-    context_bar)      echo "Same data as context_pct but defaults to progressbar+percent" ;;
+    context)          echo "% of context window used; rich formats include tokens used and window size" ;;
+    tokens_input)     echo "Total input tokens this session (e.g. 202k)" ;;
+    tokens_output)    echo "Total output tokens this session (e.g. 265)" ;;
+    context_size)     echo "Configured context window size (e.g. 1M)" ;;
+    context_remaining) echo "% of context window still available" ;;
     cache_hit)        echo "% of input tokens served from cache" ;;
     cost)             echo "Session cost in USD (formatted \$0.40)" ;;
     duration)         echo "Total wall-clock time since session start" ;;
