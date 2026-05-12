@@ -3,6 +3,8 @@
 *.swp
 *.swo
 *~
+.idea/
+.vscode/
 
 # Local-only files
 *.local.json

@@ -2,12 +2,21 @@
 
 Customizable Claude Code statusline. Single bash file, no JavaScript, no network, no daemon.
 
-The `default` preset rendered with the synthetic example data (run `--examples` to see this and every other preset, theme, prefix style, separator, and bar):
+The `default` preset rendered against a real Claude Code session:
+
+![default preset rendered in the terminal — two lines covering model, context, cost, rate limits, git status, line counters, and duration](screenshots/preset_default.png)
+
+Run `--examples` to see this and every other preset, theme, prefix style, separator, and bar rendered live in your terminal — the catalog below shows the same output as screenshots.
+
+<details>
+<summary>Text-only version (copy-pasteable)</summary>
 
 ```
 🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40 | 🕔 5h █████░░░░░ 50% 🔄 3h 25m 13s | 🕖 7d █████░░░░░ 50% 🔄 5d 2h 17m 0s
 💭 true | 💪 xhigh | 📁 example_dir | 🌳 main | 🌿 feat/wizard | 📊 +3 ~5 ?2 | 🔀 ↑2 ↓1 | ➕ +128 | ➖ -42 | ⏳ 3m 50s
 ```
+
+</details>
 
 ## Why
 
@@ -84,8 +93,7 @@ The `command` path must be **absolute** — `~` and `$HOME` aren't expanded. Rep
 Restart Claude Code (or open a new session) and the statusline appears at the bottom. If it doesn't, run the script manually against the bundled sample input to confirm it works:
 
 ```bash
-~/.local/share/statusline-bar/statusline-bar.sh \
-  < ~/.local/share/statusline-bar/test/sample-input.json
+~/.local/share/statusline-bar/statusline-bar.sh < ~/.local/share/statusline-bar/test/sample-input.json
 ```
 
 You should see a populated two-line statusline (model, context, cost, rate limits, git info, …) — the same layout you'd see in a real Claude Code session.
@@ -121,7 +129,46 @@ The wizard opens on a main menu with rows for preset, theme, prefix style, separ
 - **s** save, **r** reset to defaults, **q** quit (prompts to save if unsaved changes)
 - **Esc** goes back one level
 
+![Wizard main menu showing preset, theme, prefix style, separator, bar style, Tokens & lines, empty data, and color depth rows; live preview pane at the bottom](screenshots/menu_main.png)
+
 The bottom pane is a live preview that re-renders as you change settings. The focused token / separator is **underlined and wrapped in `▶ ◀` markers** so its real colors stay visible.
+
+Picker screens for the single-choice settings (preset, theme, prefix, separator, bar) all follow the same pattern — list of options on the left, per-option sample on the right, full statusline preview at the bottom:
+
+<table>
+  <tr>
+    <td><img src="screenshots/menu_preset.png" alt="Preset picker — 11 presets each with a short description and token count" /></td>
+    <td><img src="screenshots/menu_theme.png" alt="Theme picker — 21 themes grouped by terminal compatibility, each with good/warn/crit color swatches" /></td>
+  </tr>
+  <tr>
+    <td><img src="screenshots/menu_prefixstyle.png" alt="Prefix style picker — 8 styles each with a token render sample" /></td>
+    <td><img src="screenshots/menu_seperator.png" alt="Separator picker — 19 separators each with a literal char preview" /></td>
+  </tr>
+  <tr>
+    <td colspan="2"><img src="screenshots/menu_barstyle.png" alt="Bar style picker — 12 bar styles each with a 50% sample bar" /></td>
+  </tr>
+</table>
+
+The **Tokens & lines** screen is the layout editor — line tabs at the top, token list with inline separators in the middle, live full preview at the bottom:
+
+![Tokens & lines main screen showing line tabs, token list with inline separator rows, and live preview](screenshots/menu_tokens_lines.png)
+
+Drill into any token to edit its per-token prefix / format / bar style overrides:
+
+<table>
+  <tr>
+    <td><img src="screenshots/menu_tokens_lines_model.png" alt="Token detail screen for model — prefix, format, bar style, reset rows" /></td>
+    <td><img src="screenshots/menu_tokens_lines_model_format.png" alt="Format picker for model token — value, compact, short, id, id_short each with a sample render" /></td>
+  </tr>
+  <tr>
+    <td><img src="screenshots/menu_tokens_lines_model_prefix.png" alt="Prefix override picker for model — inherit global + 8 prefix styles" /></td>
+    <td><img src="screenshots/menu_tokens_lines_rl5h_format.png" alt="Format picker for rl_5h — 12 formats from value through progressbar+percent+remaining_short" /></td>
+  </tr>
+</table>
+
+Hit `a` from any line to add a token — the picker shows all 42 grouped by source, each row with a live sample and a `✓` mark next to tokens already used somewhere:
+
+![Token picker — 42 tokens grouped by Claude session / Git / Local OS, each row showing the rendered sample](screenshots/menu_tokens_lines_add_token.png)
 
 ### Tune it live alongside Claude Code
 
@@ -162,10 +209,100 @@ Globals can be overridden per-token via `tokens.<id>.prefix`, `.format`, `.bar_s
 
 ## Showcase
 
-The output of `statusline-bar.sh --examples` (your terminal will show this in color):
+The same output you'd see from `statusline-bar.sh --examples` in your terminal, captured here as screenshots. Each `<picture>` element below auto-switches to a matching light or dark variant depending on your GitHub theme.
+
+### Presets
+
+11 layouts, ranging from 3 tokens on one line to 42 on four. Individual close-ups first:
+
+<table>
+  <tr>
+    <td><b>minimum</b><br><img src="screenshots/preset_minimum.png" alt="minimum preset"></td>
+    <td><b>compact</b><br><img src="screenshots/preset_compact.png" alt="compact preset"></td>
+  </tr>
+  <tr>
+    <td><b>focus</b><br><img src="screenshots/preset_focus.png" alt="focus preset"></td>
+    <td><b>coder</b><br><img src="screenshots/preset_coder.png" alt="coder preset"></td>
+  </tr>
+  <tr>
+    <td><b>default</b><br><img src="screenshots/preset_default.png" alt="default preset"></td>
+    <td><b>modern</b><br><img src="screenshots/preset_modern.png" alt="modern preset"></td>
+  </tr>
+  <tr>
+    <td><b>rates</b> (dark theme)<br><img src="screenshots/preset_rates_dark.png" alt="rates preset, dark theme"></td>
+    <td><b>fancy</b> (dark theme)<br><img src="screenshots/preset_fancy_dark.png" alt="fancy preset, dark theme"></td>
+  </tr>
+</table>
+
+The full 11-preset catalog at a glance:
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="screenshots/showroom_presets_dark.png">
+  <img src="screenshots/showroom_presets_light.png" alt="All 11 presets rendered: minimum, compact, focus, coder, default, modern, rates, claude, fancy, everything, maximum">
+</picture>
+
+### Themes
+
+21 palettes grouped by terminal compatibility — Auto/adaptive, Light, Dark. Each row shows the good/warn/crit/accent swatches, then a model + context render, then three threshold-colored bars at 25%/75%/95%:
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="screenshots/showroom_themes_dark.png">
+  <img src="screenshots/showroom_themes_light.png" alt="All 21 themes rendered with color swatches and threshold bars">
+</picture>
+
+### Prefix styles
+
+8 ways to label a token — none, label, emoji, nerd, ascii, plus three combos. The same `default` preset rendered with three different prefix styles applied globally:
+
+<table>
+  <tr>
+    <td align="center"><b>emoji</b> (default)</td>
+    <td align="center"><b>ascii</b></td>
+    <td align="center"><b>nerd</b></td>
+  </tr>
+  <tr>
+    <td><img src="screenshots/preset_default.png" alt="default preset with emoji prefix"></td>
+    <td><img src="screenshots/preset_default_ascii.png" alt="default preset with ascii prefix"></td>
+    <td><img src="screenshots/preset_default_nerd.png" alt="default preset with nerd font prefix"></td>
+  </tr>
+</table>
+
+Full prefix-style catalog (all 8 styles applied to model + context + cost):
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="screenshots/showroom_prefix_sets_dark.png">
+  <img src="screenshots/showroom_prefix_sets_light.png" alt="All 8 prefix styles applied to model/context/cost">
+</picture>
+
+### Separators
+
+19 separators across 4 families — ASCII, Unicode, Decorative, Powerline:
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="screenshots/showroom_seperators_dark.png">
+  <img src="screenshots/showroom_seperators_light.png" alt="All 19 separators rendered between three sample tokens">
+</picture>
+
+### Bar styles
+
+12 progress-bar styles — each row shows the same bar at 25 / 75 / 95% so good/warn/crit colors are all visible:
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="screenshots/showroom_barstyles_dark.png">
+  <img src="screenshots/showroom_barstyles_light.png" alt="All 12 bar styles rendered at three threshold percentages">
+</picture>
+
+### Tokens
+
+All 42 tokens grouped by source — Claude session (29), Git (6), Local OS (7) — each with a live sample and an inline `ⓘ` description:
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="screenshots/showroom_tokens_dark.png">
+  <img src="screenshots/showroom_tokens_light.png" alt="All 42 tokens rendered alone with inline descriptions">
+</picture>
 
 <details>
-<summary><b>Click to expand the full catalog</b> — 11 presets · 21 themes · 8 prefix styles · 19 separators · 12 bar styles · 42 tokens</summary>
+<summary>Text-only catalog (copy-pasteable)</summary>
 
 ```
 ## Presets  (factory layouts; switch via --preset NAME)
@@ -365,6 +502,23 @@ Flags:
 `statusline-bar.sh` with no flags and no stdin prints the help (same as `-h`). When piped JSON arrives on stdin (i.e. Claude Code calls it), it renders the statusline.
 
 ## Changelog
+
+### 0.5.0 — 2026-05-13
+
+**First public release.** Rolls up the v0.4.0 + v0.4.1 changes into a single tagged drop, with documentation tuned for new users.
+
+**Install / docs:**
+- Switched from `curl …/vX.Y.Z/statusline-bar.sh` to `git clone` — clones to `~/.local/share/statusline-bar`, upgrade via `git pull`, no version pinning to maintain.
+- Rewrote the **Wire it up in Claude Code** section to spell out the part new users trip on most: `~/.claude/settings.json` is one JSON object — *add* the `statusLine` key alongside `model` / `permissions` / `hooks` / etc., don't overwrite the file. Includes minimal-config example, merged-with-existing example, the trailing-comma reminder, and a sanity-check command that pipes `test/sample-input.json` into the script so you see a real two-line render before fiddling with Claude.
+- New **Tune it live alongside Claude Code** subsection documenting the workflow: leave the wizard open in one terminal, run a real CC session in another, save in the wizard, type any `/` slash command in CC to force a statusline tick — see the new config rendered against your live data.
+- Full **screenshots** throughout the README: hero, wizard pickers, Tokens & lines editor, token-detail screens, plus a **Showcase** section with light/dark `<picture>` switching for every catalog dimension (presets, themes, prefix styles, separators, bar styles, tokens). 33 screenshots organized into tables + showrooms.
+
+**Nerd Font glyph mapping** (was the v0.1.0-era follow-up):
+- Every one of the 42 tokens now has a Font Awesome glyph in its `nerd` prefix field, stored as `\uXXXX` JSON escapes so the source stays plain ASCII and grep-friendly. The `nerd` / `nerd+label` prefix styles render real icons in any Nerd-Font-patched terminal.
+
+**Carrying forward from v0.4.0** (see the entry below for the full list): +4 presets (focus, coder, rates, claude → 11 total), +11 themes (segmented by terminal compat → 21 total), +4 bar styles (gradient_dots / gradient_fade / gradient_shade / gradient_braille → 12 total), context-token consolidation + 4 new companion tokens, ~15 new format variants (model compact/short/id/id_short, cost per_hour/with_rate, duration short, rate-limit countdown_short / remaining_short and combined, context tokens / tokens+size / percent+tokens / progressbar+percent+tokens, lines count), default empty_behavior → placeholder, save-no-exit + per-screen reset, themes-picker segmentation, catalog redesign, sample-data refresh.
+
+Tests: 118 e2e cases passing.
 
 ### 0.4.0 — 2026-05-12
 
