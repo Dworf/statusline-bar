@@ -41,7 +41,7 @@ The Claude Code ecosystem already has a dozen excellent statuslines, each great 
 
 ```bash
 mkdir -p ~/.local/bin
-curl -fsSL https://raw.githubusercontent.com/Dworf/statusline-bar/v0.4.0/statusline-bar.sh \
+curl -fsSL https://raw.githubusercontent.com/Dworf/statusline-bar/v0.4.1/statusline-bar.sh \
   -o ~/.local/bin/statusline-bar.sh
 chmod +x ~/.local/bin/statusline-bar.sh
 ```
