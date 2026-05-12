@@ -3,7 +3,7 @@
 Customizable Claude Code statusline. Single bash file, no JavaScript, no network, no daemon.
 
 ```
-🤖 Opus 4.7 (1M) | 🧠 4% | 💰 $0.40 | ⏱️ 5h ░░░░░░░░░░ 0% 🔄 4h 58m | ⏱️ 7d █░░░░░░░░░ 6% 🔄 5d 23h
+🤖 Opus 4.7 (1M) | 🧠 4% | 💰 $0.40 | 🕔 ░░░░░░░░░░ 0% 🔄 4h 58m | 🕖 █░░░░░░░░░ 6% 🔄 5d 23h
 💭 true | 💪 xhigh | 📁 my-project | 🌿 main | ➕ +128 | ➖ -42 | ⏳ 3m 50s
 ```
 
@@ -18,7 +18,7 @@ The Claude Code ecosystem already has a dozen excellent statuslines, each great 
 
 ## Features
 
-- **Single file**, ~1,750 lines of bash 3.2+. Drop it anywhere on `$PATH`.
+- **Single file**, ~3,000 lines of bash 3.2+. Drop it anywhere on `$PATH`.
 - **Up to 4 lines** of statusline, each a freely-arranged token sequence.
 - **39 tokens**: 26 from Claude Code's stdin JSON + 6 from `git` + 7 from local OS.
 - **9 format variants** per token: `value`, `percent`, `progressbar`, `progressbar+percent`, `countdown`, `remaining`, `progressbar+percent+countdown`, `combined`, `flag`.
@@ -27,7 +27,7 @@ The Claude Code ecosystem already has a dozen excellent statuslines, each great 
 - **8 progress-bar styles**: `blocks`, `heavy`, `line`, `braille`, `dots`, `arrows`, `ascii`, `gradient` (sub-character precision via eighths).
 - **8 prefix styles**: `none`, `label`, `emoji`, `nerd`, `ascii` + `emoji+label`, `label+emoji`, `nerd+label`.
 - **19 separators** across 4 families: ASCII (3), Unicode (10), Decorative (3), Powerline / Nerd-Font (3).
-- **Interactive TUI wizard** with always-visible live preview pane.
+- **Interactive TUI wizard** with always-visible live preview pane and a dedicated **Tokens & lines** screen for add / change / delete / reorder, inline separator editing, and per-token overrides.
 - **Auto-detected color depth** (truecolor / 256 / 16 / none) with `$NO_COLOR` honored.
 - **Threshold-based coloring** with sane defaults — battery inverts (low % = critical), memory uses a relaxed table (80% is normal).
 - **Configurable empty-data handling** (`hide` or `placeholder`).
@@ -39,7 +39,7 @@ The Claude Code ecosystem already has a dozen excellent statuslines, each great 
 
 ```bash
 mkdir -p ~/.local/bin
-curl -fsSL https://raw.githubusercontent.com/Dworf/statusline-bar/v0.1.0/statusline-bar.sh \
+curl -fsSL https://raw.githubusercontent.com/Dworf/statusline-bar/v0.3.0/statusline-bar.sh \
   -o ~/.local/bin/statusline-bar.sh
 chmod +x ~/.local/bin/statusline-bar.sh
 ```
@@ -75,25 +75,38 @@ Then set your terminal's font to the Nerd Font variant (e.g. "JetBrainsMono Nerd
 Launch the interactive wizard:
 
 ```bash
-statusline-bar.sh -c
+statusline-bar.sh -w        # or --wizard
 ```
 
-Arrow keys + Enter to navigate, Esc to go back, **s** to save, **r** to reset, **q** to quit. The bottom pane shows a live preview as you change settings.
+The wizard opens on a main menu with rows for preset, theme, prefix style, separator, bar style, **Tokens & lines** (the full layout editor — see below), empty-data behavior, and color depth. Use:
+
+- **↑/↓** to navigate, **←/→** to switch where applicable, **Enter** to drill in
+- **s** save, **r** reset to defaults, **q** quit (prompts to save if unsaved changes)
+- **Esc** goes back one level
+
+The bottom pane is a live preview that re-renders as you change settings. The focused token / separator is **underlined and wrapped in `▶ ◀` markers** so its real colors stay visible.
+
+Inside **Tokens & lines** you get:
+
+- A horizontal line tab strip (`[1]  2   3   +`) — `←/→` switches the active line, `↓` enters the token list, `d` deletes a line, Enter on `+` adds a new one (up to 4).
+- Token rows + always-visible inline separator rows (`↓ pipe (global)` / `↓ star (override)`).
+- **a** add a token, **c** change it, **d** delete, **m** mark for cross-line move, **p** paste, **Shift+↑/↓** move within the line.
+- Enter on a token opens its per-override detail screen; Enter on a separator row opens a separator picker scoped to that one position.
 
 ## Browse
 
 ```bash
-statusline-bar.sh --examples catalog
+statusline-bar.sh -e        # or --examples
 ```
 
-Prints one sample per preset / theme / prefix style / separator / bar style. For the full combinatorial tour, `--examples all` (slow; pipes through `$PAGER`).
+Prints a catalog: one sample per preset, theme, prefix style, separator, and bar style. Uses your real terminal's color depth, so themes visibly differ — what you see is what you'd get if you picked it. Pipe through `less -R` if you want pagination with ANSI.
 
-## Catalog
+## Reference
 
 - **39 tokens** — 26 from Claude stdin (model, context, cost, rate limits, vim mode, agent name, session id, …) + 6 git + 7 OS (clock, battery, memory, load, …)
 - **7 presets** — `minimum`, `compact`, `default`, `modern`, `fancy`, `everything`, `maximum`
 - **10 themes** — `default`, `dark`, `light`, `graphite`, `solarized`, `dracula`, `nord`, `gruvbox`, `tokyo-night`, `catppuccin`
-- **8 prefix styles** — `none`, `label`, `emoji`, `nerd`, `ascii` + 3 combos
+- **8 prefix styles** — `none`, `label`, `emoji`, `nerd`, `ascii` + `emoji+label`, `label+emoji`, `nerd+label`
 - **19 separators** — ASCII (3), Unicode (10), Decorative (3), Powerline (3)
 - **8 bar styles** — `blocks`, `heavy`, `line`, `braille`, `dots`, `arrows`, `ascii`, `gradient`
 - **9 formats** — `value`, `percent`, `progressbar`, `progressbar+percent`, `countdown`, `remaining`, `progressbar+percent+countdown`, `combined`, `flag`
@@ -113,20 +126,29 @@ Config lookup order (highest precedence first):
 
 The auto-created config includes a `$schema` field pointing at this repo's `schema.json` — VS Code, Cursor, JetBrains, and Neovim's LSP all give you autocomplete and inline docs while editing.
 
-Validate any config with `statusline-bar.sh --check --config PATH`.
+Validate any config with `statusline-bar.sh -c --config PATH` (or `--check`).
 
 ## CLI
 
 ```text
-statusline-bar.sh [FLAGS]               render from stdin (Claude Code mode)
-statusline-bar.sh -c | --wizard         interactive setup
-statusline-bar.sh --examples [MODE]     browse presets/themes/etc
-statusline-bar.sh --check               validate config; exit 0/1
-statusline-bar.sh --preset NAME         one-shot render override
-statusline-bar.sh --theme NAME          one-shot render override
-statusline-bar.sh --no-color            disable ANSI output
-statusline-bar.sh --config PATH         use specific config file
+statusline-bar.sh [FLAGS]            render from stdin (Claude Code mode)
+statusline-bar.sh -w | --wizard      interactive setup
+statusline-bar.sh -e | --examples    print a catalog of presets/themes/etc
+statusline-bar.sh -c | --check       validate config; exit 0/1
+
+Flags:
+  -h, --help                show help
+  -V, --version             print version
+  -w, --wizard              enter setup wizard
+  -e, --examples            print the catalog
+  -c, --check               validate config and exit
+      --config PATH         use this config file instead of default
+      --preset NAME         one-shot render with this preset
+      --theme NAME          one-shot render with this theme
+      --no-color            disable ANSI color output
 ```
+
+`statusline-bar.sh` with no flags and no stdin prints the help (same as `-h`). When piped JSON arrives on stdin (i.e. Claude Code calls it), it renders the statusline.
 
 ## Changelog
 
