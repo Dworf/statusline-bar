@@ -1551,7 +1551,7 @@ _wiz_draw_select() {  # title, current_value, mutation, examples-array-name, hea
   _wiz_preview_with "$mutation" "${items[$WIZARD_CURSOR]}"
   printf '\n'
   printf -- '─%.0s' {1..60}; printf '\n'
-  printf '  ↑↓ navigate (wraps)   Enter select   Esc back   q quit\n'
+  printf '  ↑↓ navigate (wraps)   Enter select   Esc back   s save   r reset   q quit\n'
 }
 
 # Each selection screen is wrapped as a small draw+handle pair using a shared list.
@@ -2364,7 +2364,7 @@ _wiz_draw_token_picker() {
   done
   printf '\n'
   printf -- '─%.0s' {1..60}; printf '\n'
-  printf '  ↑↓ navigate (wraps)   Enter add   Esc cancel\n'
+  printf '  ↑↓ navigate (wraps)   Enter add   s save   r reset   Esc cancel\n'
   _wiz_help_tooltip token_picker
 }
 
@@ -2443,7 +2443,7 @@ _wiz_draw_sep_picker() {
     render_all
   printf '\n'
   printf -- '─%.0s' {1..60}; printf '\n'
-  printf '  ↑↓ navigate (wraps)   Enter select   Esc cancel\n'
+  printf '  ↑↓ navigate (wraps)   Enter select   s save   r reset   Esc cancel\n'
   _wiz_help_tooltip sep_picker
 }
 
@@ -2495,7 +2495,7 @@ _wiz_draw_token_detail() {
   RENDER_HIGHLIGHT_ID="$id" _wiz_preview_line
   printf '\n'
   printf -- '─%.0s' {1..60}; printf '\n'
-  printf '  ↑↓ navigate (wraps)   Enter edit field   r reset   Esc back\n'
+  printf '  ↑↓ navigate (wraps)   Enter edit field   s save   r reset   Esc back\n'
   _wiz_help_tooltip token_detail
 }
 
@@ -2606,7 +2606,7 @@ _wiz_draw_token_field() {
     render_all
   printf '\n'
   printf -- '─%.0s' {1..60}; printf '\n'
-  printf '  ↑↓ navigate (wraps)   Enter select   Esc cancel\n'
+  printf '  ↑↓ navigate (wraps)   Enter select   s save   r reset   Esc cancel\n'
 }
 
 # Build TL_FIELD_EX parallel to TL_FIELD_ITEMS: each entry is the rendering
@@ -2696,6 +2696,7 @@ run_wizard() {
   WIZARD_CURSOR_STACK=()
   WIZARD_CURSOR=0
   WIZARD_DIRTY=0
+  WIZARD_FLASH=""
   WIZARD_TUI_SCRIPT="${OPT_TUI_SCRIPT:-}"
   local scripted=0
   [[ -n "$WIZARD_TUI_SCRIPT" ]] && scripted=1
@@ -2735,13 +2736,27 @@ run_wizard() {
       token_detail) _wiz_draw_token_detail ;;
       token_field)  _wiz_draw_token_field ;;
     esac
+    # Post-save flash: shown for one frame after a submenu save, so users
+    # get visible confirmation. Cleared on the next key press.
+    if [[ -n "$WIZARD_FLASH" ]]; then
+      printf '  \033[1;32m✓ %s\033[0m\n' "$WIZARD_FLASH"
+      WIZARD_FLASH=""
+    fi
     _wiz_next_key
     # Global shortcuts (apply on any screen)
     case "$KEY" in
       save)
-        save_config "${CONFIG_PATH:-$(_default_config_path)}" "$CONFIG_JSON"
+        local _save_path="${CONFIG_PATH:-$(_default_config_path)}"
+        save_config "$_save_path" "$CONFIG_JSON"
         WIZARD_DIRTY=0
-        break ;;
+        # Save-and-exit only on main. On any submenu, stay put so the user
+        # can continue editing — flash a confirmation so they know it took.
+        if [[ "$screen" == "main" ]]; then
+          break
+        else
+          WIZARD_FLASH="Saved to $_save_path"
+          continue
+        fi ;;
       reset)
         # On the token_detail screen, `r` resets just that one token's
         # overrides instead of the whole config. Everywhere else, `r`

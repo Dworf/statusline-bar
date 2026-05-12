@@ -55,7 +55,7 @@
   Preview (focused: default):
 🤖 Opus 4.7 (1M)
 ────────────────────────────────────────────────────────────
-  ↑↓ navigate (wraps)   Enter select   Esc back   q quit
+  ↑↓ navigate (wraps)   Enter select   Esc back   s save   r reset   q quit
 [H[2J[1;1H  statusline-bar ▸ Theme
 
                       good warn crit  text  bar style
@@ -73,7 +73,7 @@
   Preview (focused: dark):
 🤖 Opus 4.7 (1M)
 ────────────────────────────────────────────────────────────
-  ↑↓ navigate (wraps)   Enter select   Esc back   q quit
+  ↑↓ navigate (wraps)   Enter select   Esc back   s save   r reset   q quit
 [H[2J[1;1H  statusline-bar ▸ Theme
 
                       good warn crit  text  bar style
@@ -91,7 +91,7 @@
   Preview (focused: light):
 🤖 Opus 4.7 (1M)
 ────────────────────────────────────────────────────────────
-  ↑↓ navigate (wraps)   Enter select   Esc back   q quit
+  ↑↓ navigate (wraps)   Enter select   Esc back   s save   r reset   q quit
 [H[2J[1;1H  statusline-bar ▸ Theme
 
                       good warn crit  text  bar style
@@ -109,7 +109,7 @@
   Preview (focused: graphite):
 🤖 Opus 4.7 (1M)
 ────────────────────────────────────────────────────────────
-  ↑↓ navigate (wraps)   Enter select   Esc back   q quit
+  ↑↓ navigate (wraps)   Enter select   Esc back   s save   r reset   q quit
 [H[2J[1;1H  statusline-bar ▸ Theme
 
                       good warn crit  text  bar style
@@ -127,7 +127,7 @@
   Preview (focused: solarized):
 🤖 Opus 4.7 (1M)
 ────────────────────────────────────────────────────────────
-  ↑↓ navigate (wraps)   Enter select   Esc back   q quit
+  ↑↓ navigate (wraps)   Enter select   Esc back   s save   r reset   q quit
 [H[2J[1;1H  statusline-bar ▸ Theme
 
                       good warn crit  text  bar style
@@ -145,7 +145,7 @@
   Preview (focused: dracula):
 🤖 Opus 4.7 (1M)
 ────────────────────────────────────────────────────────────
-  ↑↓ navigate (wraps)   Enter select   Esc back   q quit
+  ↑↓ navigate (wraps)   Enter select   Esc back   s save   r reset   q quit
 [H[2J[1;1H  statusline-bar ▸ Main
 
   Preset          [default]
