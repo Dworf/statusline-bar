@@ -112,7 +112,7 @@ read -r -d '' PRESETS_JSON <<'JSON' || true
   "default": {
     "lines": [
       ["model","context","cost","rl_5h","rl_7d"],
-      ["thinking","effort","dir","worktree","git_branch","lines_added","lines_removed","duration"]
+      ["thinking","effort","dir","worktree","git_branch","git_status","git_ahead_behind","lines_added","lines_removed","duration"]
     ],
     "token_formats": {
       "rl_5h": "progressbar+percent+countdown",
@@ -284,7 +284,7 @@ read -r -d '' EXAMPLES_INPUT_JSON <<'JSON' || true
   "transcript_path": "/dev/null",
   "session_name": "Browse",
   "model": { "id": "claude-opus-4-7[1m]", "display_name": "Opus 4.7 (1M context)" },
-  "workspace": { "current_dir": "/tmp/x", "added_dirs": [] },
+  "workspace": { "current_dir": "/tmp/example_dir", "added_dirs": [] },
   "effort": { "level": "xhigh" },
   "thinking": { "enabled": true },
   "output_style": { "name": "default" },
@@ -1472,7 +1472,7 @@ _TOOLTIPS_TOKEN_DETAIL=(
 _TOOLTIPS_PRESET=(
   "Minimum: 1 line, 3 tokens — model, context %, cost. Smallest possible statusline."
   "Compact: 1 line, 6 tokens — adds git branch, duration, and the 5h rate limit (as % only)."
-  "Default: 2 lines, 13 tokens — usage row on top; thinking / dir / git / counters / duration below."
+  "Default: 2 lines, 15 tokens — usage row on top; thinking / dir / git / counters / duration below."
   "Modern: 2 lines, 9 tokens — git staged/modified inline; rate-limit bars + duration on line 2."
   "Fancy: 3 lines, 13 tokens — context bar, rate-limit bars, OS chrome (battery, clock), git status."
   "Everything: 4 lines, all 42 tokens, each using its default format. Coverage over compactness."
@@ -1821,11 +1821,11 @@ _DEPTH=(auto truecolor 256 16 none)
 _PRESETS_EX=(
   "1 line · 3 tokens"
   "1 line · 6 tokens"
-  "2 lines · 13 tokens"
+  "2 lines · 15 tokens"
   "2 lines · 9 tokens"
-  "3 lines · 11 tokens"
-  "4 lines · 29 tokens"
-  "4 lines · 29 tokens (detailed)"
+  "3 lines · 13 tokens"
+  "4 lines · 42 tokens"
+  "4 lines · 42 tokens (detailed)"
 )
 
 # _PREFIXES_EX and _SEPARATORS_EX are rebuilt at wizard start (so the

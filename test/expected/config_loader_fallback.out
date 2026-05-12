@@ -26,6 +26,8 @@
       "dir",
       "worktree",
       "git_branch",
+      "git_status",
+      "git_ahead_behind",
       "lines_added",
       "lines_removed",
       "duration"
