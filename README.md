@@ -64,31 +64,42 @@ Minimal config (only `statusLine`, fresh install):
 }
 ```
 
-Existing config with other top-level keys — add the highlighted block as a sibling:
+Existing config with other top-level keys — your file already has things like `model`, `permissions`, `hooks`, etc. **Add only the `statusLine` block** as one more sibling:
 
-```diff
- {
-   "model": "claude-opus-4-7",
--  "permissions": { ... }
-+  "permissions": { ... },
-+  "statusLine": {
-+    "type": "command",
-+    "command": "/Users/YOUR_USERNAME/.local/share/statusline-bar/statusline-bar.sh"
-+  }
- }
+```json
+{
+  "statusLine": {
+    "type": "command",
+    "command": "/Users/YOUR_USERNAME/.local/share/statusline-bar/statusline-bar.sh"
+  }
+}
 ```
 
-GitHub renders the `+` lines in green — that's everything you add. The `-` line + the `+` version above it just means: add a trailing comma to your previous last key (JSON doesn't allow trailing commas, so the previously-last key won't have one until you insert a sibling after it).
+So your merged file ends up looking like this — `statusLine` is the new bit, everything else was already there:
+
+```json
+{
+  "model": "claude-opus-4-7",
+  "permissions": { ... },
+  "statusLine": {
+    "type": "command",
+    "command": "/Users/YOUR_USERNAME/.local/share/statusline-bar/statusline-bar.sh"
+  }
+}
+```
+
+Heads up on JSON's no-trailing-commas rule: if your previously-last key didn't have a comma after its closing `}` or `]`, you need to add one when you append `statusLine` after it. Most JSON-aware editors (VS Code, Cursor, etc.) flag this automatically.
 
 The `command` path must be **absolute** — `~` and `$HOME` aren't expanded. Replace `YOUR_USERNAME` (or paste the full path from `realpath ~/.local/share/statusline-bar/statusline-bar.sh`). On Windows: use the WSL or Git Bash path.
 
-Restart Claude Code (or open a new session) and the statusline appears at the bottom. If it doesn't, run the script manually first to confirm it works:
+Restart Claude Code (or open a new session) and the statusline appears at the bottom. If it doesn't, run the script manually against the bundled sample input to confirm it works:
 
 ```bash
-echo '{}' | ~/.local/share/statusline-bar/statusline-bar.sh
+~/.local/share/statusline-bar/statusline-bar.sh \
+  < ~/.local/share/statusline-bar/test/sample-input.json
 ```
 
-You should see at least the model token render.
+You should see a populated two-line statusline (model, context, cost, rate limits, git info, …) — the same layout you'd see in a real Claude Code session.
 
 ### Requirements
 
