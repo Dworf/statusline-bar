@@ -8,6 +8,7 @@
   Tokens & lines  [2 lines · 13 tokens]
   Empty data      [hide]
   Color depth     [none]
+  Reset to defaults  [1 customization — Enter to reset all]
 
   Save (s)  Reset (r)  Quit (q)
 ────────────────────────────────────────────────────────────
@@ -28,6 +29,7 @@
   Tokens & lines  [2 lines · 13 tokens]
   Empty data      [hide]
   Color depth     [none]
+  Reset to defaults  [1 customization — Enter to reset all]
 
   Save (s)  Reset (r)  Quit (q)
 ────────────────────────────────────────────────────────────
@@ -48,6 +50,7 @@
   Tokens & lines  [2 lines · 13 tokens]
   Empty data      [hide]
   Color depth     [none]
+  Reset to defaults  [1 customization — Enter to reset all]
 
   Save (s)  Reset (r)  Quit (q)
 ────────────────────────────────────────────────────────────
@@ -68,6 +71,7 @@
   Tokens & lines  [2 lines · 13 tokens]
   Empty data      [hide]
   Color depth     [none]
+  Reset to defaults  [1 customization — Enter to reset all]
 
   Save (s)  Reset (r)  Quit (q)
 ────────────────────────────────────────────────────────────
@@ -88,6 +92,7 @@
   Tokens & lines  [2 lines · 13 tokens]
   Empty data      [hide]
   Color depth     [none]
+  Reset to defaults  [1 customization — Enter to reset all]
 
   Save (s)  Reset (r)  Quit (q)
 ────────────────────────────────────────────────────────────
@@ -108,6 +113,7 @@
 › Tokens & lines  [2 lines · 13 tokens]
   Empty data      [hide]
   Color depth     [none]
+  Reset to defaults  [1 customization — Enter to reset all]
 
   Save (s)  Reset (r)  Quit (q)
 ────────────────────────────────────────────────────────────
@@ -177,7 +183,7 @@
     5. rl_7d
 ────────────────────────────────────────────────────────────
   Preview (all lines):
-🤖 Opus 4.7 (1M) | 🧠 50% | 💰 $0.40 | ⏱️ 5h █████░░░░░ 50% 🔄 0s | ⏱️ 7d █████░░░░░ 50% 🔄 0s
+🤖 Opus 4.7 (1M)[ | ]🧠 50% | 💰 $0.40 | ⏱️ 5h █████░░░░░ 50% 🔄 0s | ⏱️ 7d █████░░░░░ 50% 🔄 0s
 💭 true | 💪 xhigh | 📁 x | 🌳 main | ➕ +128 | ➖ -42 | ⏳ 3m 50s
 ────────────────────────────────────────────────────────────
   ↑↓ navigate   ←→ switch line   Shift+↑↓ move   Enter edit
@@ -216,6 +222,7 @@
 › Tokens & lines  [2 lines · 13 tokens]
   Empty data      [hide]
   Color depth     [none]
+  Reset to defaults  [1 customization — Enter to reset all]
 
   Save (s)  Reset (r)  Quit (q)
 ────────────────────────────────────────────────────────────

@@ -1093,7 +1093,15 @@ render_line() {
       if [[ -n "$sep_id" && "$sep_id" != "null" ]]; then sep="$(_sep_chars "$sep_id")"
       else sep="$global_sep"
       fi
-      result+="$sep"
+      # Highlight this separator if the wizard is focused on its row.
+      if [[ -n "${RENDER_HIGHLIGHT_SEP_AFTER:-}" && "$RENDER_HIGHLIGHT_SEP_AFTER" == "$prev_id_for_sep" ]]; then
+        case "$COLOR_DEPTH" in
+          none) result+="[${sep}]" ;;
+          *)    result+=$'\033[7m'"$sep"$'\033[27m' ;;
+        esac
+      else
+        result+="$sep"
+      fi
     fi
     result+="$body"
     prev_visible=1
@@ -1190,6 +1198,7 @@ _TOOLTIPS_MAIN=(
   "Tokens & lines: add/remove/reorder tokens; switch between up to 4 lines; edit separators inline."
   "Empty data: when a token has no value — hide it (compact) or show a placeholder."
   "Color depth: auto-detects from \$NO_COLOR / \$COLORTERM / tput colors. Pin to override."
+  "Reset to defaults: wipes all customizations and restores the factory config. Save (s) to persist; q to discard."
 )
 
 _TOOLTIPS_TOKEN_DETAIL=(
@@ -1198,6 +1207,26 @@ _TOOLTIPS_TOKEN_DETAIL=(
   "Bar style: bar characters used by this token. Override global / theme suggestion just for this token."
   "Reset to defaults: removes ALL per-token overrides for this token (prefix, format, bar, separator-after)."
 )
+
+# Count how many config fields differ from the built-in defaults. Used to
+# show / hide the dynamic "Reset to defaults" row on the main menu.
+_wiz_count_customizations() {
+  jq --argjson def "$(build_default_config)" '
+    [
+      (if .preset                != $def.preset                then 1 else empty end),
+      (if .theme                 != $def.theme                 then 1 else empty end),
+      (if .global.prefix_style   != $def.global.prefix_style   then 1 else empty end),
+      (if .global.separator      != $def.global.separator      then 1 else empty end),
+      (if .global.bar_style      != $def.global.bar_style      then 1 else empty end),
+      (if .global.color_depth    != $def.global.color_depth    then 1 else empty end),
+      (if .global.empty_behavior != $def.global.empty_behavior then 1 else empty end),
+      (if .global.placeholder    != $def.global.placeholder    then 1 else empty end),
+      (if .global.bar_width      != $def.global.bar_width      then 1 else empty end),
+      (if .lines                 != $def.lines                 then 1 else empty end),
+      ((.tokens // {}) | length)
+    ] | add // 0
+  ' <<<"$CONFIG_JSON"
+}
 
 _wiz_help_tooltip() {
   local screen="$1" tip="" arr_name=""
@@ -1222,7 +1251,13 @@ _wiz_help_tooltip() {
         fi
       fi ;;
     sep_picker)   tip="Picking a separator writes \`tokens.<id>.separator_after\` for just this position. (use global) clears the override." ;;
-    token_picker) tip="✓ next to a token means it's already used somewhere. Selecting one inserts it after the cursor on the active line." ;;
+    token_picker)
+      local _picked_id="${TOK_PICKER_LIST[$WIZARD_CURSOR]:-}"
+      if [[ -n "$_picked_id" ]]; then
+        tip="$_picked_id — $(_token_description "$_picked_id")"
+      else
+        tip="✓ next to a token means it's already used somewhere. Selecting one inserts it after the cursor on the active line."
+      fi ;;
   esac
   if [[ -z "$tip" && -n "$arr_name" ]]; then
     eval "tip=\${${arr_name}[$WIZARD_CURSOR]:-}"
@@ -1370,6 +1405,12 @@ _wiz_draw_main() {
   local total_tokens; total_tokens="$(jq -r '[.lines[][]] | length' <<<"$CONFIG_JSON")"
   local items=("Preset" "Theme" "Prefix style" "Separator" "Bar style" "Tokens & lines" "Empty data" "Color depth")
   local vals=("$preset" "$theme" "$prefix" "$sep" "$bar" "$lines lines · $total_tokens tokens" "$(jq -r '.global.empty_behavior // "hide"' <<<"$CONFIG_JSON")" "$(jq -r '.global.color_depth // "auto"' <<<"$CONFIG_JSON")")
+  # Conditional 9th row: appears only when something differs from defaults.
+  local custom_count; custom_count="$(_wiz_count_customizations)"
+  if (( custom_count > 0 )); then
+    items+=("Reset to defaults")
+    vals+=("$custom_count customization$([[ "$custom_count" == "1" ]] || echo s) — Enter to reset all")
+  fi
   local i
   for ((i=0; i<${#items[@]}; i++)); do
     if (( i == WIZARD_CURSOR )); then printf '› '; else printf '  '; fi
@@ -1386,15 +1427,18 @@ _wiz_draw_main() {
 }
 
 _wiz_handle_main() {
+  # The "Reset to defaults" row is conditional (only when customizations
+  # exist), so the max cursor index varies between 7 and 8.
+  local _custom; _custom="$(_wiz_count_customizations)"
+  local _max=7; (( _custom > 0 )) && _max=8
   case "$KEY" in
     up)
       if (( WIZARD_CURSOR > 0 )); then WIZARD_CURSOR=$((WIZARD_CURSOR-1))
-      else WIZARD_CURSOR=7; fi ;;
+      else WIZARD_CURSOR=$_max; fi ;;
     down)
-      if (( WIZARD_CURSOR < 7 )); then WIZARD_CURSOR=$((WIZARD_CURSOR+1))
+      if (( WIZARD_CURSOR < _max )); then WIZARD_CURSOR=$((WIZARD_CURSOR+1))
       else WIZARD_CURSOR=0; fi ;;
     enter|right)
-      # Initial cursor in the submenu = index of currently-selected value.
       local cur
       case "$WIZARD_CURSOR" in
         0) cur="$(jq -r '.preset // ""' <<<"$CONFIG_JSON")"
@@ -1416,6 +1460,10 @@ _wiz_handle_main() {
            _wiz_push empty     "$(_index_of _EMPTY      "$cur")" ;;
         7) cur="$(jq -r '.global.color_depth // "auto"' <<<"$CONFIG_JSON")"
            _wiz_push depth     "$(_index_of _DEPTH      "$cur")" ;;
+        8) # Conditional "Reset to defaults" row
+           CONFIG_JSON="$(build_default_config)"
+           WIZARD_DIRTY=1
+           WIZARD_CURSOR=0 ;;
       esac ;;
   esac
 }
@@ -1814,16 +1862,22 @@ _wiz_draw_tokens_lines() {
     _tl_draw_tokens
   fi
   printf -- '─%.0s' {1..60}; printf '\n'
-  # Highlight the focused token in the preview when in tokens zone on a token row
-  local hl=""
+  # Highlight in the preview: focused token (on token row) OR the separator
+  # whose row is focused (on separator row).
+  local hl="" hl_sep=""
   if [[ "$TL_ZONE" == "tokens" ]]; then
     local count; count="$(_tl_line_count)"
-    if (( count > 0 )) && (( TL_TOKEN_ROW % 2 == 0 )); then
-      hl="$(_tl_token_at "$TL_TOKEN_ROW")"
+    if (( count > 0 )); then
+      if (( TL_TOKEN_ROW % 2 == 0 )); then
+        hl="$(_tl_token_at "$TL_TOKEN_ROW")"
+      else
+        local _pi=$(( (TL_TOKEN_ROW - 1) / 2 ))
+        hl_sep="$(jq -r --argjson l "$TL_ACTIVE_LINE" --argjson j "$_pi" '.lines[$l][$j]' <<<"$CONFIG_JSON")"
+      fi
     fi
   fi
   printf '  Preview (all lines):\n'
-  RENDER_HIGHLIGHT_ID="$hl" _wiz_preview_line
+  RENDER_HIGHLIGHT_ID="$hl" RENDER_HIGHLIGHT_SEP_AFTER="$hl_sep" _wiz_preview_line
   printf '\n'
   printf -- '─%.0s' {1..60}; printf '\n'
   if [[ "$TL_ZONE" == "tabs" ]]; then
@@ -1839,6 +1893,27 @@ _wiz_draw_tokens_lines() {
     fi
   fi
   _wiz_help_tooltip tokens_lines
+}
+
+# Unsaved-changes prompt shown when quitting the wizard with dirty config.
+# Echoes one of: save | discard | cancel.
+# In scripted mode, an exhausted input buffer means "the script intends to
+# stop here" — treat it as discard so we don't infinite-loop reading nothing.
+_wiz_dirty_prompt() {
+  if [[ -n "${OPT_TUI_SCRIPT:-}" && -z "$WIZARD_TUI_SCRIPT" ]]; then
+    echo "discard"; return
+  fi
+  tui_clear
+  printf '\n  Unsaved changes detected.\n\n'
+  printf '  Press s to save and quit\n'
+  printf '        d to discard and quit\n'
+  printf '        c (or any other key) to keep editing\n'
+  _wiz_next_key
+  case "$KEY" in
+    save|char:s|char:S) echo "save" ;;
+    char:d|char:D)      echo "discard" ;;
+    *)                  echo "cancel" ;;
+  esac
 }
 
 # Confirmation prompt overlay. Reuses _wiz_next_key for scripted/real input.
@@ -2015,14 +2090,26 @@ _wiz_handle_tokens_lines() {
       if (( TL_TOKEN_ROW < max_row )); then TL_TOKEN_ROW=$((TL_TOKEN_ROW+1))
       else TL_ZONE="tabs"; TL_TAB_POS="$TL_ACTIVE_LINE"; fi ;;
     left)
-      # Switch to previous line (wraps); stay in tokens zone.
-      if (( TL_ACTIVE_LINE > 0 )); then TL_ACTIVE_LINE=$((TL_ACTIVE_LINE-1))
-      else TL_ACTIVE_LINE=$((num_lines-1)); fi
-      TL_TOKEN_ROW=0 ;;
+      # Cycle through lines AND the + add-line button (wraps).
+      if (( TL_ACTIVE_LINE > 0 )); then
+        TL_ACTIVE_LINE=$((TL_ACTIVE_LINE-1))
+        TL_TOKEN_ROW=0
+      elif (( num_lines < 4 )); then
+        TL_ZONE="tabs"; TL_TAB_POS="$num_lines"  # + position
+      else
+        TL_ACTIVE_LINE=$((num_lines-1))
+        TL_TOKEN_ROW=0
+      fi ;;
     right)
-      if (( TL_ACTIVE_LINE < num_lines-1 )); then TL_ACTIVE_LINE=$((TL_ACTIVE_LINE+1))
-      else TL_ACTIVE_LINE=0; fi
-      TL_TOKEN_ROW=0 ;;
+      if (( TL_ACTIVE_LINE < num_lines-1 )); then
+        TL_ACTIVE_LINE=$((TL_ACTIVE_LINE+1))
+        TL_TOKEN_ROW=0
+      elif (( num_lines < 4 )); then
+        TL_ZONE="tabs"; TL_TAB_POS="$num_lines"  # +
+      else
+        TL_ACTIVE_LINE=0
+        TL_TOKEN_ROW=0
+      fi ;;
     shift-up)   _tl_swap_tokens up   ;;
     shift-down) _tl_swap_tokens down ;;
     enter)
@@ -2032,19 +2119,23 @@ _wiz_handle_tokens_lines() {
         WIZARD_TOKEN_DETAIL="$(_tl_token_at "$TL_TOKEN_ROW")"
         _wiz_push token_detail 0
       else
-        # Separator row: open separator picker (with "(use global)" option)
+        # Separator row: open separator picker; land cursor on the current override.
         local prev_idx=$(( (TL_TOKEN_ROW - 1) / 2 ))
         TL_SEP_PICKER_TOKEN="$(jq -r --argjson i "$TL_ACTIVE_LINE" --argjson j "$prev_idx" '.lines[$i][$j]' <<<"$CONFIG_JSON")"
-        _wiz_push sep_picker 0
+        local _sep_cur; _sep_cur="$(jq -r --arg id "$TL_SEP_PICKER_TOKEN" '.tokens[$id].separator_after // empty' <<<"$CONFIG_JSON")"
+        local _sep_idx=0
+        if [[ -n "$_sep_cur" && "$_sep_cur" != "null" ]]; then
+          # _SEP_PICKER[0] = "(use global)", so explicit-override index = _index_of _SEPARATORS + 1
+          local _s; _s="$(_index_of _SEPARATORS "$_sep_cur")"
+          _sep_idx=$((_s + 1))
+        fi
+        _wiz_push sep_picker "$_sep_idx"
       fi ;;
     char:a)
       _tl_build_picker
       _wiz_push token_picker 0 ;;
     char:d)
       if (( count == 0 )); then return; fi
-      if (( count == 1 )) && (( TL_TOKEN_ROW % 2 == 0 )); then
-        if ! _tl_confirm "Delete the last token on this line? The line will be removed."; then return; fi
-      fi
       _tl_delete_token_at_cursor ;;
     char:m)
       if (( count == 0 )); then return; fi
@@ -2108,12 +2199,14 @@ TOK_PICKER_SAMPLES=() # parallel: full render sample (emoji + value, etc.)
 
 _tl_build_picker() {
   TOK_PICKER_LIST=(); TOK_PICKER_GROUPS=(); TOK_PICKER_SAMPLES=()
+  # Force emoji+label so the picker shows icon + label + value (richer than
+  # plain emoji, easier to identify each token at a glance).
+  local picker_cfg; picker_cfg="$(jq '.global.prefix_style="emoji+label"' <<<"$CONFIG_JSON")"
   local id src sample
   while IFS= read -r id; do
     src="$(jq -r --arg id "$id" '.[$id].source' <<<"$TOKENS_JSON")"
-    # Full render of just this token under default global settings + EXAMPLES input.
     sample="$(INPUT_JSON="$EXAMPLES_INPUT_JSON" \
-      CONFIG_JSON="$CONFIG_JSON" \
+      CONFIG_JSON="$picker_cfg" \
       COLOR_DEPTH="$WIZARD_COLOR_DEPTH" \
       NOW_EPOCH=9999999999 \
       MOCK_GIT_STATE=out_of_repo \
@@ -2122,6 +2215,52 @@ _tl_build_picker() {
     TOK_PICKER_GROUPS+=("$src")
     TOK_PICKER_SAMPLES+=("$sample")
   done < <( jq -r 'keys_unsorted[]' <<<"$TOKENS_JSON" )
+}
+
+# One-line description per token id. Used by the picker's tooltip line.
+_token_description() {
+  case "$1" in
+    model)            echo "Current Claude model display name" ;;
+    session_name)     echo "Custom session name set via --name or /rename" ;;
+    context_pct)      echo "% of context window used (formatted as 4%)" ;;
+    context_bar)      echo "Same data as context_pct but defaults to progressbar+percent" ;;
+    cache_hit)        echo "% of input tokens served from cache" ;;
+    cost)             echo "Session cost in USD (formatted \$0.40)" ;;
+    duration)         echo "Total wall-clock time since session start" ;;
+    api_duration)     echo "Time spent waiting for API responses" ;;
+    lines_added)      echo "Lines of code added in this session (+128)" ;;
+    lines_removed)    echo "Lines of code removed in this session (-42)" ;;
+    rl_5h)            echo "5-hour rate limit % + reset countdown" ;;
+    rl_7d)            echo "7-day rate limit % + reset countdown" ;;
+    thinking)         echo "Whether extended thinking is enabled" ;;
+    effort)           echo "Current reasoning effort (low/medium/high/xhigh/max)" ;;
+    output_style)     echo "Active output style name" ;;
+    version)          echo "Claude Code version" ;;
+    fast_mode)        echo "Fast mode flag (shows only when true)" ;;
+    exceeds_200k)     echo "Token-count-over-200k flag (shows only when true)" ;;
+    dir)              echo "Workspace directory basename" ;;
+    worktree)         echo "Worktree name (--worktree sessions only)" ;;
+    vim_mode)         echo "Current vim mode (NORMAL/INSERT/VISUAL)" ;;
+    agent_name)       echo "Name of the running --agent" ;;
+    session_id)       echo "Session UUID (first 8 chars)" ;;
+    added_dirs)       echo "Count of dirs added via /add-dir" ;;
+    git_worktree)     echo "Git worktree name (set for any linked worktree)" ;;
+    transcript)       echo "Basename of the transcript file" ;;
+    git_branch)       echo "Current git branch name" ;;
+    git_status)       echo "Combined +staged ~modified ?untracked counts" ;;
+    git_staged)       echo "Count of staged files" ;;
+    git_modified)     echo "Count of modified-but-unstaged files" ;;
+    git_untracked)    echo "Count of untracked files" ;;
+    git_ahead_behind) echo "Ahead/behind count vs upstream" ;;
+    clock)            echo "Current time (HH:MM)" ;;
+    date)             echo "Current date (YYYY-MM-DD)" ;;
+    hostname)         echo "Short hostname" ;;
+    user)             echo "Current user (\$USER)" ;;
+    battery)          echo "Battery % (low % = critical color)" ;;
+    memory)           echo "Memory used % (relaxed thresholds; 80% is normal)" ;;
+    load)             echo "1-minute load average" ;;
+    *)                echo "" ;;
+  esac
 }
 
 _wiz_draw_token_picker() {
@@ -2280,13 +2419,41 @@ _wiz_handle_token_detail() {
       else WIZARD_CURSOR=0; fi ;;
     enter)
       case "$WIZARD_CURSOR" in
-        0) TL_FIELD=prefix;          _wiz_push token_field 0 ;;
-        1) TL_FIELD=format;          _wiz_push token_field 0 ;;
-        2) TL_FIELD=bar_style;       _wiz_push token_field 0 ;;
+        0) TL_FIELD=prefix;    _wiz_push token_field "$(_tl_field_initial_cursor "$id" prefix)" ;;
+        1) TL_FIELD=format;    _wiz_push token_field "$(_tl_field_initial_cursor "$id" format)" ;;
+        2) TL_FIELD=bar_style; _wiz_push token_field "$(_tl_field_initial_cursor "$id" bar_style)" ;;
         3) CONFIG_JSON="$(jq --arg id "$id" 'del(.tokens[$id])' <<<"$CONFIG_JSON")"
            WIZARD_DIRTY=1 ;;
       esac ;;
     esc|left) _wiz_pop ;;
+  esac
+}
+
+# Compute initial cursor index for the token_field picker. Returns 0 when
+# there's no override (which lands on "(inherit ...)"), or the index of
+# the current override in the picker's full item list (1-based after
+# the synthetic "(inherit ...)" first row).
+_tl_field_initial_cursor() {
+  local id="$1" field="$2"
+  local cur; cur="$(jq -r --arg id "$id" --arg f "$field" '.tokens[$id][$f] // empty' <<<"$CONFIG_JSON")"
+  if [[ -z "$cur" || "$cur" == "null" ]]; then echo 0; return; fi
+  case "$field" in
+    prefix)
+      local idx; idx="$(_index_of _PREFIXES "$cur")"
+      echo $((idx + 1)) ;;
+    format)
+      local i=1 fmt
+      while IFS= read -r fmt; do
+        if [[ "$fmt" == "$cur" ]]; then echo "$i"; return; fi
+        i=$((i+1))
+      done < <( jq -r --arg id "$id" '.[$id].applicable_formats[]' <<<"$TOKENS_JSON" )
+      echo 0 ;;
+    bar_style)
+      local bars=(blocks heavy line braille dots arrows ascii gradient) i
+      for ((i=0; i<${#bars[@]}; i++)); do
+        if [[ "${bars[$i]}" == "$cur" ]]; then echo $((i+1)); return; fi
+      done
+      echo 0 ;;
   esac
 }
 
@@ -2498,10 +2665,20 @@ run_wizard() {
         WIZARD_DIRTY=1
         continue ;;
       quit)
-        # On main: quit immediately. On submenu: pop back to main.
-        if [[ "$screen" == "main" ]]; then break
-        else _wiz_pop; fi
-        continue ;;
+        # On submenu: pop back to main. On main: quit, but if there are
+        # unsaved changes prompt to save / discard / cancel first.
+        if [[ "$screen" != "main" ]]; then _wiz_pop; continue; fi
+        if (( WIZARD_DIRTY )); then
+          local _choice
+          _choice="$(_wiz_dirty_prompt)"
+          case "$_choice" in
+            save) save_config "${CONFIG_PATH:-$(_default_config_path)}" "$CONFIG_JSON"
+                  WIZARD_DIRTY=0; break ;;
+            discard) break ;;
+            cancel|*) continue ;;
+          esac
+        fi
+        break ;;
     esac
     case "$screen" in
       main)      _wiz_handle_main ;;
