@@ -53,6 +53,7 @@
     catppuccin-latte    ●    ●    ●     Aa    blocks
     tokyo-day           ●    ●    ●     Aa    blocks
     ayu-light           ●    ●    ●     Aa    blocks
+    garden              ●    ●    ●     Aa    blocks
 
   [2m── Dark terminals ──[0m
     dark                ●    ●    ●     Aa    blocks
@@ -64,6 +65,9 @@
     one-dark            ●    ●    ●     Aa    blocks
     rose-pine           ●    ●    ●     Aa    blocks
     monokai             ●    ●    ●     Aa    blocks
+    mocha               ●    ●    ●     Aa    heavy
+    silver              ●    ●    ●     Aa    line
+    ocean               ●    ●    ●     Aa    heavy
 ────────────────────────────────────────────────────────────
   Preview (focused: default):
 🤖 Opus 4.7 (1M context)
@@ -84,6 +88,7 @@
     catppuccin-latte    ●    ●    ●     Aa    blocks
     tokyo-day           ●    ●    ●     Aa    blocks
     ayu-light           ●    ●    ●     Aa    blocks
+    garden              ●    ●    ●     Aa    blocks
 
   [2m── Dark terminals ──[0m
     dark                ●    ●    ●     Aa    blocks
@@ -95,6 +100,9 @@
     one-dark            ●    ●    ●     Aa    blocks
     rose-pine           ●    ●    ●     Aa    blocks
     monokai             ●    ●    ●     Aa    blocks
+    mocha               ●    ●    ●     Aa    heavy
+    silver              ●    ●    ●     Aa    line
+    ocean               ●    ●    ●     Aa    heavy
 ────────────────────────────────────────────────────────────
   Preview (focused: solarized):
 🤖 Opus 4.7 (1M context)
@@ -115,6 +123,7 @@
     catppuccin-latte    ●    ●    ●     Aa    blocks
     tokyo-day           ●    ●    ●     Aa    blocks
     ayu-light           ●    ●    ●     Aa    blocks
+    garden              ●    ●    ●     Aa    blocks
 
   [2m── Dark terminals ──[0m
     dark                ●    ●    ●     Aa    blocks
@@ -126,6 +135,9 @@
     one-dark            ●    ●    ●     Aa    blocks
     rose-pine           ●    ●    ●     Aa    blocks
     monokai             ●    ●    ●     Aa    blocks
+    mocha               ●    ●    ●     Aa    heavy
+    silver              ●    ●    ●     Aa    line
+    ocean               ●    ●    ●     Aa    heavy
 ────────────────────────────────────────────────────────────
   Preview (focused: graphite):
 🤖 Opus 4.7 (1M context)
@@ -146,6 +158,7 @@
     catppuccin-latte    ●    ●    ●     Aa    blocks
     tokyo-day           ●    ●    ●     Aa    blocks
     ayu-light           ●    ●    ●     Aa    blocks
+    garden              ●    ●    ●     Aa    blocks
 
   [2m── Dark terminals ──[0m
     dark                ●    ●    ●     Aa    blocks
@@ -157,6 +170,9 @@
     one-dark            ●    ●    ●     Aa    blocks
     rose-pine           ●    ●    ●     Aa    blocks
     monokai             ●    ●    ●     Aa    blocks
+    mocha               ●    ●    ●     Aa    heavy
+    silver              ●    ●    ●     Aa    line
+    ocean               ●    ●    ●     Aa    heavy
 ────────────────────────────────────────────────────────────
   Preview (focused: light):
 🤖 Opus 4.7 (1M context)
@@ -177,6 +193,7 @@
     catppuccin-latte    ●    ●    ●     Aa    blocks
     tokyo-day           ●    ●    ●     Aa    blocks
     ayu-light           ●    ●    ●     Aa    blocks
+    garden              ●    ●    ●     Aa    blocks
 
   [2m── Dark terminals ──[0m
     dark                ●    ●    ●     Aa    blocks
@@ -188,6 +205,9 @@
     one-dark            ●    ●    ●     Aa    blocks
     rose-pine           ●    ●    ●     Aa    blocks
     monokai             ●    ●    ●     Aa    blocks
+    mocha               ●    ●    ●     Aa    heavy
+    silver              ●    ●    ●     Aa    line
+    ocean               ●    ●    ●     Aa    heavy
 ────────────────────────────────────────────────────────────
   Preview (focused: solarized-light):
 🤖 Opus 4.7 (1M context)
@@ -208,6 +228,7 @@
 ›   catppuccin-latte    ●    ●    ●     Aa    blocks
     tokyo-day           ●    ●    ●     Aa    blocks
     ayu-light           ●    ●    ●     Aa    blocks
+    garden              ●    ●    ●     Aa    blocks
 
   [2m── Dark terminals ──[0m
     dark                ●    ●    ●     Aa    blocks
@@ -219,6 +240,9 @@
     one-dark            ●    ●    ●     Aa    blocks
     rose-pine           ●    ●    ●     Aa    blocks
     monokai             ●    ●    ●     Aa    blocks
+    mocha               ●    ●    ●     Aa    heavy
+    silver              ●    ●    ●     Aa    line
+    ocean               ●    ●    ●     Aa    heavy
 ────────────────────────────────────────────────────────────
   Preview (focused: catppuccin-latte):
 🤖 Opus 4.7 (1M context)
@@ -239,6 +263,7 @@
     catppuccin-latte    ●    ●    ●     Aa    blocks
 ›   tokyo-day           ●    ●    ●     Aa    blocks
     ayu-light           ●    ●    ●     Aa    blocks
+    garden              ●    ●    ●     Aa    blocks
 
   [2m── Dark terminals ──[0m
     dark                ●    ●    ●     Aa    blocks
@@ -250,6 +275,9 @@
     one-dark            ●    ●    ●     Aa    blocks
     rose-pine           ●    ●    ●     Aa    blocks
     monokai             ●    ●    ●     Aa    blocks
+    mocha               ●    ●    ●     Aa    heavy
+    silver              ●    ●    ●     Aa    line
+    ocean               ●    ●    ●     Aa    heavy
 ────────────────────────────────────────────────────────────
   Preview (focused: tokyo-day):
 🤖 Opus 4.7 (1M context)
@@ -270,6 +298,7 @@
     catppuccin-latte    ●    ●    ●     Aa    blocks
     tokyo-day           ●    ●    ●     Aa    blocks
 ›   ayu-light           ●    ●    ●     Aa    blocks
+    garden              ●    ●    ●     Aa    blocks
 
   [2m── Dark terminals ──[0m
     dark                ●    ●    ●     Aa    blocks
@@ -281,6 +310,9 @@
     one-dark            ●    ●    ●     Aa    blocks
     rose-pine           ●    ●    ●     Aa    blocks
     monokai             ●    ●    ●     Aa    blocks
+    mocha               ●    ●    ●     Aa    heavy
+    silver              ●    ●    ●     Aa    line
+    ocean               ●    ●    ●     Aa    heavy
 ────────────────────────────────────────────────────────────
   Preview (focused: ayu-light):
 🤖 Opus 4.7 (1M context)
@@ -301,6 +333,42 @@
     catppuccin-latte    ●    ●    ●     Aa    blocks
     tokyo-day           ●    ●    ●     Aa    blocks
     ayu-light           ●    ●    ●     Aa    blocks
+›   garden              ●    ●    ●     Aa    blocks
+
+  [2m── Dark terminals ──[0m
+    dark                ●    ●    ●     Aa    blocks
+    dracula             ●    ●    ●     Aa    blocks
+    nord                ●    ●    ●     Aa    heavy
+    gruvbox             ●    ●    ●     Aa    heavy
+    tokyo-night         ●    ●    ●     Aa    blocks
+    catppuccin          ●    ●    ●     Aa    blocks
+    one-dark            ●    ●    ●     Aa    blocks
+    rose-pine           ●    ●    ●     Aa    blocks
+    monokai             ●    ●    ●     Aa    blocks
+    mocha               ●    ●    ●     Aa    heavy
+    silver              ●    ●    ●     Aa    line
+    ocean               ●    ●    ●     Aa    heavy
+────────────────────────────────────────────────────────────
+  Preview (focused: garden):
+🤖 Opus 4.7 (1M context)
+────────────────────────────────────────────────────────────
+  ↑↓ navigate (wraps)   Enter select   Esc back   s save   r reset   q quit
+[H[2J[1;1H  statusline-bar ▸ Theme
+
+                      good warn crit  text  bar style
+
+  [2m── Auto / adaptive  (works in either light or dark terminals) ──[0m
+  ● default             ●    ●    ●     Aa    blocks
+    solarized           ●    ●    ●     Aa    heavy
+    graphite            ●    ●    ●     Aa    ascii
+
+  [2m── Light terminals ──[0m
+    light               ●    ●    ●     Aa    blocks
+    solarized-light     ●    ●    ●     Aa    heavy
+    catppuccin-latte    ●    ●    ●     Aa    blocks
+    tokyo-day           ●    ●    ●     Aa    blocks
+    ayu-light           ●    ●    ●     Aa    blocks
+    garden              ●    ●    ●     Aa    blocks
 
   [2m── Dark terminals ──[0m
 ›   dark                ●    ●    ●     Aa    blocks
@@ -312,6 +380,9 @@
     one-dark            ●    ●    ●     Aa    blocks
     rose-pine           ●    ●    ●     Aa    blocks
     monokai             ●    ●    ●     Aa    blocks
+    mocha               ●    ●    ●     Aa    heavy
+    silver              ●    ●    ●     Aa    line
+    ocean               ●    ●    ●     Aa    heavy
 ────────────────────────────────────────────────────────────
   Preview (focused: dark):
 🤖 Opus 4.7 (1M context)
@@ -332,6 +403,7 @@
     catppuccin-latte    ●    ●    ●     Aa    blocks
     tokyo-day           ●    ●    ●     Aa    blocks
     ayu-light           ●    ●    ●     Aa    blocks
+    garden              ●    ●    ●     Aa    blocks
 
   [2m── Dark terminals ──[0m
     dark                ●    ●    ●     Aa    blocks
@@ -343,6 +415,9 @@
     one-dark            ●    ●    ●     Aa    blocks
     rose-pine           ●    ●    ●     Aa    blocks
     monokai             ●    ●    ●     Aa    blocks
+    mocha               ●    ●    ●     Aa    heavy
+    silver              ●    ●    ●     Aa    line
+    ocean               ●    ●    ●     Aa    heavy
 ────────────────────────────────────────────────────────────
   Preview (focused: dracula):
 🤖 Opus 4.7 (1M context)

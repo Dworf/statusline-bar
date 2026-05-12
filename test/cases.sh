@@ -213,15 +213,15 @@ post_wizard_save_theme() {
     return 1
   fi
 }
-# Script: enter Theme submenu, then down 9× to dracula, enter to commit, s to save.
+# Script: enter Theme submenu, then down 10× to dracula, enter to commit, s to save.
 # Main cursor starts at 0 (Preset). Down once → 1 (Theme). Enter → theme screen.
-# Theme cursor starts on "default" (the first non-section row). The theme list
-# now has section dividers between Auto / Light / Dark groups that arrow-nav
-# skips: default→solarized→graphite→light→solarized-light→catppuccin-latte→
-# tokyo-day→ayu-light→dark→dracula is 9 down presses. Enter pops back to main;
-# then 's' saves. Use $'\n' for enter.
+# Theme cursor starts on "default" (the first non-section row). Arrow-nav skips
+# the inline section dividers, so the path is:
+#   default → solarized → graphite → light → solarized-light → catppuccin-latte
+#   → tokyo-day → ayu-light → garden → dark → dracula  (10 down presses).
+# Enter pops back to main; then 's' saves. Use $'\n' for enter.
 CASE_ENV="STATUSLINE_BAR_CONFIG=/tmp/sbar-wsave.json TERM=xterm-256color STATUSLINE_BAR_FAKE_MEMORY=50 STATUSLINE_BAR_FAKE_LOAD=1.0 STATUSLINE_BAR_FAKE_BATTERY=92 HOSTNAME_OVERRIDE=Mac STATUSLINE_BAR_FORCE_NERD=no" \
-  run_case wizard_save_theme "" "" --wizard --tui-script "$(printf 'D\nDDDDDDDDD\ns')"
+  run_case wizard_save_theme "" "" --wizard --tui-script "$(printf 'D\nDDDDDDDDDD\ns')"
 
 # Tokens & lines: enter the screen, drop into tokens zone, navigate, quit.
 # DDDDD\n  → main cursor 0→5 (T&L), enter → tabs zone

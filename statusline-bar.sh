@@ -22,6 +22,7 @@ read -r -d '' THEMES_JSON <<'JSON' || true
   "catppuccin-latte": { "good":"#40a02b","warn":"#df8e1d","crit":"#d20f39","dim":"#6c6f85","accent":"#fe640b","bar_style":"blocks" },
   "tokyo-day":        { "good":"#587539","warn":"#8c6c3e","crit":"#f52a65","dim":"#848cb5","accent":"#b14a87","bar_style":"blocks" },
   "ayu-light":        { "good":"#86b300","warn":"#fa8d3e","crit":"#f07171","dim":"#828c99","accent":"#a37acc","bar_style":"blocks" },
+  "garden":           { "good":"#689f38","warn":"#ff8a65","crit":"#e57373","dim":"#9e9e9e","accent":"#ba68c8","bar_style":"blocks" },
 
   "dark":             { "good":"#00ff87","warn":"#ffaf00","crit":"#ff5f5f","dim":"#6a737d","accent":"#5fafff","bar_style":"blocks" },
   "dracula":          { "good":"#50fa7b","warn":"#f1fa8c","crit":"#ff5555","dim":"#6272a4","accent":"#ff79c6","bar_style":"blocks" },
@@ -31,7 +32,10 @@ read -r -d '' THEMES_JSON <<'JSON' || true
   "catppuccin":       { "good":"#a6e3a1","warn":"#f9e2af","crit":"#f38ba8","dim":"#6c7086","accent":"#f5c2e7","bar_style":"blocks" },
   "one-dark":         { "good":"#98c379","warn":"#e5c07b","crit":"#e06c75","dim":"#5c6370","accent":"#c678dd","bar_style":"blocks" },
   "rose-pine":        { "good":"#9ccfd8","warn":"#f6c177","crit":"#eb6f92","dim":"#908caa","accent":"#c4a7e7","bar_style":"blocks" },
-  "monokai":          { "good":"#a6e22e","warn":"#e6db74","crit":"#f92672","dim":"#75715e","accent":"#fd971f","bar_style":"blocks" }
+  "monokai":          { "good":"#a6e22e","warn":"#e6db74","crit":"#f92672","dim":"#75715e","accent":"#fd971f","bar_style":"blocks" },
+  "mocha":            { "good":"#aed581","warn":"#d4a574","crit":"#d2691e","dim":"#5d4037","accent":"#b08968","bar_style":"heavy"  },
+  "silver":           { "good":"#81c784","warn":"#ffb300","crit":"#ef5350","dim":"#757575","accent":"#c0c0c0","bar_style":"line"   },
+  "ocean":            { "good":"#4cc9b0","warn":"#ffd166","crit":"#ff6b6b","dim":"#90a4ae","accent":"#48cae4","bar_style":"heavy"  }
 }
 JSON
 
@@ -1149,7 +1153,7 @@ check_config() {
   fi
   load_config
   local theme; theme="$(jq -r '.theme // ""' <<<"$CONFIG_JSON")"
-  local valid_themes="default solarized graphite light solarized-light catppuccin-latte tokyo-day ayu-light dark dracula nord gruvbox tokyo-night catppuccin one-dark rose-pine monokai"
+  local valid_themes="default solarized graphite light solarized-light catppuccin-latte tokyo-day ayu-light garden dark dracula nord gruvbox tokyo-night catppuccin one-dark rose-pine monokai mocha silver ocean"
   if ! grep -qw "$theme" <<<"$valid_themes"; then
     echo "check: unknown theme \"$theme\""
     return 1
@@ -1792,9 +1796,9 @@ _THEMES=(
   "__SEC__ Auto / adaptive  (works in either light or dark terminals)"
   default solarized graphite
   "__SEC__ Light terminals"
-  light solarized-light catppuccin-latte tokyo-day ayu-light
+  light solarized-light catppuccin-latte tokyo-day ayu-light garden
   "__SEC__ Dark terminals"
-  dark dracula nord gruvbox tokyo-night catppuccin one-dark rose-pine monokai
+  dark dracula nord gruvbox tokyo-night catppuccin one-dark rose-pine monokai mocha silver ocean
 )
 _PREFIXES=(none label emoji nerd ascii emoji+label label+emoji nerd+label)
 _SEPARATORS=(space pipe slash dot vbar dash bullet diamond arrow tri star sparkle gear check heart music chevron slant chevron_thin)
@@ -3143,7 +3147,7 @@ examples_catalog() {
   fi
   if [[ "$only" == "all" || "$only" == "themes" ]]; then
     echo "## Themes"
-    for t in default solarized graphite light solarized-light catppuccin-latte tokyo-day ayu-light dark dracula nord gruvbox tokyo-night catppuccin one-dark rose-pine monokai; do
+    for t in default solarized graphite light solarized-light catppuccin-latte tokyo-day ayu-light garden dark dracula nord gruvbox tokyo-night catppuccin one-dark rose-pine monokai mocha silver ocean; do
       printf '[ %-16s ] %s\n' "$t" "$(_render_sample minimum "$t" emoji pipe null | head -n 1)"
     done
     echo
