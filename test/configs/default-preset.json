@@ -14,7 +14,7 @@
   "lines": [
     [
       "model",
-      "context_pct",
+      "context",
       "cost",
       "rl_5h",
       "rl_7d"

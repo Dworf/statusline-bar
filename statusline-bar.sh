@@ -163,7 +163,7 @@ read -r -d '' TOKENS_JSON <<'JSON' || true
              "prefix": { "none":"", "label":"Model:", "emoji":"🤖", "nerd":"", "ascii":"[M]" } },
   "session_name": { "source":"claude", "default_prefix":"emoji", "default_format":"value", "applicable_formats":["value"],
              "prefix": { "none":"", "label":"Session:", "emoji":"📝", "nerd":"", "ascii":"[S]" } },
-  "context": { "source":"claude", "default_prefix":"emoji", "default_format":"percent",
+  "context": { "source":"claude", "default_prefix":"emoji", "default_format":"percent+tokens",
              "applicable_formats":["value","percent","progressbar","progressbar+percent","tokens","tokens+size","percent+tokens","progressbar+percent+tokens"],
              "prefix": { "none":"", "label":"Ctx:", "emoji":"🧠", "nerd":"", "ascii":"[C]" } },
   "tokens_input": { "source":"claude", "default_prefix":"emoji", "default_format":"short", "applicable_formats":["value","short"],
@@ -1194,6 +1194,14 @@ _threshold_color() {
       pct="$(awk -v v="$raw" 'BEGIN{printf "%d", v+0}')"
       if   (( pct < 20 )); then _theme_var "$theme" crit
       elif (( pct < 50 )); then _theme_var "$theme" warn
+      else                      _theme_var "$theme" good
+      fi ;;
+    context_remaining)
+      # Inverted mirror of context's 70/90 used thresholds:
+      # ≥30% free → good, 10-29% → warn, <10% → crit.
+      pct="$(awk -v v="$raw" 'BEGIN{printf "%d", v+0}')"
+      if   (( pct < 10 )); then _theme_var "$theme" crit
+      elif (( pct < 30 )); then _theme_var "$theme" warn
       else                      _theme_var "$theme" good
       fi ;;
     memory)
