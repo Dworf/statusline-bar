@@ -254,12 +254,12 @@ read -r -d '' EXAMPLES_INPUT_JSON <<'JSON' || true
   "session_id": "browse001",
   "transcript_path": "/dev/null",
   "session_name": "Browse",
-  "model": { "display_name": "Opus 4.7 (1M)" },
+  "model": { "id": "claude-opus-4-7[1m]", "display_name": "Opus 4.7 (1M context)" },
   "workspace": { "current_dir": "/tmp/x", "added_dirs": [] },
   "effort": { "level": "xhigh" },
   "thinking": { "enabled": true },
   "output_style": { "name": "default" },
-  "version": "2.1.137",
+  "version": "2.1.139",
   "fast_mode": false,
   "exceeds_200k_tokens": false,
   "worktree": { "name": "main" },
@@ -271,6 +271,9 @@ read -r -d '' EXAMPLES_INPUT_JSON <<'JSON' || true
     "total_lines_removed": 42
   },
   "context_window": {
+    "total_input_tokens": 49950,
+    "total_output_tokens": 50,
+    "context_window_size": 100000,
     "used_percentage": 50,
     "remaining_percentage": 50,
     "current_usage": {
