@@ -39,25 +39,56 @@ The Claude Code ecosystem already has a dozen excellent statuslines, each great 
 
 ## Install
 
+Clone the repo somewhere stable on your machine (anywhere works — `~/code`, `~/.local/share`, etc.) and point Claude Code at the script:
+
 ```bash
-mkdir -p ~/.local/bin
-curl -fsSL https://raw.githubusercontent.com/Dworf/statusline-bar/v0.4.1/statusline-bar.sh \
-  -o ~/.local/bin/statusline-bar.sh
-chmod +x ~/.local/bin/statusline-bar.sh
+git clone https://github.com/Dworf/statusline-bar.git ~/.local/share/statusline-bar
+chmod +x ~/.local/share/statusline-bar/statusline-bar.sh
 ```
 
-Then point Claude Code's `statusLine.command` at the absolute path. In `~/.claude/settings.json`:
+To upgrade later, `cd ~/.local/share/statusline-bar && git pull`.
+
+### Wire it up in Claude Code
+
+Claude Code reads its settings from **`~/.claude/settings.json`** (your user-level config). If the file doesn't exist yet, create it. If it already has other settings — model defaults, MCP servers, permissions, hooks, etc. — **don't overwrite it**: add the `statusLine` key alongside whatever's already there. The whole file is a single JSON object.
+
+Minimal config (only `statusLine`, fresh install):
 
 ```json
 {
   "statusLine": {
     "type": "command",
-    "command": "/Users/you/.local/bin/statusline-bar.sh"
+    "command": "/Users/YOUR_USERNAME/.local/share/statusline-bar/statusline-bar.sh"
   }
 }
 ```
 
-Requirements: `bash` 3.2+ and `jq` (both default on macOS / mainstream Linux). Optional: `git`, `fc-list`, `pmset`/`/sys/class/power_supply` for richer tokens.
+Existing config with other top-level keys — add `statusLine` as a sibling:
+
+```json
+{
+  "model": "claude-opus-4-7",
+  "permissions": { ... },
+  "statusLine": {
+    "type": "command",
+    "command": "/Users/YOUR_USERNAME/.local/share/statusline-bar/statusline-bar.sh"
+  }
+}
+```
+
+The `command` path must be **absolute** — `~` and `$HOME` aren't expanded. Replace `YOUR_USERNAME` (or paste the full path from `realpath ~/.local/share/statusline-bar/statusline-bar.sh`). On Windows: use the WSL or Git Bash path.
+
+Restart Claude Code (or open a new session) and the statusline appears at the bottom. If it doesn't, run the script manually first to confirm it works:
+
+```bash
+echo '{}' | ~/.local/share/statusline-bar/statusline-bar.sh
+```
+
+You should see at least the model token render.
+
+### Requirements
+
+`bash` 3.2+ and `jq` — both ship with macOS and every mainstream Linux. Optional: `git` (for git tokens), `fc-list` (for Nerd Font detection), `pmset` / `/sys/class/power_supply` (for the battery token).
 
 ### Nerd Fonts (optional)
 
