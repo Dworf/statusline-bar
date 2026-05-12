@@ -84,8 +84,8 @@ read -r -d '' BAR_STYLES_JSON <<'JSON' || true
   "ascii":    { "fill":"#",        "empty":".",        "gradient":false },
   "gradient":       { "fill":"█",   "empty":" ",        "gradient":true,
                       "eighths":["", "▏","▎","▍","▌","▋","▊","▉"] },
-  "gradient_track": { "fill":"█",   "empty":"░",   "gradient":true,
-                      "eighths":["", "▒","▒","▒","▒","▓","▓","▓"] }
+  "gradient_track": { "fill":"█",   "empty":"▒",   "gradient":true,
+                      "eighths":["", "▓","▓","▓","▓","▓","▓","▓"] }
 }
 JSON
 
@@ -1876,7 +1876,7 @@ _BARS_EX=(
   "▶▶▶▶▶▷▷▷▷▷"
   "#####....."
   "█████     "
-  "█████░░░░░"
+  "█████▒▒▒▒▒"
 )
 
 _EMPTY_EX=(
