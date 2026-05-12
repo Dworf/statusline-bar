@@ -62,11 +62,11 @@
 [ none         ] Opus 4.7 (1M context) | 50% (49k/100k) | $0.40
 [ label        ] Model: Opus 4.7 (1M context) | Ctx: 50% (49k/100k) | Cost: $0.40
 [ emoji        ] 🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40
-[ nerd         ] Opus 4.7 (1M context) | 50% (49k/100k) | $0.40
+[ nerd         ]  Opus 4.7 (1M context) |  50% (49k/100k) |  $0.40
 [ ascii        ] [M] Opus 4.7 (1M context) | [C] 50% (49k/100k) | [$] $0.40
 [ emoji+label  ] 🤖 Model: Opus 4.7 (1M context) | 🧠 Ctx: 50% (49k/100k) | 💰 Cost: $0.40
 [ label+emoji  ] Model 🤖 Opus 4.7 (1M context) | Ctx 🧠 50% (49k/100k) | Cost 💰 $0.40
-[ nerd+label   ]  Model: Opus 4.7 (1M context) |  Ctx: 50% (49k/100k) |  Cost: $0.40
+[ nerd+label   ]  Model: Opus 4.7 (1M context) |  Ctx: 50% (49k/100k) |  Cost: $0.40
 
 ## Separators  (string between tokens on the same line)
 [ space        ] 🤖 Opus 4.7 (1M context)  🧠 50% (49k/100k)  💰 $0.40

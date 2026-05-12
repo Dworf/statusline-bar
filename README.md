@@ -362,6 +362,7 @@ A big content + UX pass: more variety in every catalog dimension, smarter defaul
 
 **Other**
 
+- **Nerd Font glyph mapping complete.** Every token now has a Font Awesome glyph for the `nerd` / `nerd+label` prefix styles — model `` (laptop/cpu), branch `` (code-fork), folder ``, clock ``, etc. Stored as `\uXXXX` JSON escapes inside `TOKENS_JSON` so they survive copy-paste and are easy to find. This was listed as a known v0.3.0 follow-up.
 - New `MOCK_GIT_STATE=in_repo` for catalog rendering so git tokens show realistic values in presets too.
 - Theme `default`'s accent inherits the terminal foreground color (no explicit color), so terminal-themed users keep their custom text color while semantic threshold colors still apply.
 - Tests: 118 e2e cases passing.

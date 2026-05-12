@@ -4,6 +4,6 @@ default_format=value
 prefix.none=
 prefix.label=Model:
 prefix.emoji=🤖
-prefix.nerd=
+prefix.nerd=
 prefix.ascii=[M]
 applicable=value,compact,short,id,id_short
