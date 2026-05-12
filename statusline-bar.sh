@@ -298,14 +298,15 @@ statusline-bar $VERSION — Claude Code statusline (bash + jq)
 Usage:
   statusline-bar.sh [FLAGS]            render from stdin (Claude Code mode)
   statusline-bar.sh -w | --wizard      interactive setup
-  statusline-bar.sh -e | --examples    browse presets/themes/etc
+  statusline-bar.sh -e | --examples    print a catalog of presets/themes/etc
   statusline-bar.sh -c | --check       validate config; exit 0/1
 
 Flags:
   -h, --help                show this help
   -V, --version             print version
   -w, --wizard              enter setup wizard
-  -e, --examples [MODE]     MODE is catalog|interactive|all; default asks
+  -e, --examples            print a catalog of presets / themes / prefixes /
+                            separators / bar styles, with samples
   -c, --check               validate config and exit
       --config PATH         use this config file instead of default
       --preset NAME         one-shot render with this preset
@@ -2766,10 +2767,12 @@ run_wizard() {
 # ============================================================
 
 # Run the renderer once with a synthetic input + a config override.
+# Color depth tracks the real terminal: themes visibly differ when invoked
+# from a TTY; tests force NO_COLOR=1 so output stays diff-stable.
 # Args: <preset> <theme> <prefix> <separator> <bar_style|"null">
 _render_sample() {
   local preset="$1" theme="$2" prefix="$3" sep="$4" bar="$5"
-  local cfg
+  local cfg depth
   cfg="$(build_default_config | jq \
     --arg p "$preset" --arg t "$theme" --arg ps "$prefix" --arg s "$sep" --arg b "$bar" \
     --argjson presets "$PRESETS_JSON" '
@@ -2778,11 +2781,11 @@ _render_sample() {
       | .lines=$presets[$p].lines
       | .global.prefix_style=$ps
       | .global.separator=$s
-      | (if $b=="null" then .global.bar_style=null else .global.bar_style=$b end)
-      | .global.color_depth="none"')"
+      | (if $b=="null" then .global.bar_style=null else .global.bar_style=$b end)')"
+  depth="$(detect_color_depth)"
   INPUT_JSON="$EXAMPLES_INPUT_JSON" \
     CONFIG_JSON="$cfg" \
-    COLOR_DEPTH="none" \
+    COLOR_DEPTH="$depth" \
     NOW_EPOCH=9999999999 \
     MOCK_GIT_STATE=out_of_repo \
     render_all
@@ -2827,51 +2830,12 @@ examples_catalog() {
   fi
 }
 
-# Combinatorial: 7 presets × 10 themes × 8 prefixes × 19 separators = 10,640 lines.
-examples_all() {
-  local p t ps s
-  for p in minimum compact default modern fancy everything maximum; do
-    for t in default dark light graphite solarized dracula nord gruvbox tokyo-night catppuccin; do
-      for ps in none label emoji nerd ascii emoji+label label+emoji nerd+label; do
-        for s in space pipe slash dot vbar dash bullet diamond arrow tri star sparkle gear check heart music chevron slant chevron_thin; do
-          _render_sample "$p" "$t" "$ps" "$s" null | head -n 1
-        done
-      done
-    done
-  done
-}
-
-# Interactive examples (stub; full TUI version comes in Phase 10 addendum).
-examples_interactive() {
-  echo "statusline-bar: --examples interactive not yet implemented" >&2
-  return 1
-}
-
 run_examples() {
-  local mode="${1:-}"
-  case "$mode" in
-    "")
-      printf '%s\n' \
-        "statusline-bar examples" \
-        "  1) Catalog       one preview per preset/theme/prefix/separator" \
-        "  2) Interactive   browse-only TUI like the wizard" \
-        "  3) All           combinatorial 7×10×8×19 = 10,640 lines (paged)"
-      printf "  Enter choice [1-3, q]: "
-      local choice; read -r choice
-      case "$choice" in
-        1) run_examples catalog ;;
-        2) run_examples interactive ;;
-        3) run_examples all ;;
-        *) return 0 ;;
-      esac ;;
-    catalog) examples_catalog ;;
-    all)
-      if [[ -t 1 ]]; then examples_all | ${PAGER:-less}
-      else                examples_all
-      fi ;;
-    interactive) examples_interactive ;;
-    *) echo "unknown examples mode: $mode" >&2; return 2 ;;
-  esac
+  # The interactive and combinatorial-all modes were dropped in v0.3.0 —
+  # catalog mode covers the same need and is fast / predictable. The
+  # accepted argument is preserved for backwards compatibility (any value
+  # routes to the same catalog).
+  examples_catalog
 }
 
 main() {
@@ -2903,9 +2867,6 @@ main() {
         _i=$((_i+1)); ONLY="${!_i}"; export ONLY ;;
       --tui-script)
         _i=$((_i+1)); OPT_TUI_SCRIPT="${!_i}" ;;
-      --examples-all-count)
-        examples_all | wc -l | tr -d ' '
-        exit 0 ;;
       *) _args+=("${!_i}") ;;
     esac
     _i=$((_i+1))
