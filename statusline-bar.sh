@@ -122,19 +122,19 @@ read -r -d '' PRESETS_JSON <<'JSON' || true
   },
   "everything": {
     "lines": [
-      ["model","session_name","context_pct","cache_hit","cost","duration","api_duration"],
-      ["rl_5h","rl_7d","thinking","effort","output_style","version"],
-      ["dir","worktree","git_branch","git_status","git_ahead_behind","lines_added","lines_removed"],
-      ["clock","date","hostname","user","battery","memory","load","fast_mode","exceeds_200k"]
+      ["model","session_name","session_id","context_pct","context_bar","cache_hit","cost","api_duration"],
+      ["rl_5h","rl_7d","thinking","effort","output_style","version","agent_name","vim_mode","fast_mode","exceeds_200k"],
+      ["dir","worktree","added_dirs","git_worktree","transcript","git_branch","git_status","git_staged","git_modified","git_untracked","git_ahead_behind","lines_added","lines_removed"],
+      ["duration","clock","date","hostname","user","battery","memory","load"]
     ],
     "token_formats": {}
   },
   "maximum": {
     "lines": [
-      ["model","session_name","context_pct","cache_hit","cost","duration","api_duration"],
-      ["rl_5h","rl_7d","thinking","effort","output_style","version"],
-      ["dir","worktree","git_branch","git_status","git_ahead_behind","lines_added","lines_removed"],
-      ["clock","date","hostname","user","battery","memory","load","fast_mode","exceeds_200k"]
+      ["model","session_name","session_id","context_pct","context_bar","cache_hit","cost","api_duration"],
+      ["rl_5h","rl_7d","thinking","effort","output_style","version","agent_name","vim_mode","fast_mode","exceeds_200k"],
+      ["dir","worktree","added_dirs","git_worktree","transcript","git_branch","git_status","git_staged","git_modified","git_untracked","git_ahead_behind","lines_added","lines_removed"],
+      ["duration","clock","date","hostname","user","battery","memory","load"]
     ],
     "token_formats": {
       "context_pct": "progressbar+percent",
@@ -1250,6 +1250,19 @@ _TOOLTIPS_TOKEN_DETAIL=(
   "Reset to defaults: removes ALL per-token overrides for this token (prefix, format, bar, separator-after)."
 )
 
+# Parallel to _PRESETS — one line per preset, shown when its row is focused
+# on the Preset screen. Use them to communicate scope ("how many tokens") and
+# intent (what kind of layout) without making users scroll the preview.
+_TOOLTIPS_PRESET=(
+  "Minimum: 1 line, 3 tokens — model, context %, cost. Smallest possible statusline."
+  "Compact: 1 line, 6 tokens — adds git branch, duration, and the 5h rate limit (as % only)."
+  "Default: 2 lines, 13 tokens — usage row on top; thinking / dir / git / counters / duration below."
+  "Modern: 2 lines, 9 tokens — git staged/modified inline; rate-limit bars + duration on line 2."
+  "Fancy: 3 lines, 13 tokens — context bar, rate-limit bars, OS chrome (battery, clock), git status."
+  "Everything: 4 lines, all 39 tokens, each using its default format. Coverage over compactness."
+  "Maximum: same 39 tokens as Everything, but with progress bars, countdowns, and combined views where applicable."
+)
+
 # Count how many config fields differ from the built-in defaults. Used to
 # show / hide the dynamic "Reset to defaults" row on the main menu.
 _wiz_count_customizations() {
@@ -1274,6 +1287,7 @@ _wiz_help_tooltip() {
   local screen="$1" tip="" arr_name=""
   case "$screen" in
     main)         arr_name="_TOOLTIPS_MAIN" ;;
+    preset)       arr_name="_TOOLTIPS_PRESET" ;;
     token_detail) arr_name="_TOOLTIPS_TOKEN_DETAIL" ;;
     tokens_lines)
       if [[ "$TL_ZONE" == "tabs" ]]; then
@@ -1700,6 +1714,7 @@ _wiz_select_handle() {  # items_array_name jq_set_expression
 _wiz_draw_preset() {
   local cur; cur="$(jq -r '.preset // ""' <<<"$CONFIG_JSON")"
   _wiz_draw_select "Preset" "$cur" '.preset=$v | .lines=$presets[$v].lines' _PRESETS_EX "" "${_PRESETS[@]}"
+  _wiz_help_tooltip preset
 }
 _wiz_handle_preset() {
   local size=${#_PRESETS[@]}
