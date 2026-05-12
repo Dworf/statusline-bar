@@ -1052,12 +1052,15 @@ render_token() {
     with_prefix="$(apply_prefix "$id" "$prefix_style" "$body")"
   fi
   # If this token is the currently-focused one in the wizard preview,
-  # wrap it in a visual highlight (reverse video on real TTYs, brackets
-  # when color depth is "none").
+  # underline the content and wrap it in bright-yellow ▶ ◀ markers. The
+  # token's actual color is preserved (markers use their own color, the
+  # underline is an orthogonal ANSI attribute). When color depth is
+  # "none" the markers degrade to plain text without ANSI.
   if [[ -n "${RENDER_HIGHLIGHT_ID:-}" && "$RENDER_HIGHLIGHT_ID" == "$id" ]]; then
     case "$COLOR_DEPTH" in
-      none) printf '[%s]' "$with_prefix" ;;
-      *)    printf '\033[7m%s%s%s\033[27m' "$color_esc" "$with_prefix" "$reset" ;;
+      none) printf '▶ %s ◀' "$with_prefix" ;;
+      *)    printf '\033[1;93m▶\033[0m \033[4m%s%s\033[0m \033[1;93m◀\033[0m' \
+              "$color_esc" "$with_prefix" ;;
     esac
     return
   fi
@@ -1106,10 +1109,13 @@ render_line() {
       else sep="$global_sep"
       fi
       # Highlight this separator if the wizard is focused on its row.
+      # Same visual idiom as the token highlight: bright-yellow ▶ ◀ markers
+      # with the separator itself underlined. Falls back to plain ASCII
+      # markers when color depth is "none".
       if [[ -n "${RENDER_HIGHLIGHT_SEP_AFTER:-}" && "$RENDER_HIGHLIGHT_SEP_AFTER" == "$prev_id_for_sep" ]]; then
         case "$COLOR_DEPTH" in
-          none) result+="[${sep}]" ;;
-          *)    result+=$'\033[7m'"$sep"$'\033[27m' ;;
+          none) result+="▶ ${sep} ◀" ;;
+          *)    result+="$(printf '\033[1;93m▶\033[0m \033[4m%s\033[0m \033[1;93m◀\033[0m' "$sep")" ;;
         esac
       else
         result+="$sep"
