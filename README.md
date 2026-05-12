@@ -53,17 +53,6 @@ To upgrade later, `cd ~/.local/share/statusline-bar && git pull`.
 
 Claude Code reads its settings from **`~/.claude/settings.json`** (your user-level config). If the file doesn't exist yet, create it. If it already has other settings — model defaults, MCP servers, permissions, hooks, etc. — **don't overwrite it**: add the `statusLine` key alongside whatever's already there. The whole file is a single JSON object.
 
-Minimal config (only `statusLine`, fresh install):
-
-```json
-{
-  "statusLine": {
-    "type": "command",
-    "command": "/Users/YOUR_USERNAME/.local/share/statusline-bar/statusline-bar.sh"
-  }
-}
-```
-
 Existing config with other top-level keys — your file already has things like `model`, `permissions`, `hooks`, etc. **Add only the `statusLine` block** as one more sibling:
 
 ```json
@@ -79,7 +68,7 @@ So your merged file ends up looking like this — `statusLine` is the new bit, e
 
 ```json
 {
-  "model": "claude-opus-4-7",
+  "model": "...",
   "permissions": { ... },
   "statusLine": {
     "type": "command",
@@ -133,6 +122,12 @@ The wizard opens on a main menu with rows for preset, theme, prefix style, separ
 - **Esc** goes back one level
 
 The bottom pane is a live preview that re-renders as you change settings. The focused token / separator is **underlined and wrapped in `▶ ◀` markers** so its real colors stay visible.
+
+### Tune it live alongside Claude Code
+
+You can keep the wizard open in one terminal and have a real Claude Code session running in another. Every time you press **`s` save** in the wizard, the new config lands on disk — and Claude Code picks it up on its next statusline refresh, using **your actual live data** (current cost, real rate-limit countdowns, real git status, etc.) instead of the wizard's synthetic preview.
+
+Claude Code refreshes the statusline on each **tick** — basically anything that updates its UI. The easiest trigger is typing `/` in CC and selecting any slash command (e.g. `/help`, `/status`); CC re-reads the statusline config and re-runs the script immediately. Tweak in the wizard → save → tick CC → see the change live.
 
 Inside **Tokens & lines** you get:
 
