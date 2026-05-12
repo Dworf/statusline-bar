@@ -157,7 +157,7 @@ JSON
 
 read -r -d '' TOKENS_JSON <<'JSON' || true
 {
-  "model": { "source":"claude", "default_prefix":"emoji", "default_format":"value", "applicable_formats":["value"],
+  "model": { "source":"claude", "default_prefix":"emoji", "default_format":"value", "applicable_formats":["value","short","id","id_short"],
              "prefix": { "none":"", "label":"Model:", "emoji":"🤖", "nerd":"", "ascii":"[M]" } },
   "session_name": { "source":"claude", "default_prefix":"emoji", "default_format":"value", "applicable_formats":["value"],
              "prefix": { "none":"", "label":"Session:", "emoji":"📝", "nerd":"", "ascii":"[S]" } },
@@ -170,7 +170,7 @@ read -r -d '' TOKENS_JSON <<'JSON' || true
   "cache_hit": { "source":"claude", "default_prefix":"emoji", "default_format":"percent",
              "applicable_formats":["value","percent","progressbar","progressbar+percent"],
              "prefix": { "none":"", "label":"Cache:", "emoji":"💾", "nerd":"", "ascii":"[H]" } },
-  "cost": { "source":"claude", "default_prefix":"emoji", "default_format":"value", "applicable_formats":["value"],
+  "cost": { "source":"claude", "default_prefix":"emoji", "default_format":"value", "applicable_formats":["value","per_hour","with_rate"],
              "prefix": { "none":"", "label":"Cost:", "emoji":"💰", "nerd":"", "ascii":"[$]" } },
   "duration": { "source":"claude", "default_prefix":"emoji", "default_format":"value", "applicable_formats":["value"],
              "prefix": { "none":"", "label":"Time:", "emoji":"⏳", "nerd":"", "ascii":"[T]" } },
@@ -181,10 +181,10 @@ read -r -d '' TOKENS_JSON <<'JSON' || true
   "lines_removed": { "source":"claude", "default_prefix":"emoji", "default_format":"value", "applicable_formats":["value","count"],
              "prefix": { "none":"", "label":"Removed:", "emoji":"➖", "nerd":"", "ascii":"-" } },
   "rl_5h": { "source":"claude", "default_prefix":"label", "default_format":"progressbar+percent+countdown",
-             "applicable_formats":["value","percent","progressbar","progressbar+percent","countdown","remaining","progressbar+percent+countdown"],
+             "applicable_formats":["value","percent","progressbar","progressbar+percent","countdown","remaining","progressbar+percent+countdown","progressbar+percent+remaining"],
              "prefix": { "none":"", "label":"5h", "emoji":"🕔 5h", "nerd":" 5h", "ascii":"[5h]" } },
   "rl_7d": { "source":"claude", "default_prefix":"label", "default_format":"progressbar+percent+countdown",
-             "applicable_formats":["value","percent","progressbar","progressbar+percent","countdown","remaining","progressbar+percent+countdown"],
+             "applicable_formats":["value","percent","progressbar","progressbar+percent","countdown","remaining","progressbar+percent+countdown","progressbar+percent+remaining"],
              "prefix": { "none":"", "label":"7d", "emoji":"🕖 7d", "nerd":" 7d", "ascii":"[7d]" } },
   "thinking": { "source":"claude", "default_prefix":"emoji", "default_format":"value", "applicable_formats":["value","flag"],
              "prefix": { "none":"", "label":"Think:", "emoji":"💭", "nerd":"", "ascii":"[?]" } },
@@ -488,6 +488,17 @@ fmt_percent() {
   awk -v v="$n" 'BEGIN { printf "%d%%", int((v+0) + 0.5) }'
 }
 
+# _strip_trailing_paren <s> → drop a single trailing " (...)" or " [...]"
+# group plus any whitespace before it. Used by the model token's short
+# formats: "Opus 4.7 (1M context)" → "Opus 4.7"; "claude-opus-4-7[1m]"
+# → "claude-opus-4-7". Anything in the middle is left alone.
+_strip_trailing_paren() {
+  local s="$1"
+  s="$(printf '%s' "$s" | sed -E 's/[[:space:]]*\([^()]*\)[[:space:]]*$//')"
+  s="$(printf '%s' "$s" | sed -E 's/[[:space:]]*\[[^][]*\][[:space:]]*$//')"
+  printf '%s' "$s"
+}
+
 # ============================================================
 # SECTION: Progressbar
 # ============================================================
@@ -579,6 +590,21 @@ tok_cost() {
   c="$(jq -r '.cost.total_cost_usd // empty' <<<"$INPUT_JSON")"
   [[ -z "$c" ]] && return
   awk -v v="$c" 'BEGIN { printf "$%.2f", v }'
+}
+
+# Project session cost to an hourly burn rate based on wall-clock
+# duration ("$6.26/hr"). Emits nothing when cost or duration is
+# missing / zero — used by the cost token's per_hour / with_rate
+# formats. Format-side helper, intentionally cost-shaped (not generic).
+_cost_per_hour() {
+  local c d
+  c="$(jq -r '.cost.total_cost_usd // empty' <<<"$INPUT_JSON")"
+  d="$(jq -r '.cost.total_duration_ms // empty' <<<"$INPUT_JSON")"
+  [[ -z "$c" || -z "$d" ]] && return
+  awk -v c="$c" -v d="$d" 'BEGIN {
+    if (d+0 <= 0) exit 0
+    printf "$%.2f/hr", c / (d / 3600000.0)
+  }'
 }
 tok_lines_added() {
   local n; n="$(jq -r '.cost.total_lines_added // empty' <<<"$INPUT_JSON")"
@@ -768,10 +794,52 @@ apply_format() {
   local id="$1" fmt="$2" raw="$3" bar_style="$4" bar_width="$5" now="$6"
   case "$fmt" in
     value) printf '%s' "$raw" ;;
+    short)
+      # Model-only today: strip a trailing (...) or [...] modifier from
+      # display_name. "Opus 4.7 (1M context)" → "Opus 4.7". Other tokens
+      # pass through unchanged.
+      case "$id" in
+        model)
+          local _dn; _dn="$(jq -r '.model.display_name // ""' <<<"$INPUT_JSON")"
+          printf '%s' "$(_strip_trailing_paren "$_dn")" ;;
+        *) printf '%s' "$raw" ;;
+      esac ;;
+    id)
+      # Model-only today: emit .model.id verbatim ("claude-opus-4-7[1m]").
+      case "$id" in
+        model) jq -r '.model.id // ""' <<<"$INPUT_JSON" ;;
+        *) printf '%s' "$raw" ;;
+      esac ;;
+    id_short)
+      # Model-only today: emit .model.id with trailing (...) / [...]
+      # stripped ("claude-opus-4-7[1m]" → "claude-opus-4-7").
+      case "$id" in
+        model)
+          local _mid; _mid="$(jq -r '.model.id // ""' <<<"$INPUT_JSON")"
+          printf '%s' "$(_strip_trailing_paren "$_mid")" ;;
+        *) printf '%s' "$raw" ;;
+      esac ;;
     count)
       # Strip a leading +/- sign (e.g. lines_added "+128" → "128",
       # lines_removed "-42" → "42"). Other values pass through unchanged.
       printf '%s' "${raw#[+-]}" ;;
+    per_hour)
+      # cost-only: project total_cost_usd over total_duration_ms to an
+      # hourly burn rate ("$6.26/hr"). Blank if duration is missing/zero.
+      case "$id" in
+        cost) _cost_per_hour ;;
+        *) printf '%s' "$raw" ;;
+      esac ;;
+    with_rate)
+      # cost-only: absolute cost + projected hourly rate side-by-side
+      # ("$0.40 ($6.26/hr)"). Falls back to plain value if duration=0.
+      case "$id" in
+        cost)
+          local _rate; _rate="$(_cost_per_hour)"
+          if [[ -n "$_rate" ]]; then printf '%s (%s)' "$raw" "$_rate"
+          else printf '%s' "$raw"; fi ;;
+        *) printf '%s' "$raw" ;;
+      esac ;;
     percent)
       [[ -z "$raw" ]] && return
       local p="${raw%%|*}"
@@ -802,6 +870,15 @@ apply_format() {
       local diff=$(( r - now ))
       (( diff < 0 )) && diff=0
       printf '%s %s 🔄 %s' \
+        "$(render_bar "$p" "$bar_style" "$bar_width")" \
+        "$(fmt_percent "$p")" \
+        "$(fmt_duration_ms $(( diff * 1000 )))" ;;
+    "progressbar+percent+remaining")
+      [[ -z "$raw" ]] && return
+      local p="${raw%%|*}" r="${raw##*|}"
+      local diff=$(( r - now ))
+      (( diff < 0 )) && diff=0
+      printf '%s %s 🔄 in %s' \
         "$(render_bar "$p" "$bar_style" "$bar_width")" \
         "$(fmt_percent "$p")" \
         "$(fmt_duration_ms $(( diff * 1000 )))" ;;
@@ -2764,25 +2841,41 @@ run_wizard() {
         local _save_path="${CONFIG_PATH:-$(_default_config_path)}"
         save_config "$_save_path" "$CONFIG_JSON"
         WIZARD_DIRTY=0
-        # Save-and-exit only on main. On any submenu, stay put so the user
-        # can continue editing — flash a confirmation so they know it took.
-        if [[ "$screen" == "main" ]]; then
-          break
-        else
-          WIZARD_FLASH="Saved to $_save_path"
-          continue
-        fi ;;
+        # Save never exits — flash a confirmation and stay on the current
+        # screen. Use q to leave the wizard once saved.
+        WIZARD_FLASH="Saved to $_save_path"
+        continue ;;
       reset)
-        # On the token_detail screen, `r` resets just that one token's
-        # overrides instead of the whole config. Everywhere else, `r`
-        # resets the entire config to defaults.
-        if [[ "$screen" == "token_detail" ]]; then
-          local _tid="$WIZARD_TOKEN_DETAIL"
-          CONFIG_JSON="$(jq --arg id "$_tid" 'del(.tokens[$id])' <<<"$CONFIG_JSON")"
-          WIZARD_DIRTY=1
-          continue
-        fi
-        CONFIG_JSON="$(build_default_config)"
+        # `r` resets at the granularity of the current screen, so users
+        # don't lose unrelated work:
+        #   token_field  → drop the override for just this field on this token
+        #   token_detail → drop all overrides for just this token
+        #   tokens_lines → reset .lines + .tokens to the active preset's
+        #                  layout (keep theme / prefix / separator / etc.)
+        #   anywhere else → reset the entire config to factory defaults
+        case "$screen" in
+          token_field)
+            local _tid="$WIZARD_TOKEN_DETAIL" _tf="$TL_FIELD"
+            CONFIG_JSON="$(jq --arg id "$_tid" --arg f "$_tf" '
+              if .tokens[$id]? then .tokens[$id] |= del(.[$f]) else . end
+              | if (.tokens[$id] // {}) == {} then del(.tokens[$id]) else . end
+            ' <<<"$CONFIG_JSON")"
+            ;;
+          token_detail)
+            local _tid="$WIZARD_TOKEN_DETAIL"
+            CONFIG_JSON="$(jq --arg id "$_tid" 'del(.tokens[$id])' <<<"$CONFIG_JSON")"
+            ;;
+          tokens_lines)
+            local _preset; _preset="$(jq -r '.preset // "default"' <<<"$CONFIG_JSON")"
+            CONFIG_JSON="$(jq --argjson presets "$PRESETS_JSON" --arg p "$_preset" '
+              .lines = ($presets[$p].lines // .lines)
+              | .tokens = {}
+            ' <<<"$CONFIG_JSON")"
+            ;;
+          *)
+            CONFIG_JSON="$(build_default_config)"
+            ;;
+        esac
         WIZARD_DIRTY=1
         continue ;;
       quit|esc)

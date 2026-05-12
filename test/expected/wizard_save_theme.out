@@ -166,3 +166,24 @@
   ↑↓ navigate   Enter select   Esc back   s save   r reset   q quit
 ────────────────────────────────────────────────────────────
   ⓘ  Theme: color palette only. Switching themes does not change which tokens render or how they're labeled.
+[H[2J[1;1H  statusline-bar ▸ Main
+
+  Preset          [default]
+› Theme           [dracula]
+  Prefix style    [emoji]
+  Separator       [pipe]
+  Bar style       [(theme default)]
+  Tokens & lines  [1 lines · 1 tokens]
+  Empty data      [hide]
+  Color depth     [none]
+  Reset to defaults  [3 customizations — Enter to reset all]
+
+  Save (s)  Reset (r)  Quit (q)
+────────────────────────────────────────────────────────────
+  Preview:
+🤖 Opus 4.7 (1M)
+────────────────────────────────────────────────────────────
+  ↑↓ navigate   Enter select   Esc back   s save   r reset   q quit
+────────────────────────────────────────────────────────────
+  ⓘ  Theme: color palette only. Switching themes does not change which tokens render or how they're labeled.
+  [1;32m✓ Saved to /tmp/sbar-wsave.json[0m

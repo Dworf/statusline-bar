@@ -6,4 +6,4 @@ prefix.label=Model:
 prefix.emoji=🤖
 prefix.nerd=
 prefix.ascii=[M]
-applicable=value
+applicable=value,short,id,id_short
