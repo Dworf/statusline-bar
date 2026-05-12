@@ -3336,6 +3336,28 @@ _print_token_row() {
 # section (varying the theme, theme's default bar). Args:
 #   $1 bar style name (or "null" for theme default)
 #   $2 theme name      (or "default")
+# Render the "model + context" prelude shown before each theme's
+# threshold-bar row. Model picks up the theme's accent color; context
+# picks up the threshold color for its 50% value. This is what makes
+# theme differences visible across non-numeric tokens too.
+_render_theme_prelude() {
+  local theme="$1" cfg
+  cfg="$(build_default_config | jq --arg t "$theme" '
+    .preset = "minimum"
+    | .theme = $t
+    | .global.prefix_style = "emoji"
+    | .global.separator = "pipe"
+    | .global.bar_style = null
+    | .lines = [["model","context"]]
+    | .tokens = {}
+  ')"
+  INPUT_JSON="$EXAMPLES_INPUT_JSON" \
+    CONFIG_JSON="$cfg" \
+    COLOR_DEPTH="$(detect_color_depth)" \
+    NOW_EPOCH=1778522580 \
+    render_all | head -n 1
+}
+
 _render_threshold_bars() {
   local bar="$1" theme="${2:-default}" out="" pct cfg input rendered
   for pct in 25 75 95; do
@@ -3399,12 +3421,13 @@ examples_catalog() {
   fi
 
   if [[ "$only" == "all" || "$only" == "themes" ]]; then
-    echo "## Themes  (color palettes; switch via --theme NAME — bars show good / warn / crit at 25 / 75 / 95%)"
-    echo "                       good warn crit text   good (25%)     warn (75%)     crit (95%)"
+    echo "## Themes  (color palettes; switch via --theme NAME — accent color on model + good/warn/crit bars)"
+    echo "                       good warn crit text"
     for t in default solarized graphite light solarized-light catppuccin-latte tokyo-day ayu-light garden dark dracula nord gruvbox tokyo-night catppuccin one-dark rose-pine monokai mocha silver ocean; do
-      printf '[ %-16s ] %s   %s\n' \
+      printf '[ %-16s ] %s   %s   %s\n' \
         "$t" \
         "$(_theme_swatch "$t" "$depth")" \
+        "$(_render_theme_prelude "$t")" \
         "$(_render_threshold_bars null "$t")"
     done
     echo
