@@ -182,10 +182,10 @@ read -r -d '' TOKENS_JSON <<'JSON' || true
              "prefix": { "none":"", "label":"Removed:", "emoji":"➖", "nerd":"", "ascii":"-" } },
   "rl_5h": { "source":"claude", "default_prefix":"label", "default_format":"progressbar+percent+countdown",
              "applicable_formats":["value","percent","progressbar","progressbar+percent","countdown","remaining","progressbar+percent+countdown"],
-             "prefix": { "none":"", "label":"5h", "emoji":"🕔", "nerd":"", "ascii":"[5h]" } },
+             "prefix": { "none":"", "label":"5h", "emoji":"🕔 5h", "nerd":" 5h", "ascii":"[5h]" } },
   "rl_7d": { "source":"claude", "default_prefix":"label", "default_format":"progressbar+percent+countdown",
              "applicable_formats":["value","percent","progressbar","progressbar+percent","countdown","remaining","progressbar+percent+countdown"],
-             "prefix": { "none":"", "label":"7d", "emoji":"🕖", "nerd":"", "ascii":"[7d]" } },
+             "prefix": { "none":"", "label":"7d", "emoji":"🕖 7d", "nerd":" 7d", "ascii":"[7d]" } },
   "thinking": { "source":"claude", "default_prefix":"emoji", "default_format":"value", "applicable_formats":["value","flag"],
              "prefix": { "none":"", "label":"Think:", "emoji":"💭", "nerd":"", "ascii":"[?]" } },
   "effort": { "source":"claude", "default_prefix":"emoji", "default_format":"value", "applicable_formats":["value"],
@@ -824,21 +824,37 @@ apply_prefix() {
       else printf '%s %s' "$p" "$value"
       fi ;;
     emoji+label)
-      local pe pl
+      local pe pl pl_bare
       pe="$(jq -r --arg id "$id" '.[$id].prefix.emoji' <<<"$TOKENS_JSON")"
       pl="$(jq -r --arg id "$id" '.[$id].prefix.label' <<<"$TOKENS_JSON")"
-      printf '%s %s %s' "$pe" "$pl" "$value" ;;
+      pl_bare="${pl%:}"
+      # If the emoji prefix already contains the label text (e.g. rl_5h's
+      # "🕔 5h" + label "5h"), don't repeat it.
+      if [[ -n "$pl_bare" && "$pe" == *"$pl_bare" ]]; then
+        printf '%s %s' "$pe" "$value"
+      else
+        printf '%s %s %s' "$pe" "$pl" "$value"
+      fi ;;
     label+emoji)
-      local pe pl
+      local pe pl pl_bare
       pe="$(jq -r --arg id "$id" '.[$id].prefix.emoji' <<<"$TOKENS_JSON")"
       pl="$(jq -r --arg id "$id" '.[$id].prefix.label' <<<"$TOKENS_JSON")"
-      pl="${pl%:}"
-      printf '%s %s %s' "$pl" "$pe" "$value" ;;
+      pl_bare="${pl%:}"
+      if [[ -n "$pl_bare" && "$pe" == *"$pl_bare" ]]; then
+        printf '%s %s' "$pe" "$value"
+      else
+        printf '%s %s %s' "$pl_bare" "$pe" "$value"
+      fi ;;
     nerd+label)
-      local pn pl
+      local pn pl pl_bare
       pn="$(jq -r --arg id "$id" '.[$id].prefix.nerd' <<<"$TOKENS_JSON")"
       pl="$(jq -r --arg id "$id" '.[$id].prefix.label' <<<"$TOKENS_JSON")"
-      printf '%s %s %s' "$pn" "$pl" "$value" ;;
+      pl_bare="${pl%:}"
+      if [[ -n "$pl_bare" && "$pn" == *"$pl_bare" ]]; then
+        printf '%s %s' "$pn" "$value"
+      else
+        printf '%s %s %s' "$pn" "$pl" "$value"
+      fi ;;
     *) printf '%s' "$value" ;;
   esac
 }

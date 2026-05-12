@@ -3,7 +3,7 @@
 Customizable Claude Code statusline. Single bash file, no JavaScript, no network, no daemon.
 
 ```
-🤖 Opus 4.7 (1M) | 🧠 4% | 💰 $0.40 | 🕔 ░░░░░░░░░░ 0% 🔄 4h 58m | 🕖 █░░░░░░░░░ 6% 🔄 5d 23h
+🤖 Opus 4.7 (1M) | 🧠 4% | 💰 $0.40 | 🕔 5h ░░░░░░░░░░ 0% 🔄 4h 58m | 🕖 7d █░░░░░░░░░ 6% 🔄 5d 23h
 💭 true | 💪 xhigh | 📁 my-project | 🌿 main | ➕ +128 | ➖ -42 | ⏳ 3m 50s
 ```
 
