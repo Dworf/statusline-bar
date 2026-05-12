@@ -42,6 +42,7 @@ The Claude Code ecosystem already has a dozen excellent statuslines, each great 
 Clone the repo somewhere stable on your machine (anywhere works — `~/code`, `~/.local/share`, etc.) and point Claude Code at the script:
 
 ```bash
+mkdir -p ~/.local/share
 git clone https://github.com/Dworf/statusline-bar.git ~/.local/share/statusline-bar
 chmod +x ~/.local/share/statusline-bar/statusline-bar.sh
 ```
@@ -63,18 +64,21 @@ Minimal config (only `statusLine`, fresh install):
 }
 ```
 
-Existing config with other top-level keys — add `statusLine` as a sibling:
+Existing config with other top-level keys — add the highlighted block as a sibling:
 
-```json
-{
-  "model": "claude-opus-4-7",
-  "permissions": { ... },
-  "statusLine": {
-    "type": "command",
-    "command": "/Users/YOUR_USERNAME/.local/share/statusline-bar/statusline-bar.sh"
-  }
-}
+```diff
+ {
+   "model": "claude-opus-4-7",
+-  "permissions": { ... }
++  "permissions": { ... },
++  "statusLine": {
++    "type": "command",
++    "command": "/Users/YOUR_USERNAME/.local/share/statusline-bar/statusline-bar.sh"
++  }
+ }
 ```
+
+GitHub renders the `+` lines in green — that's everything you add. The `-` line + the `+` version above it just means: add a trailing comma to your previous last key (JSON doesn't allow trailing commas, so the previously-last key won't have one until you insert a sibling after it).
 
 The `command` path must be **absolute** — `~` and `$HOME` aren't expanded. Replace `YOUR_USERNAME` (or paste the full path from `realpath ~/.local/share/statusline-bar/statusline-bar.sh`). On Windows: use the WSL or Git Bash path.
 
