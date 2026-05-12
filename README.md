@@ -130,6 +130,36 @@ statusline-bar.sh --config PATH         use specific config file
 
 ## Changelog
 
+### 0.3.0 — 2026-05-12
+
+**Tokens & lines** — a full TUI for managing your statusline layout, plus a lot of preview-pane polish.
+
+- **New "Tokens & lines" screen** replaces the old `Lines` / `Tokens` placeholders on the main menu. Manage every line and every token from one place:
+  - Horizontal **line tabs** (`[1] [2] [3] +`) at the top — `←`/`→` switches the active line, `↓` enters the token list, Enter on `+` adds a new line (up to 4), `d` deletes a line with confirmation if non-empty.
+  - Token rows + **inline separator rows** (always visible, labeled `↓ pipe (global)` or `↓ star (override)`).
+  - `a` add a token, `c` change the token at cursor, `d` delete, `m` mark for cross-line move, `p` paste, `Shift+↑↓` move within a line, Enter on a token opens its detail screen, Enter on a separator row opens a separator picker scoped to that one position (with a `(use global)` row that clears the override).
+  - `←`/`→` from inside the tokens zone also cycle through lines + the `+` tab (no need to climb back up).
+- **Token picker**: 39 tokens grouped by source (Claude stdin / git / OS), each row showing a live `emoji+label` sample rendered with synthetic data (e.g. `🤖 Model: Opus 4.7 (1M)`, `🕔 5h █████░░░░░ 50% 🔄 0s`). `✓` marks tokens already used somewhere. Cursor on a row tooltips its one-line description ("context_pct — % of context window used (formatted 4%)" etc.). Used by both `a add` and `c change`.
+- **Token detail screen** for per-token overrides: `prefix`, `format`, `bar_style`, and `Reset to defaults`. Each sub-picker opens with the cursor on the currently-active value, and the right-side example column renders the actual token under that option so you can compare outputs directly. `r` resets just this token (screen-aware shortcut).
+- **Preview highlighting** redesigned. The focused token / separator no longer reverse-video-inverts colors (which lied about how it would actually render). Now the focused content is **underlined** and wrapped in bold-bright-yellow `▶ ◀` markers — colors stay accurate.
+- **Unsaved-changes prompt** when you press `q` or `Esc` on the main menu with edits pending — choose `s` save+quit, `d` discard+quit, or any other key to cancel and keep editing. Previously the prompt wasn't reachable because of a subshell-captured-output bug.
+- **Conditional "Reset to defaults" row** appears at the bottom of the main menu when the config diverges from factory defaults, with a count of customizations.
+- **CLI cleanup**:
+  - `--examples` now always prints the catalog; the `interactive` and `all` sub-modes (and the sub-picker prompt) are gone.
+  - Catalog output now uses your real terminal color depth — 10 themes visibly differ instead of looking identical.
+- **Prefix data cleanups** for cleaner picker samples:
+  - `rl_5h` / `rl_7d` emoji `⏱️ 5h` / `⏱️ 7d` → `🕔` / `🕖` (removes the duplicated `5h 5h` under `emoji+label`).
+  - `lines_added` / `lines_removed` labels `+:` / `-:` → `Added:` / `Removed:`.
+  - `version` label `v` → `Version:`.
+  - VS-16 variation selectors added to `🏷️` / `⚡️` / `⌨️` / `🖥️` so they render as wide emojis (consistent column count with other prefixes).
+  - `git_ahead_behind` icon `⇅` (math symbol) → `🔀` (proper emoji).
+- **`git_run` helper** so git tokens work from a synthetic input (mock-on-PATH) even when the workspace dir doesn't exist on disk.
+- Lots of small wizard fixes from earlier in this cycle: cursor restoration on return from sub-menus, wrap-around navigation, per-item examples on every selection screen, theme menu columns (`good warn crit text bar style`), live Nerd-Font detection labels, breadcrumbs on every screen, dynamic `Config:` line in `--help`, `-w/-c/-e` short-flag remap.
+
+Known follow-ups for v0.4.0: per-token + global colors (`text`, `prefix`, `separator`), full Nerd-Font glyph mapping for the `nerd` / `nerd+label` prefix styles.
+
+Tests: 115 e2e cases passing.
+
 ### 0.2.0 — 2026-05-11
 
 Wizard polish, CLI cleanup, and live Nerd-Font detection.
