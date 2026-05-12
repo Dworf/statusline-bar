@@ -100,7 +100,19 @@ You should see a populated two-line statusline (model, context, cost, rate limit
 
 ### Requirements
 
-`bash` 3.2+ and `jq` — both ship with macOS and every mainstream Linux. Optional: `git` (for git tokens), `fc-list` (for Nerd Font detection), `pmset` / `/sys/class/power_supply` (for the battery token).
+`bash` 3.2+ (ships everywhere) and `jq`. Install `jq` if you don't already have it:
+
+| OS | Install |
+|---|---|
+| macOS | `brew install jq` |
+| Debian / Ubuntu / WSL | `sudo apt install jq` |
+| Fedora / RHEL | `sudo dnf install jq` |
+| Arch | `sudo pacman -S jq` |
+| Windows | `winget install jqlang.jq` (or `choco install jq` / `scoop install jq`) |
+
+Check it's working: `jq --version` should print something like `jq-1.7.1`.
+
+Optional: `git` (for git tokens), `fc-list` (for Nerd Font detection), `pmset` / `/sys/class/power_supply` (for the battery token).
 
 ### Nerd Fonts (optional)
 
