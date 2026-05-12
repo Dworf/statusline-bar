@@ -3175,11 +3175,20 @@ _render_sample() {
       | .global.separator=$s
       | (if $b=="null" then .global.bar_style=null else .global.bar_style=$b end)')"
   depth="$(detect_color_depth)"
+  # Pin clock / battery / memory / load to fake values so the catalog
+  # renders the same output every time (otherwise OS tokens drift
+  # between runs and break snapshot tests). NOW=9999999999 also makes
+  # the date/clock output deterministic.
   INPUT_JSON="$EXAMPLES_INPUT_JSON" \
     CONFIG_JSON="$cfg" \
     COLOR_DEPTH="$depth" \
     NOW_EPOCH=9999999999 \
     MOCK_GIT_STATE=out_of_repo \
+    STATUSLINE_BAR_FAKE_NOW=9999999999 \
+    STATUSLINE_BAR_FAKE_BATTERY=92 \
+    STATUSLINE_BAR_FAKE_MEMORY=45 \
+    STATUSLINE_BAR_FAKE_LOAD=1.2 \
+    HOSTNAME_OVERRIDE=mac \
     render_all
 }
 
@@ -3208,6 +3217,37 @@ _render_token_alone() {
     STATUSLINE_BAR_FAKE_NOW=9999999999 \
     HOSTNAME_OVERRIDE=mac \
     render_all
+}
+
+# Print one row for the Tokens catalog section:
+#   [ <id>             ] <render>   ⓘ <description>
+# The description is padded onto the same line as the render, aligned to
+# roughly the same column. Emoji widths and ANSI escapes can throw the
+# alignment off by a column or two — we strip ANSI for length math and
+# count each emoji as 2 columns (close enough for most monospace fonts).
+_print_token_row() {
+  local tok="$1" rendered desc plain pad target=34
+  rendered="$(_render_token_alone "$tok" | head -n 1)"
+  desc="$(_token_description "$tok")"
+  # Strip ANSI escapes for column math.
+  plain="$(printf '%s' "$rendered" | sed -E 's/'$'\033''\[[0-9;]*m//g')"
+  # Bash 3.2's ${#var} counts characters in the current locale, but emojis
+  # consume two columns visually. Add 1 per probable wide char (every
+  # multi-byte char above U+1F000 ish — approximated by counting bytes
+  # vs chars).
+  local chars="${#plain}"
+  local bytes; bytes="$(printf '%s' "$plain" | LC_ALL=C wc -c | tr -d ' ')"
+  # Each 4-byte UTF-8 sequence (planar emoji) likely renders 2-wide; add
+  # the difference between byte count and char count divided by 3 as an
+  # approximation of double-width glyphs.
+  local wide=$(( (bytes - chars) / 3 ))
+  local width=$(( chars + wide ))
+  if (( width < target )); then
+    pad=$(( target - width ))
+  else
+    pad=1
+  fi
+  printf '[ %-18s ] %s%*s   ⓘ %s\n' "$tok" "$rendered" "$pad" "" "$desc"
 }
 
 # Build the inline color swatch shown next to each theme in the catalog:
@@ -3287,33 +3327,37 @@ examples_catalog() {
     echo
     echo "### Claude session (29 tokens, read from stdin JSON)"
     for tok in model session_name session_id context tokens_input tokens_output context_size context_remaining cache_hit cost duration api_duration lines_added lines_removed rl_5h rl_7d thinking effort output_style version fast_mode exceeds_200k dir worktree vim_mode agent_name added_dirs git_worktree transcript; do
-      printf '[ %-18s ] %s\n' "$tok" "$(_render_token_alone "$tok" | head -n 1)"
-      printf '                       ⓘ %s\n' "$(_token_description "$tok")"
+      _print_token_row "$tok"
     done
     echo
     echo "### Git (6 tokens, populated when cwd is inside a git repo)"
     for tok in git_branch git_status git_staged git_modified git_untracked git_ahead_behind; do
-      printf '[ %-18s ] %s\n' "$tok" "$(_render_token_alone "$tok" | head -n 1)"
-      printf '                       ⓘ %s\n' "$(_token_description "$tok")"
+      _print_token_row "$tok"
     done
     echo
     echo "### Local OS (7 tokens, from the machine running the statusline)"
     for tok in clock date hostname user battery memory load; do
-      printf '[ %-18s ] %s\n' "$tok" "$(_render_token_alone "$tok" | head -n 1)"
-      printf '                       ⓘ %s\n' "$(_token_description "$tok")"
+      _print_token_row "$tok"
     done
     echo
   fi
 }
 
 run_examples() {
-  # Argument names a single catalog section to print
-  # (presets|themes|prefixes|separators|bars|tokens), or empty/"all" for
-  # the full catalog. examples_catalog reads $ONLY to decide which
-  # sections to emit; the historic combinatorial-all and interactive
-  # modes from earlier releases are gone — the catalog covers them.
-  local mode="${1:-all}"
-  ONLY="$mode" examples_catalog
+  # `--examples MODE` may name a single section
+  # (presets|themes|prefixes|separators|bars|tokens) — passed as $1 here.
+  # `--only X` may also set ONLY in the env. The historic "catalog" mode
+  # name (and an empty arg) both mean "full catalog".
+  # Precedence: explicit `--only` wins over the positional MODE.
+  local mode="${1:-}"
+  if [[ -z "${ONLY:-}" ]]; then
+    if [[ -z "$mode" || "$mode" == "catalog" ]]; then
+      ONLY="all"
+    else
+      ONLY="$mode"
+    fi
+  fi
+  ONLY="$ONLY" examples_catalog
 }
 
 main() {

@@ -1,0 +1,24 @@
+## Themes  (color palettes; switch via --theme NAME — only colors change)
+                       good warn crit text   sample
+[ default          ] ● ● ● Aa   🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40
+[ solarized        ] ● ● ● Aa   🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40
+[ graphite         ] ● ● ● Aa   🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40
+[ light            ] ● ● ● Aa   🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40
+[ solarized-light  ] ● ● ● Aa   🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40
+[ catppuccin-latte ] ● ● ● Aa   🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40
+[ tokyo-day        ] ● ● ● Aa   🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40
+[ ayu-light        ] ● ● ● Aa   🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40
+[ garden           ] ● ● ● Aa   🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40
+[ dark             ] ● ● ● Aa   🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40
+[ dracula          ] ● ● ● Aa   🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40
+[ nord             ] ● ● ● Aa   🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40
+[ gruvbox          ] ● ● ● Aa   🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40
+[ tokyo-night      ] ● ● ● Aa   🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40
+[ catppuccin       ] ● ● ● Aa   🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40
+[ one-dark         ] ● ● ● Aa   🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40
+[ rose-pine        ] ● ● ● Aa   🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40
+[ monokai          ] ● ● ● Aa   🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40
+[ mocha            ] ● ● ● Aa   🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40
+[ silver           ] ● ● ● Aa   🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40
+[ ocean            ] ● ● ● Aa   🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40
+
