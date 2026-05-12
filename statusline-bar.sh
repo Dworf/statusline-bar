@@ -3329,19 +3329,23 @@ _print_token_row() {
   printf '[ %-18s ] %s%*s   ⓘ %s\n' "$tok" "$rendered" "$pad" "" "$desc"
 }
 
-# Render one row of bar-style samples — the same bar at 25 / 75 / 95%,
-# each picking up the threshold color (good / warn / crit). Used by the
-# Bar styles catalog section so the focus is purely on bar character +
-# fill + color, not on other tokens.
-_render_bar_showcase() {
-  local bar="$1" out="" pct cfg input rendered
+# Render one row of bar samples — the same context-bar token at three
+# threshold percentages (25 / 75 / 95%) so each bar picks up the
+# good / warn / crit color from the theme. Used by both the Bar styles
+# section (varying the bar character, theme=default) and the Themes
+# section (varying the theme, theme's default bar). Args:
+#   $1 bar style name (or "null" for theme default)
+#   $2 theme name      (or "default")
+_render_threshold_bars() {
+  local bar="$1" theme="${2:-default}" out="" pct cfg input rendered
   for pct in 25 75 95; do
     input="$(jq --arg p "$pct" '.context_window.used_percentage = ($p|tonumber)' <<<"$EXAMPLES_INPUT_JSON")"
-    cfg="$(build_default_config | jq --arg b "$bar" '
+    cfg="$(build_default_config | jq --arg b "$bar" --arg t "$theme" '
       .preset = "minimum"
+      | .theme = $t
       | .global.prefix_style = "none"
       | .global.separator = "space"
-      | .global.bar_style = $b
+      | (if $b=="null" then .global.bar_style=null else .global.bar_style=$b end)
       | .lines = [["context"]]
       | .tokens = { "context": { "format": "progressbar+percent" } }
     ')"
@@ -3395,13 +3399,13 @@ examples_catalog() {
   fi
 
   if [[ "$only" == "all" || "$only" == "themes" ]]; then
-    echo "## Themes  (color palettes; switch via --theme NAME — only colors change)"
-    echo "                       good warn crit text   sample"
+    echo "## Themes  (color palettes; switch via --theme NAME — bars show good / warn / crit at 25 / 75 / 95%)"
+    echo "                       good warn crit text   good (25%)     warn (75%)     crit (95%)"
     for t in default solarized graphite light solarized-light catppuccin-latte tokyo-day ayu-light garden dark dracula nord gruvbox tokyo-night catppuccin one-dark rose-pine monokai mocha silver ocean; do
       printf '[ %-16s ] %s   %s\n' \
         "$t" \
         "$(_theme_swatch "$t" "$depth")" \
-        "$(_render_sample minimum "$t" emoji pipe null | head -n 1)"
+        "$(_render_threshold_bars null "$t")"
     done
     echo
   fi
@@ -3425,7 +3429,7 @@ examples_catalog() {
   if [[ "$only" == "all" || "$only" == "bars" ]]; then
     echo "## Bar styles  (each row: same bar at 25 / 75 / 95% — green good, yellow warn, red crit)"
     for b in blocks heavy line braille dots arrows ascii gradient gradient_dots gradient_fade gradient_shade gradient_braille; do
-      printf '[ %-16s ] %s\n' "$b" "$(_render_bar_showcase "$b")"
+      printf '[ %-16s ] %s\n' "$b" "$(_render_threshold_bars "$b")"
     done
     echo
   fi
