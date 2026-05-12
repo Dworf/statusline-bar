@@ -82,8 +82,10 @@ read -r -d '' BAR_STYLES_JSON <<'JSON' || true
   "dots":     { "fill":"●",   "empty":"○",   "gradient":false },
   "arrows":   { "fill":"▶",   "empty":"▷",   "gradient":false },
   "ascii":    { "fill":"#",        "empty":".",        "gradient":false },
-  "gradient": { "fill":"█",   "empty":" ",        "gradient":true,
-                "eighths":["", "▏","▎","▍","▌","▋","▊","▉"] }
+  "gradient":       { "fill":"█",   "empty":" ",        "gradient":true,
+                      "eighths":["", "▏","▎","▍","▌","▋","▊","▉"] },
+  "gradient_track": { "fill":"█",   "empty":"░",   "gradient":true,
+                      "eighths":["", "▏","▎","▍","▌","▋","▊","▉"] }
 }
 JSON
 
@@ -563,7 +565,7 @@ _bar_eighth()      { jq -r --arg s "$1" --argjson i "$2" '.[$s].eighths[$i]' <<<
 render_bar() {
   local pct="$1" style="${2:-blocks}" width="${3:-10}"
   if _bar_is_gradient "$style"; then
-    local eighths
+    local eighths echar
     eighths="$(awk -v p="$pct" -v w="$width" 'BEGIN { printf "%d", int((p*w*8/100) + 0.5) }')"
     if (( eighths < 0 )); then eighths=0; fi
     local max=$(( width * 8 ))
@@ -572,10 +574,11 @@ render_bar() {
     local rem=$(( eighths % 8 ))
     local partial_count=$(( rem > 0 ? 1 : 0 ))
     local empty=$(( width - full - partial_count ))
+    echar="$(_bar_empty_char "$style")"
     local i out=""
     for ((i=0; i<full; i++)); do out+="█"; done
     if (( rem > 0 )); then out+="$(_bar_eighth "$style" "$rem")"; fi
-    for ((i=0; i<empty; i++)); do out+=" "; done
+    for ((i=0; i<empty; i++)); do out+="$echar"; done
     printf '%s' "$out"
     return
   fi
@@ -1802,7 +1805,7 @@ _THEMES=(
 )
 _PREFIXES=(none label emoji nerd ascii emoji+label label+emoji nerd+label)
 _SEPARATORS=(space pipe slash dot vbar dash bullet diamond arrow tri star sparkle gear check heart music chevron slant chevron_thin)
-_BARS=("(theme default)" blocks heavy line braille dots arrows ascii gradient)
+_BARS=("(theme default)" blocks heavy line braille dots arrows ascii gradient gradient_track)
 _EMPTY=(hide placeholder)
 _DEPTH=(auto truecolor 256 16 none)
 
@@ -2814,7 +2817,7 @@ _tl_field_initial_cursor() {
       done < <( jq -r --arg id "$id" '.[$id].applicable_formats[]' <<<"$TOKENS_JSON" )
       echo 0 ;;
     bar_style)
-      local bars=(blocks heavy line braille dots arrows ascii gradient) i
+      local bars=(blocks heavy line braille dots arrows ascii gradient gradient_track) i
       for ((i=0; i<${#bars[@]}; i++)); do
         if [[ "${bars[$i]}" == "$cur" ]]; then echo $((i+1)); return; fi
       done
@@ -2839,7 +2842,7 @@ _wiz_draw_token_field() {
       while IFS= read -r f; do items+=("$f"); done < <( jq -r --arg id "$id" '.[$id].applicable_formats[]' <<<"$TOKENS_JSON" )
       cur="$(jq -r --arg id "$id" '.tokens[$id].format // "(inherit default)"' <<<"$CONFIG_JSON")" ;;
     bar_style)
-      items=("(inherit global)" blocks heavy line braille dots arrows ascii gradient)
+      items=("(inherit global)" blocks heavy line braille dots arrows ascii gradient gradient_track)
       cur="$(jq -r --arg id "$id" '.tokens[$id].bar_style // "(inherit global)"' <<<"$CONFIG_JSON")" ;;
   esac
   TL_FIELD_ITEMS=("${items[@]}")
@@ -3168,7 +3171,7 @@ examples_catalog() {
   fi
   if [[ "$only" == "all" || "$only" == "bars" ]]; then
     echo "## Bar styles"
-    for b in blocks heavy line braille dots arrows ascii gradient; do
+    for b in blocks heavy line braille dots arrows ascii gradient gradient_track; do
       printf '[ %-10s ] %s\n' "$b" "$(_render_sample fancy default emoji pipe "$b" | sed -n '1p')"
     done
   fi
