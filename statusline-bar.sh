@@ -13,16 +13,25 @@ VERSION="0.3.0"
 
 read -r -d '' THEMES_JSON <<'JSON' || true
 {
-  "default":     { "good":"#3fb950","warn":"#d29922","crit":"#f85149","dim":"#8b949e","accent":"","bar_style":"blocks" },
-  "dark":        { "good":"#00ff87","warn":"#ffaf00","crit":"#ff5f5f","dim":"#6a737d","accent":"#5fafff","bar_style":"blocks" },
-  "light":       { "good":"#1a7f37","warn":"#bf8700","crit":"#cf222e","dim":"#57606a","accent":"#0969da","bar_style":"blocks" },
-  "graphite":    { "good":"bold",   "warn":"normal","crit":"normal","dim":"dim",    "accent":"bold",    "bar_style":"ascii"  },
-  "solarized":   { "good":"#859900","warn":"#b58900","crit":"#dc322f","dim":"#586e75","accent":"#268bd2","bar_style":"heavy"  },
-  "dracula":     { "good":"#50fa7b","warn":"#f1fa8c","crit":"#ff5555","dim":"#6272a4","accent":"#bd93f9","bar_style":"blocks" },
-  "nord":        { "good":"#a3be8c","warn":"#ebcb8b","crit":"#bf616a","dim":"#4c566a","accent":"#88c0d0","bar_style":"heavy"  },
-  "gruvbox":     { "good":"#98971a","warn":"#d79921","crit":"#cc241d","dim":"#7c6f64","accent":"#458588","bar_style":"heavy"  },
-  "tokyo-night": { "good":"#9ece6a","warn":"#e0af68","crit":"#f7768e","dim":"#565f89","accent":"#7aa2f7","bar_style":"blocks" },
-  "catppuccin":  { "good":"#a6e3a1","warn":"#f9e2af","crit":"#f38ba8","dim":"#6c7086","accent":"#89b4fa","bar_style":"blocks" }
+  "default":          { "good":"#3fb950","warn":"#d29922","crit":"#f85149","dim":"#8b949e","accent":"",       "bar_style":"blocks" },
+  "solarized":        { "good":"#859900","warn":"#b58900","crit":"#dc322f","dim":"#586e75","accent":"#268bd2","bar_style":"heavy"  },
+  "graphite":         { "good":"bold",   "warn":"normal","crit":"normal","dim":"dim",    "accent":"bold",    "bar_style":"ascii"  },
+
+  "light":            { "good":"#1a7f37","warn":"#bf8700","crit":"#cf222e","dim":"#57606a","accent":"#0969da","bar_style":"blocks" },
+  "solarized-light":  { "good":"#859900","warn":"#b58900","crit":"#dc322f","dim":"#93a1a1","accent":"#268bd2","bar_style":"heavy"  },
+  "catppuccin-latte": { "good":"#40a02b","warn":"#df8e1d","crit":"#d20f39","dim":"#6c6f85","accent":"#1e66f5","bar_style":"blocks" },
+  "tokyo-day":        { "good":"#587539","warn":"#8c6c3e","crit":"#f52a65","dim":"#848cb5","accent":"#2e7de9","bar_style":"blocks" },
+  "ayu-light":        { "good":"#86b300","warn":"#fa8d3e","crit":"#f07171","dim":"#828c99","accent":"#399ee6","bar_style":"blocks" },
+
+  "dark":             { "good":"#00ff87","warn":"#ffaf00","crit":"#ff5f5f","dim":"#6a737d","accent":"#5fafff","bar_style":"blocks" },
+  "dracula":          { "good":"#50fa7b","warn":"#f1fa8c","crit":"#ff5555","dim":"#6272a4","accent":"#bd93f9","bar_style":"blocks" },
+  "nord":             { "good":"#a3be8c","warn":"#ebcb8b","crit":"#bf616a","dim":"#4c566a","accent":"#88c0d0","bar_style":"heavy"  },
+  "gruvbox":          { "good":"#98971a","warn":"#d79921","crit":"#cc241d","dim":"#7c6f64","accent":"#458588","bar_style":"heavy"  },
+  "tokyo-night":      { "good":"#9ece6a","warn":"#e0af68","crit":"#f7768e","dim":"#565f89","accent":"#7aa2f7","bar_style":"blocks" },
+  "catppuccin":       { "good":"#a6e3a1","warn":"#f9e2af","crit":"#f38ba8","dim":"#6c7086","accent":"#89b4fa","bar_style":"blocks" },
+  "one-dark":         { "good":"#98c379","warn":"#e5c07b","crit":"#e06c75","dim":"#5c6370","accent":"#61afef","bar_style":"blocks" },
+  "rose-pine":        { "good":"#9ccfd8","warn":"#f6c177","crit":"#eb6f92","dim":"#908caa","accent":"#c4a7e7","bar_style":"blocks" },
+  "monokai":          { "good":"#a6e22e","warn":"#e6db74","crit":"#f92672","dim":"#75715e","accent":"#66d9ef","bar_style":"blocks" }
 }
 JSON
 
@@ -1140,7 +1149,7 @@ check_config() {
   fi
   load_config
   local theme; theme="$(jq -r '.theme // ""' <<<"$CONFIG_JSON")"
-  local valid_themes="default dark light graphite solarized dracula nord gruvbox tokyo-night catppuccin"
+  local valid_themes="default solarized graphite light solarized-light catppuccin-latte tokyo-day ayu-light dark dracula nord gruvbox tokyo-night catppuccin one-dark rose-pine monokai"
   if ! grep -qw "$theme" <<<"$valid_themes"; then
     echo "check: unknown theme \"$theme\""
     return 1
@@ -1694,7 +1703,10 @@ _wiz_handle_main() {
         0) cur="$(jq -r '.preset // ""' <<<"$CONFIG_JSON")"
            _wiz_push preset    "$(_index_of _PRESETS    "$cur")" ;;
         1) cur="$(jq -r '.theme' <<<"$CONFIG_JSON")"
-           _wiz_push theme     "$(_index_of _THEMES     "$cur")" ;;
+           local _ti; _ti="$(_index_of _THEMES "$cur")"
+           # _THEMES contains section dividers; don't land the cursor on one.
+           while [[ "${_THEMES[$_ti]}" == __SEC__\ * ]]; do _ti=$((_ti+1)); done
+           _wiz_push theme "$_ti" ;;
         2) cur="$(jq -r '.global.prefix_style' <<<"$CONFIG_JSON")"
            _wiz_push prefix    "$(_index_of _PREFIXES   "$cur")" ;;
         3) cur="$(jq -r '.global.separator' <<<"$CONFIG_JSON")"
@@ -1734,6 +1746,12 @@ _wiz_draw_select() {  # title, current_value, mutation, examples-array-name, hea
   local i name marker is_current ex
   for ((i=0; i<${#items[@]}; i++)); do
     name="${items[$i]}"
+    # Section header rows: dim text, no marker, no example column. Used by
+    # the theme picker to label terminal-compatibility groups.
+    if [[ "$name" == __SEC__\ * ]]; then
+      printf '\n  \033[2m── %s ──\033[0m\n' "${name#__SEC__ }"
+      continue
+    fi
     marker="  "
     (( i == WIZARD_CURSOR )) && marker="› "
     is_current=0
@@ -1764,7 +1782,20 @@ _wiz_draw_select() {  # title, current_value, mutation, examples-array-name, hea
 
 # Each selection screen is wrapped as a small draw+handle pair using a shared list.
 _PRESETS=(minimum compact default modern fancy everything maximum)
-_THEMES=(default dark light graphite solarized dracula nord gruvbox tokyo-night catppuccin)
+# Theme list with inline section headers. Items starting with "__SEC__ "
+# render as group labels (no marker, no example, dimmed) and are skipped
+# by cursor navigation. The grouping matches terminal compatibility:
+#   Auto / adaptive — palettes that read well on either light or dark bg
+#   Light terminals — designed for light bg (high-contrast dark text)
+#   Dark terminals  — designed for dark bg (bright/saturated text)
+_THEMES=(
+  "__SEC__ Auto / adaptive  (works in either light or dark terminals)"
+  default solarized graphite
+  "__SEC__ Light terminals"
+  light solarized-light catppuccin-latte tokyo-day ayu-light
+  "__SEC__ Dark terminals"
+  dark dracula nord gruvbox tokyo-night catppuccin one-dark rose-pine monokai
+)
 _PREFIXES=(none label emoji nerd ascii emoji+label label+emoji nerd+label)
 _SEPARATORS=(space pipe slash dot vbar dash bullet diamond arrow tri star sparkle gear check heart music chevron slant chevron_thin)
 _BARS=("(theme default)" blocks heavy line braille dots arrows ascii gradient)
@@ -1864,6 +1895,13 @@ _build_theme_examples() {
   local t s good warn crit accent bar reset
   reset="$(color_reset "$WIZARD_COLOR_DEPTH")"
   for t in "${_THEMES[@]}"; do
+    # Section markers stay in _THEMES so the picker draws group labels,
+    # but they have no theme data — push an empty example to preserve
+    # parallel-array indexing.
+    if [[ "$t" == __SEC__\ * ]]; then
+      _THEMES_EX+=( "" )
+      continue
+    fi
     s="${t//-/_}"
     eval "good=\$THEME_${s}_good"
     eval "warn=\$THEME_${s}_warn"
@@ -1884,14 +1922,34 @@ _build_theme_examples() {
 _wiz_select_handle() {  # items_array_name jq_set_expression
   local arr_name="$1" set_expr="$2"
   local size; eval "size=\${#${arr_name}[@]}"
+  # Helper: is items[$1] a section divider (skipped by navigation)?
+  local _is_sec_v
+  _is_sec() { eval "_is_sec_v=\${${arr_name}[$1]}"; [[ "$_is_sec_v" == __SEC__\ * ]]; }
   case "$KEY" in
     up)
       if (( WIZARD_CURSOR > 0 )); then WIZARD_CURSOR=$((WIZARD_CURSOR-1))
-      else WIZARD_CURSOR=$((size-1)); fi ;;
+      else WIZARD_CURSOR=$((size-1)); fi
+      # Keep moving past section dividers; if we wrap all the way back to
+      # the start, stop (defensive — a list of only sections is malformed).
+      local _guard=0
+      while _is_sec "$WIZARD_CURSOR" && (( _guard < size )); do
+        if (( WIZARD_CURSOR > 0 )); then WIZARD_CURSOR=$((WIZARD_CURSOR-1))
+        else WIZARD_CURSOR=$((size-1)); fi
+        _guard=$((_guard+1))
+      done ;;
     down)
       if (( WIZARD_CURSOR < size-1 )); then WIZARD_CURSOR=$((WIZARD_CURSOR+1))
-      else WIZARD_CURSOR=0; fi ;;
+      else WIZARD_CURSOR=0; fi
+      local _guard=0
+      while _is_sec "$WIZARD_CURSOR" && (( _guard < size )); do
+        if (( WIZARD_CURSOR < size-1 )); then WIZARD_CURSOR=$((WIZARD_CURSOR+1))
+        else WIZARD_CURSOR=0; fi
+        _guard=$((_guard+1))
+      done ;;
     enter)
+      # Defensive: cursor should never land on a section — but if it
+      # somehow does, ignore Enter rather than write a marker as the value.
+      if _is_sec "$WIZARD_CURSOR"; then return; fi
       local v
       eval "v=\${${arr_name}[$WIZARD_CURSOR]}"
       if [[ "$v" == "(theme default)" ]]; then
@@ -3085,8 +3143,8 @@ examples_catalog() {
   fi
   if [[ "$only" == "all" || "$only" == "themes" ]]; then
     echo "## Themes"
-    for t in default dark light graphite solarized dracula nord gruvbox tokyo-night catppuccin; do
-      printf '[ %-12s ] %s\n' "$t" "$(_render_sample minimum "$t" emoji pipe null | head -n 1)"
+    for t in default solarized graphite light solarized-light catppuccin-latte tokyo-day ayu-light dark dracula nord gruvbox tokyo-night catppuccin one-dark rose-pine monokai; do
+      printf '[ %-16s ] %s\n' "$t" "$(_render_sample minimum "$t" emoji pipe null | head -n 1)"
     done
     echo
   fi

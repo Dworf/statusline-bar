@@ -41,16 +41,29 @@
 [H[2J[1;1H  statusline-bar ▸ Theme
 
                       good warn crit  text  bar style
+
+  [2m── Auto / adaptive  (works in either light or dark terminals) ──[0m
 › ● default             ●    ●    ●     Aa    blocks
-    dark                ●    ●    ●     Aa    blocks
-    light               ●    ●    ●     Aa    blocks
-    graphite            ●    ●    ●     Aa    ascii
     solarized           ●    ●    ●     Aa    heavy
+    graphite            ●    ●    ●     Aa    ascii
+
+  [2m── Light terminals ──[0m
+    light               ●    ●    ●     Aa    blocks
+    solarized-light     ●    ●    ●     Aa    heavy
+    catppuccin-latte    ●    ●    ●     Aa    blocks
+    tokyo-day           ●    ●    ●     Aa    blocks
+    ayu-light           ●    ●    ●     Aa    blocks
+
+  [2m── Dark terminals ──[0m
+    dark                ●    ●    ●     Aa    blocks
     dracula             ●    ●    ●     Aa    blocks
     nord                ●    ●    ●     Aa    heavy
     gruvbox             ●    ●    ●     Aa    heavy
     tokyo-night         ●    ●    ●     Aa    blocks
     catppuccin          ●    ●    ●     Aa    blocks
+    one-dark            ●    ●    ●     Aa    blocks
+    rose-pine           ●    ●    ●     Aa    blocks
+    monokai             ●    ●    ●     Aa    blocks
 ────────────────────────────────────────────────────────────
   Preview (focused: default):
 🤖 Opus 4.7 (1M context)
@@ -59,70 +72,29 @@
 [H[2J[1;1H  statusline-bar ▸ Theme
 
                       good warn crit  text  bar style
-  ● default             ●    ●    ●     Aa    blocks
-›   dark                ●    ●    ●     Aa    blocks
-    light               ●    ●    ●     Aa    blocks
-    graphite            ●    ●    ●     Aa    ascii
-    solarized           ●    ●    ●     Aa    heavy
-    dracula             ●    ●    ●     Aa    blocks
-    nord                ●    ●    ●     Aa    heavy
-    gruvbox             ●    ●    ●     Aa    heavy
-    tokyo-night         ●    ●    ●     Aa    blocks
-    catppuccin          ●    ●    ●     Aa    blocks
-────────────────────────────────────────────────────────────
-  Preview (focused: dark):
-🤖 Opus 4.7 (1M context)
-────────────────────────────────────────────────────────────
-  ↑↓ navigate (wraps)   Enter select   Esc back   s save   r reset   q quit
-[H[2J[1;1H  statusline-bar ▸ Theme
 
-                      good warn crit  text  bar style
+  [2m── Auto / adaptive  (works in either light or dark terminals) ──[0m
   ● default             ●    ●    ●     Aa    blocks
-    dark                ●    ●    ●     Aa    blocks
-›   light               ●    ●    ●     Aa    blocks
-    graphite            ●    ●    ●     Aa    ascii
-    solarized           ●    ●    ●     Aa    heavy
-    dracula             ●    ●    ●     Aa    blocks
-    nord                ●    ●    ●     Aa    heavy
-    gruvbox             ●    ●    ●     Aa    heavy
-    tokyo-night         ●    ●    ●     Aa    blocks
-    catppuccin          ●    ●    ●     Aa    blocks
-────────────────────────────────────────────────────────────
-  Preview (focused: light):
-🤖 Opus 4.7 (1M context)
-────────────────────────────────────────────────────────────
-  ↑↓ navigate (wraps)   Enter select   Esc back   s save   r reset   q quit
-[H[2J[1;1H  statusline-bar ▸ Theme
-
-                      good warn crit  text  bar style
-  ● default             ●    ●    ●     Aa    blocks
-    dark                ●    ●    ●     Aa    blocks
-    light               ●    ●    ●     Aa    blocks
-›   graphite            ●    ●    ●     Aa    ascii
-    solarized           ●    ●    ●     Aa    heavy
-    dracula             ●    ●    ●     Aa    blocks
-    nord                ●    ●    ●     Aa    heavy
-    gruvbox             ●    ●    ●     Aa    heavy
-    tokyo-night         ●    ●    ●     Aa    blocks
-    catppuccin          ●    ●    ●     Aa    blocks
-────────────────────────────────────────────────────────────
-  Preview (focused: graphite):
-🤖 Opus 4.7 (1M context)
-────────────────────────────────────────────────────────────
-  ↑↓ navigate (wraps)   Enter select   Esc back   s save   r reset   q quit
-[H[2J[1;1H  statusline-bar ▸ Theme
-
-                      good warn crit  text  bar style
-  ● default             ●    ●    ●     Aa    blocks
-    dark                ●    ●    ●     Aa    blocks
-    light               ●    ●    ●     Aa    blocks
-    graphite            ●    ●    ●     Aa    ascii
 ›   solarized           ●    ●    ●     Aa    heavy
+    graphite            ●    ●    ●     Aa    ascii
+
+  [2m── Light terminals ──[0m
+    light               ●    ●    ●     Aa    blocks
+    solarized-light     ●    ●    ●     Aa    heavy
+    catppuccin-latte    ●    ●    ●     Aa    blocks
+    tokyo-day           ●    ●    ●     Aa    blocks
+    ayu-light           ●    ●    ●     Aa    blocks
+
+  [2m── Dark terminals ──[0m
+    dark                ●    ●    ●     Aa    blocks
     dracula             ●    ●    ●     Aa    blocks
     nord                ●    ●    ●     Aa    heavy
     gruvbox             ●    ●    ●     Aa    heavy
     tokyo-night         ●    ●    ●     Aa    blocks
     catppuccin          ●    ●    ●     Aa    blocks
+    one-dark            ●    ●    ●     Aa    blocks
+    rose-pine           ●    ●    ●     Aa    blocks
+    monokai             ●    ●    ●     Aa    blocks
 ────────────────────────────────────────────────────────────
   Preview (focused: solarized):
 🤖 Opus 4.7 (1M context)
@@ -131,16 +103,246 @@
 [H[2J[1;1H  statusline-bar ▸ Theme
 
                       good warn crit  text  bar style
+
+  [2m── Auto / adaptive  (works in either light or dark terminals) ──[0m
   ● default             ●    ●    ●     Aa    blocks
-    dark                ●    ●    ●     Aa    blocks
-    light               ●    ●    ●     Aa    blocks
-    graphite            ●    ●    ●     Aa    ascii
     solarized           ●    ●    ●     Aa    heavy
+›   graphite            ●    ●    ●     Aa    ascii
+
+  [2m── Light terminals ──[0m
+    light               ●    ●    ●     Aa    blocks
+    solarized-light     ●    ●    ●     Aa    heavy
+    catppuccin-latte    ●    ●    ●     Aa    blocks
+    tokyo-day           ●    ●    ●     Aa    blocks
+    ayu-light           ●    ●    ●     Aa    blocks
+
+  [2m── Dark terminals ──[0m
+    dark                ●    ●    ●     Aa    blocks
+    dracula             ●    ●    ●     Aa    blocks
+    nord                ●    ●    ●     Aa    heavy
+    gruvbox             ●    ●    ●     Aa    heavy
+    tokyo-night         ●    ●    ●     Aa    blocks
+    catppuccin          ●    ●    ●     Aa    blocks
+    one-dark            ●    ●    ●     Aa    blocks
+    rose-pine           ●    ●    ●     Aa    blocks
+    monokai             ●    ●    ●     Aa    blocks
+────────────────────────────────────────────────────────────
+  Preview (focused: graphite):
+🤖 Opus 4.7 (1M context)
+────────────────────────────────────────────────────────────
+  ↑↓ navigate (wraps)   Enter select   Esc back   s save   r reset   q quit
+[H[2J[1;1H  statusline-bar ▸ Theme
+
+                      good warn crit  text  bar style
+
+  [2m── Auto / adaptive  (works in either light or dark terminals) ──[0m
+  ● default             ●    ●    ●     Aa    blocks
+    solarized           ●    ●    ●     Aa    heavy
+    graphite            ●    ●    ●     Aa    ascii
+
+  [2m── Light terminals ──[0m
+›   light               ●    ●    ●     Aa    blocks
+    solarized-light     ●    ●    ●     Aa    heavy
+    catppuccin-latte    ●    ●    ●     Aa    blocks
+    tokyo-day           ●    ●    ●     Aa    blocks
+    ayu-light           ●    ●    ●     Aa    blocks
+
+  [2m── Dark terminals ──[0m
+    dark                ●    ●    ●     Aa    blocks
+    dracula             ●    ●    ●     Aa    blocks
+    nord                ●    ●    ●     Aa    heavy
+    gruvbox             ●    ●    ●     Aa    heavy
+    tokyo-night         ●    ●    ●     Aa    blocks
+    catppuccin          ●    ●    ●     Aa    blocks
+    one-dark            ●    ●    ●     Aa    blocks
+    rose-pine           ●    ●    ●     Aa    blocks
+    monokai             ●    ●    ●     Aa    blocks
+────────────────────────────────────────────────────────────
+  Preview (focused: light):
+🤖 Opus 4.7 (1M context)
+────────────────────────────────────────────────────────────
+  ↑↓ navigate (wraps)   Enter select   Esc back   s save   r reset   q quit
+[H[2J[1;1H  statusline-bar ▸ Theme
+
+                      good warn crit  text  bar style
+
+  [2m── Auto / adaptive  (works in either light or dark terminals) ──[0m
+  ● default             ●    ●    ●     Aa    blocks
+    solarized           ●    ●    ●     Aa    heavy
+    graphite            ●    ●    ●     Aa    ascii
+
+  [2m── Light terminals ──[0m
+    light               ●    ●    ●     Aa    blocks
+›   solarized-light     ●    ●    ●     Aa    heavy
+    catppuccin-latte    ●    ●    ●     Aa    blocks
+    tokyo-day           ●    ●    ●     Aa    blocks
+    ayu-light           ●    ●    ●     Aa    blocks
+
+  [2m── Dark terminals ──[0m
+    dark                ●    ●    ●     Aa    blocks
+    dracula             ●    ●    ●     Aa    blocks
+    nord                ●    ●    ●     Aa    heavy
+    gruvbox             ●    ●    ●     Aa    heavy
+    tokyo-night         ●    ●    ●     Aa    blocks
+    catppuccin          ●    ●    ●     Aa    blocks
+    one-dark            ●    ●    ●     Aa    blocks
+    rose-pine           ●    ●    ●     Aa    blocks
+    monokai             ●    ●    ●     Aa    blocks
+────────────────────────────────────────────────────────────
+  Preview (focused: solarized-light):
+🤖 Opus 4.7 (1M context)
+────────────────────────────────────────────────────────────
+  ↑↓ navigate (wraps)   Enter select   Esc back   s save   r reset   q quit
+[H[2J[1;1H  statusline-bar ▸ Theme
+
+                      good warn crit  text  bar style
+
+  [2m── Auto / adaptive  (works in either light or dark terminals) ──[0m
+  ● default             ●    ●    ●     Aa    blocks
+    solarized           ●    ●    ●     Aa    heavy
+    graphite            ●    ●    ●     Aa    ascii
+
+  [2m── Light terminals ──[0m
+    light               ●    ●    ●     Aa    blocks
+    solarized-light     ●    ●    ●     Aa    heavy
+›   catppuccin-latte    ●    ●    ●     Aa    blocks
+    tokyo-day           ●    ●    ●     Aa    blocks
+    ayu-light           ●    ●    ●     Aa    blocks
+
+  [2m── Dark terminals ──[0m
+    dark                ●    ●    ●     Aa    blocks
+    dracula             ●    ●    ●     Aa    blocks
+    nord                ●    ●    ●     Aa    heavy
+    gruvbox             ●    ●    ●     Aa    heavy
+    tokyo-night         ●    ●    ●     Aa    blocks
+    catppuccin          ●    ●    ●     Aa    blocks
+    one-dark            ●    ●    ●     Aa    blocks
+    rose-pine           ●    ●    ●     Aa    blocks
+    monokai             ●    ●    ●     Aa    blocks
+────────────────────────────────────────────────────────────
+  Preview (focused: catppuccin-latte):
+🤖 Opus 4.7 (1M context)
+────────────────────────────────────────────────────────────
+  ↑↓ navigate (wraps)   Enter select   Esc back   s save   r reset   q quit
+[H[2J[1;1H  statusline-bar ▸ Theme
+
+                      good warn crit  text  bar style
+
+  [2m── Auto / adaptive  (works in either light or dark terminals) ──[0m
+  ● default             ●    ●    ●     Aa    blocks
+    solarized           ●    ●    ●     Aa    heavy
+    graphite            ●    ●    ●     Aa    ascii
+
+  [2m── Light terminals ──[0m
+    light               ●    ●    ●     Aa    blocks
+    solarized-light     ●    ●    ●     Aa    heavy
+    catppuccin-latte    ●    ●    ●     Aa    blocks
+›   tokyo-day           ●    ●    ●     Aa    blocks
+    ayu-light           ●    ●    ●     Aa    blocks
+
+  [2m── Dark terminals ──[0m
+    dark                ●    ●    ●     Aa    blocks
+    dracula             ●    ●    ●     Aa    blocks
+    nord                ●    ●    ●     Aa    heavy
+    gruvbox             ●    ●    ●     Aa    heavy
+    tokyo-night         ●    ●    ●     Aa    blocks
+    catppuccin          ●    ●    ●     Aa    blocks
+    one-dark            ●    ●    ●     Aa    blocks
+    rose-pine           ●    ●    ●     Aa    blocks
+    monokai             ●    ●    ●     Aa    blocks
+────────────────────────────────────────────────────────────
+  Preview (focused: tokyo-day):
+🤖 Opus 4.7 (1M context)
+────────────────────────────────────────────────────────────
+  ↑↓ navigate (wraps)   Enter select   Esc back   s save   r reset   q quit
+[H[2J[1;1H  statusline-bar ▸ Theme
+
+                      good warn crit  text  bar style
+
+  [2m── Auto / adaptive  (works in either light or dark terminals) ──[0m
+  ● default             ●    ●    ●     Aa    blocks
+    solarized           ●    ●    ●     Aa    heavy
+    graphite            ●    ●    ●     Aa    ascii
+
+  [2m── Light terminals ──[0m
+    light               ●    ●    ●     Aa    blocks
+    solarized-light     ●    ●    ●     Aa    heavy
+    catppuccin-latte    ●    ●    ●     Aa    blocks
+    tokyo-day           ●    ●    ●     Aa    blocks
+›   ayu-light           ●    ●    ●     Aa    blocks
+
+  [2m── Dark terminals ──[0m
+    dark                ●    ●    ●     Aa    blocks
+    dracula             ●    ●    ●     Aa    blocks
+    nord                ●    ●    ●     Aa    heavy
+    gruvbox             ●    ●    ●     Aa    heavy
+    tokyo-night         ●    ●    ●     Aa    blocks
+    catppuccin          ●    ●    ●     Aa    blocks
+    one-dark            ●    ●    ●     Aa    blocks
+    rose-pine           ●    ●    ●     Aa    blocks
+    monokai             ●    ●    ●     Aa    blocks
+────────────────────────────────────────────────────────────
+  Preview (focused: ayu-light):
+🤖 Opus 4.7 (1M context)
+────────────────────────────────────────────────────────────
+  ↑↓ navigate (wraps)   Enter select   Esc back   s save   r reset   q quit
+[H[2J[1;1H  statusline-bar ▸ Theme
+
+                      good warn crit  text  bar style
+
+  [2m── Auto / adaptive  (works in either light or dark terminals) ──[0m
+  ● default             ●    ●    ●     Aa    blocks
+    solarized           ●    ●    ●     Aa    heavy
+    graphite            ●    ●    ●     Aa    ascii
+
+  [2m── Light terminals ──[0m
+    light               ●    ●    ●     Aa    blocks
+    solarized-light     ●    ●    ●     Aa    heavy
+    catppuccin-latte    ●    ●    ●     Aa    blocks
+    tokyo-day           ●    ●    ●     Aa    blocks
+    ayu-light           ●    ●    ●     Aa    blocks
+
+  [2m── Dark terminals ──[0m
+›   dark                ●    ●    ●     Aa    blocks
+    dracula             ●    ●    ●     Aa    blocks
+    nord                ●    ●    ●     Aa    heavy
+    gruvbox             ●    ●    ●     Aa    heavy
+    tokyo-night         ●    ●    ●     Aa    blocks
+    catppuccin          ●    ●    ●     Aa    blocks
+    one-dark            ●    ●    ●     Aa    blocks
+    rose-pine           ●    ●    ●     Aa    blocks
+    monokai             ●    ●    ●     Aa    blocks
+────────────────────────────────────────────────────────────
+  Preview (focused: dark):
+🤖 Opus 4.7 (1M context)
+────────────────────────────────────────────────────────────
+  ↑↓ navigate (wraps)   Enter select   Esc back   s save   r reset   q quit
+[H[2J[1;1H  statusline-bar ▸ Theme
+
+                      good warn crit  text  bar style
+
+  [2m── Auto / adaptive  (works in either light or dark terminals) ──[0m
+  ● default             ●    ●    ●     Aa    blocks
+    solarized           ●    ●    ●     Aa    heavy
+    graphite            ●    ●    ●     Aa    ascii
+
+  [2m── Light terminals ──[0m
+    light               ●    ●    ●     Aa    blocks
+    solarized-light     ●    ●    ●     Aa    heavy
+    catppuccin-latte    ●    ●    ●     Aa    blocks
+    tokyo-day           ●    ●    ●     Aa    blocks
+    ayu-light           ●    ●    ●     Aa    blocks
+
+  [2m── Dark terminals ──[0m
+    dark                ●    ●    ●     Aa    blocks
 ›   dracula             ●    ●    ●     Aa    blocks
     nord                ●    ●    ●     Aa    heavy
     gruvbox             ●    ●    ●     Aa    heavy
     tokyo-night         ●    ●    ●     Aa    blocks
     catppuccin          ●    ●    ●     Aa    blocks
+    one-dark            ●    ●    ●     Aa    blocks
+    rose-pine           ●    ●    ●     Aa    blocks
+    monokai             ●    ●    ●     Aa    blocks
 ────────────────────────────────────────────────────────────
   Preview (focused: dracula):
 🤖 Opus 4.7 (1M context)
