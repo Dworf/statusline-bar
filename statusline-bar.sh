@@ -5,7 +5,7 @@
 
 set -u
 
-VERSION="0.3.0"
+VERSION="0.4.0"
 
 # ============================================================
 # SECTION: Embedded data — themes
@@ -3262,7 +3262,7 @@ _render_sample() {
     CONFIG_JSON="$cfg" \
     COLOR_DEPTH="$depth" \
     NOW_EPOCH=1778522580 \
-    MOCK_GIT_STATE=out_of_repo \
+    MOCK_GIT_STATE=in_repo \
     STATUSLINE_BAR_FAKE_NOW=1778522580 \
     STATUSLINE_BAR_FAKE_BATTERY=92 \
     STATUSLINE_BAR_FAKE_MEMORY=45 \
