@@ -176,9 +176,9 @@ read -r -d '' TOKENS_JSON <<'JSON' || true
              "prefix": { "none":"", "label":"Time:", "emoji":"⏳", "nerd":"", "ascii":"[T]" } },
   "api_duration": { "source":"claude", "default_prefix":"emoji", "default_format":"value", "applicable_formats":["value"],
              "prefix": { "none":"", "label":"API:", "emoji":"📡", "nerd":"", "ascii":"[A]" } },
-  "lines_added": { "source":"claude", "default_prefix":"emoji", "default_format":"value", "applicable_formats":["value"],
+  "lines_added": { "source":"claude", "default_prefix":"emoji", "default_format":"value", "applicable_formats":["value","count"],
              "prefix": { "none":"", "label":"Added:", "emoji":"➕", "nerd":"", "ascii":"+" } },
-  "lines_removed": { "source":"claude", "default_prefix":"emoji", "default_format":"value", "applicable_formats":["value"],
+  "lines_removed": { "source":"claude", "default_prefix":"emoji", "default_format":"value", "applicable_formats":["value","count"],
              "prefix": { "none":"", "label":"Removed:", "emoji":"➖", "nerd":"", "ascii":"-" } },
   "rl_5h": { "source":"claude", "default_prefix":"label", "default_format":"progressbar+percent+countdown",
              "applicable_formats":["value","percent","progressbar","progressbar+percent","countdown","remaining","progressbar+percent+countdown"],
@@ -768,6 +768,10 @@ apply_format() {
   local id="$1" fmt="$2" raw="$3" bar_style="$4" bar_width="$5" now="$6"
   case "$fmt" in
     value) printf '%s' "$raw" ;;
+    count)
+      # Strip a leading +/- sign (e.g. lines_added "+128" → "128",
+      # lines_removed "-42" → "42"). Other values pass through unchanged.
+      printf '%s' "${raw#[+-]}" ;;
     percent)
       [[ -z "$raw" ]] && return
       local p="${raw%%|*}"
@@ -1012,6 +1016,8 @@ _threshold_color() {
       elif (( pct >= 80 )); then _theme_var "$theme" warn
       else                       _theme_var "$theme" good
       fi ;;
+    lines_added)   _theme_var "$theme" good ;;
+    lines_removed) _theme_var "$theme" crit ;;
     *) _theme_var "$theme" accent ;;
   esac
 }
@@ -1275,7 +1281,7 @@ _wiz_help_tooltip() {
         if (( TL_TAB_POS == nlines )); then
           tip="Press Enter to add a new (empty) line. Max 4 lines total."
         else
-          tip="Line tab — ←/→ to switch active line; d to delete this line; ↓ to enter its token list."
+          tip="Line tab — ←/→ to switch active line; d to delete this line; ↓ enters its token list (↑ jumps to the last token)."
         fi
       elif (( $(_tl_line_count) == 0 )); then
         tip="Empty line — press a to add your first token."
@@ -2086,6 +2092,15 @@ _wiz_handle_tokens_lines() {
         if (( TL_TAB_POS < num_lines )); then
           TL_ZONE="tokens"
           TL_TOKEN_ROW=0
+        fi ;;
+      up)
+        # Wrap up from the tabs row to the bottom of the active line's
+        # token list — symmetric with down-at-bottom returning to tabs.
+        if (( TL_TAB_POS < num_lines )); then
+          TL_ACTIVE_LINE="$TL_TAB_POS"
+          TL_ZONE="tokens"
+          local _max_row; _max_row="$(_tl_line_rows)"
+          TL_TOKEN_ROW=$((_max_row - 1))
         fi ;;
       enter)
         if (( TL_TAB_POS == num_lines )) && (( num_lines < 4 )); then

@@ -145,7 +145,7 @@
   ←→ switch line   ↓ enter list   Enter on + adds line   d delete line
   s save   r reset   Esc back
 ────────────────────────────────────────────────────────────
-  ⓘ  Line tab — ←/→ to switch active line; d to delete this line; ↓ to enter its token list.
+  ⓘ  Line tab — ←/→ to switch active line; d to delete this line; ↓ enters its token list (↑ jumps to the last token).
 [H[2J[1;1H  statusline-bar ▸ Tokens & lines
 
   Line:  ⟨1⟩  2   + 
