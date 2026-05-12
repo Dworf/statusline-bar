@@ -13,7 +13,7 @@ VERSION="0.3.0"
 
 read -r -d '' THEMES_JSON <<'JSON' || true
 {
-  "default":     { "good":"#3fb950","warn":"#d29922","crit":"#f85149","dim":"#8b949e","accent":"#79c0ff","bar_style":"blocks" },
+  "default":     { "good":"#3fb950","warn":"#d29922","crit":"#f85149","dim":"#8b949e","accent":"","bar_style":"blocks" },
   "dark":        { "good":"#00ff87","warn":"#ffaf00","crit":"#ff5f5f","dim":"#6a737d","accent":"#5fafff","bar_style":"blocks" },
   "light":       { "good":"#1a7f37","warn":"#bf8700","crit":"#cf222e","dim":"#57606a","accent":"#0969da","bar_style":"blocks" },
   "graphite":    { "good":"bold",   "warn":"normal","crit":"normal","dim":"dim",    "accent":"bold",    "bar_style":"ascii"  },
@@ -415,12 +415,14 @@ _hex_to_256() {
   printf '%d' $(( 16 + 36 * (r * 5 / 255) + 6 * (g * 5 / 255) + (b * 5 / 255) ))
 }
 
-# Emit foreground SGR for COLOR at DEPTH. Empty if depth=none.
+# Emit foreground SGR for COLOR at DEPTH. Empty if depth=none, or if COLOR
+# is the empty string (sentinel for "no override — inherit terminal default").
 color_fg() {
   local color="$1" depth="$2"
   case "$depth" in
     none) return ;;
   esac
+  [[ -z "$color" ]] && return
   case "$color" in
     bold)   printf '\033[1m'; return ;;
     dim)    printf '\033[2m'; return ;;
