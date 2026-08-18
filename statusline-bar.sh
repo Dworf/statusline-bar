@@ -5,7 +5,7 @@
 
 set -u
 
-VERSION="0.5.0"
+VERSION="0.5.1"
 
 # ============================================================
 # SECTION: Embedded data — themes
@@ -3674,6 +3674,19 @@ main() {
   fi
 
   INPUT_JSON="$(cat)"
+
+  # Debug aid: mirror the latest stdin payload to disk (overwritten on every
+  # render) so schema changes between Claude Code versions are easy to spot.
+  # Best-effort — a failed write must never break the render. Override the
+  # path with $STATUSLINE_BAR_DEBUG_INPUT, or set it to "off" to disable.
+  local _dump_file="${STATUSLINE_BAR_DEBUG_INPUT:-/tmp/statusline-bar-input.json}"
+  if [[ "$_dump_file" != "off" ]]; then
+    ( umask 077
+      printf '%s\n' "$INPUT_JSON" >"${_dump_file}.$$" &&
+        mv -f "${_dump_file}.$$" "$_dump_file"
+    ) 2>/dev/null || rm -f "${_dump_file}.$$" 2>/dev/null || true
+  fi
+
   load_config
 
   # One-shot overrides

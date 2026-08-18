@@ -513,7 +513,23 @@ Flags:
 
 `statusline-bar.sh` with no flags and no stdin prints the help (same as `-h`). When piped JSON arrives on stdin (i.e. Claude Code calls it), it renders the statusline.
 
+### Inspecting the input JSON
+
+Every render mirrors the raw stdin JSON to `/tmp/statusline-bar-input.json` (overwritten each time, owner-readable only), so you can always inspect exactly what Claude Code piped in last — handy for spotting new or changed fields between Claude Code versions:
+
+```sh
+jq . /tmp/statusline-bar-input.json
+```
+
+The write is best-effort and can never break the render. Set `STATUSLINE_BAR_DEBUG_INPUT` to a path to relocate the file, or to `off` to disable it. With several concurrent sessions the file simply holds whichever session rendered last.
+
 ## Changelog
+
+### 0.5.1 — 2026-08-18
+
+- Every render now mirrors the raw stdin JSON to `/tmp/statusline-bar-input.json` (atomic overwrite, `0600` perms, best-effort — a failed write never breaks the render) so the latest Claude Code payload is always available for inspection. Override the path with `$STATUSLINE_BAR_DEBUG_INPUT`, or set it to `off` to disable. See **Inspecting the input JSON** under [CLI](#cli).
+
+Tests: 118 e2e cases passing.
 
 ### 0.5.0 — 2026-05-13
 
