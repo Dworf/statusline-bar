@@ -148,7 +148,7 @@ CASE_ENV="XDG_CONFIG_HOME=/nonexistent HOME=/nonexistent" \
 # Project-level config lookup
 pre_config_loader_project_local() {
   mkdir -p /tmp/sbar-project
-  jq '.theme="dracula"' /Users/david/Documents/Projects/statusline_bar/statusline-bar/test/configs/default-min.json \
+  jq '.theme="dracula"' "$CONFIGS_DIR/default-min.json" \
     > /tmp/sbar-project/.statusline-bar.json
 }
 CASE_ENV="XDG_CONFIG_HOME=/nonexistent HOME=/nonexistent" \
@@ -191,10 +191,10 @@ run_case examples_catalog_full            "" "" --examples catalog
 # Phase 10: Wizard smoke tests
 pre_wizard_smoke_quit() {
   rm -f /tmp/sbar-wizard-test.json
-  cp /Users/david/Documents/Projects/statusline_bar/statusline-bar/test/configs/default-min.json /tmp/sbar-wizard-test.json
+  cp "$CONFIGS_DIR/default-min.json" /tmp/sbar-wizard-test.json
 }
 post_wizard_smoke_quit() {
-  if ! diff -u /tmp/sbar-wizard-test.json /Users/david/Documents/Projects/statusline_bar/statusline-bar/test/configs/default-min.json >/dev/null; then
+  if ! diff -u /tmp/sbar-wizard-test.json "$CONFIGS_DIR/default-min.json" >/dev/null; then
     echo "FAIL wizard_smoke_quit (config modified despite quit)"
     return 1
   fi
@@ -204,7 +204,7 @@ CASE_ENV="STATUSLINE_BAR_CONFIG=/tmp/sbar-wizard-test.json TERM=xterm-256color S
 
 pre_wizard_save_theme() {
   rm -f /tmp/sbar-wsave.json
-  cp /Users/david/Documents/Projects/statusline_bar/statusline-bar/test/configs/default-min.json /tmp/sbar-wsave.json
+  cp "$CONFIGS_DIR/default-min.json" /tmp/sbar-wsave.json
 }
 post_wizard_save_theme() {
   local got; got="$(jq -r '.theme' /tmp/sbar-wsave.json)"
@@ -230,7 +230,7 @@ CASE_ENV="STATUSLINE_BAR_CONFIG=/tmp/sbar-wsave.json TERM=xterm-256color STATUSL
 # q       → quit
 pre_wizard_tokens_lines_nav() {
   rm -f /tmp/sbar-tl.json
-  cp /Users/david/Documents/Projects/statusline_bar/statusline-bar/test/configs/default-preset.json /tmp/sbar-tl.json
+  cp "$CONFIGS_DIR/default-preset.json" /tmp/sbar-tl.json
 }
 CASE_ENV="STATUSLINE_BAR_CONFIG=/tmp/sbar-tl.json TERM=xterm-256color STATUSLINE_BAR_FAKE_MEMORY=50 STATUSLINE_BAR_FAKE_LOAD=1.0 STATUSLINE_BAR_FAKE_BATTERY=92 HOSTNAME_OVERRIDE=Mac STATUSLINE_BAR_FORCE_NERD=no MOCK_GIT_STATE=in_repo STATUSLINE_BAR_FAKE_NOW=9999999999" \
   run_case wizard_tokens_lines_nav "" "" --wizard --tui-script "$(printf 'DDDDD\nDDDq')"

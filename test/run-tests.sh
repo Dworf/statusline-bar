@@ -84,6 +84,12 @@ run_case() {
     FAILED_IDS+=("$id")
     return
   fi
+  # Normalize the checkout path so expected outputs stay portable: a golden must
+  # not depend on where the repo happens to live.
+  if grep -q "$REPO_DIR" "$actual_path" 2>/dev/null; then
+    sed "s|$REPO_DIR|<REPO>|g" "$actual_path" > "$actual_path.norm" \
+      && mv "$actual_path.norm" "$actual_path"
+  fi
   if (( UPDATE )); then
     cp "$actual_path" "$expected_path"
     echo "UPDATED $id"

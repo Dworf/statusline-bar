@@ -5,7 +5,7 @@
 
 set -u
 
-VERSION="0.5.1"
+VERSION="0.5.2"
 
 # ============================================================
 # SECTION: Embedded data — themes

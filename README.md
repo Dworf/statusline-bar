@@ -525,6 +525,14 @@ The write is best-effort and can never break the render. Set `STATUSLINE_BAR_DEB
 
 ## Changelog
 
+### 0.5.2 — 2026-09-05
+
+- **Test suite is now location-independent.** Five cases (`check_bad_json`, `config_loader_project_local`, and three wizard cases) had this repo's absolute checkout path baked into `test/cases.sh` and one expected-output file, so the suite failed for anyone whose clone lived elsewhere — including after simply renaming the containing folder. Config paths in `test/cases.sh` now go through the runner's `$CONFIGS_DIR`, and `test/run-tests.sh` rewrites the repo path to `<REPO>` in captured output before comparing, so goldens no longer depend on where the repo sits. Verified by running the full suite from a second checkout at a different path.
+
+No changes to the script's runtime behavior.
+
+Tests: 118 e2e cases passing.
+
 ### 0.5.1 — 2026-08-18
 
 - Every render now mirrors the raw stdin JSON to `/tmp/statusline-bar-input.json` (atomic overwrite, `0600` perms, best-effort — a failed write never breaks the render) so the latest Claude Code payload is always available for inspection. Override the path with `$STATUSLINE_BAR_DEBUG_INPUT`, or set it to `off` to disable. See **Inspecting the input JSON** under [CLI](#cli).
