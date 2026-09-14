@@ -5,13 +5,22 @@ Rust, no daemon, no network calls.
 
 ![The default preset rendered and annotated: 18 of 48 tokens across two lines, covering model, context, cost, rate limits, prompt cache, git state, line counters and duration](screenshots/hero.png)
 
-That is the `default` preset on a dark terminal — 18 of the 48 tokens available.
-Here is the same statusline, same session, on a light one:
+That is the `default` preset on a dark terminal. Here is the same statusline,
+same session, on a light one:
 
 ![The same default preset under the light theme: dark text on white, with a deep blue model name, darker green progress bars and a crimson line-removed counter — identical content, repainted for a light background](screenshots/preset_default_light.png)
 
 6 of the 21 themes are drawn for a light background and 3 more work on either, so
 light terminals are a first-class target, not an afterthought.
+
+> ### That was 18 tokens. There are **48**.
+>
+> Pick any of them, in any order, across up to four lines.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="screenshots/showroom_tokens_dark.png">
+  <img src="screenshots/showroom_tokens_light.png" alt="All 48 tokens rendered individually with their descriptions: 35 read from the JSON Claude Code pipes in, 6 from git, 7 from the local machine">
+</picture>
 
 <details>
 <summary>Text-only version (copy-pasteable)</summary>
