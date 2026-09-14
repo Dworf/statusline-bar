@@ -140,12 +140,22 @@ read -r -d '' PRESETS_JSON <<'JSON' || true
   "rates": {
     "lines": [
       ["model","context","cost"],
-      ["rl_5h","rl_7d","cache_hit","api_duration"]
+      ["rl_5h","rl_7d","cache_hit","cache_expires","api_duration"]
     ],
     "token_formats": {
       "rl_5h": "progressbar+percent+countdown",
       "rl_7d": "progressbar+percent+countdown",
       "cache_hit": "progressbar+percent"
+    }
+  },
+  "cache": {
+    "lines": [
+      ["model","context","cost"],
+      ["cache_hit","cache_warm","cache_expires","cache_ttl","cache_misses","cache_write"]
+    ],
+    "token_formats": {
+      "cache_hit": "progressbar+percent",
+      "cache_expires": "countdown_short"
     }
   },
   "claude": {
@@ -171,7 +181,7 @@ read -r -d '' PRESETS_JSON <<'JSON' || true
   "everything": {
     "lines": [
       ["model","session_name","session_id","context","tokens_input","tokens_output","context_size","context_remaining"],
-      ["cache_hit","cost","api_duration","rl_5h","rl_7d","thinking","effort","output_style","version","agent_name","vim_mode","fast_mode","exceeds_200k"],
+      ["cache_hit","cache_warm","cache_expires","cache_ttl","cache_misses","cache_rebuild","cache_write","cost","api_duration","rl_5h","rl_7d","thinking","effort","output_style","version","agent_name","vim_mode","fast_mode","exceeds_200k"],
       ["dir","worktree","added_dirs","git_worktree","transcript","git_branch","git_status","git_staged","git_modified","git_untracked","git_ahead_behind","lines_added","lines_removed"],
       ["duration","clock","date","hostname","user","battery","memory","load"]
     ],
@@ -180,7 +190,7 @@ read -r -d '' PRESETS_JSON <<'JSON' || true
   "maximum": {
     "lines": [
       ["model","session_name","session_id","context","tokens_input","tokens_output","context_size","context_remaining"],
-      ["cache_hit","cost","api_duration","rl_5h","rl_7d","thinking","effort","output_style","version","agent_name","vim_mode","fast_mode","exceeds_200k"],
+      ["cache_hit","cache_warm","cache_expires","cache_ttl","cache_misses","cache_rebuild","cache_write","cost","api_duration","rl_5h","rl_7d","thinking","effort","output_style","version","agent_name","vim_mode","fast_mode","exceeds_200k"],
       ["dir","worktree","added_dirs","git_worktree","transcript","git_branch","git_status","git_staged","git_modified","git_untracked","git_ahead_behind","lines_added","lines_removed"],
       ["duration","clock","date","hostname","user","battery","memory","load"]
     ],
@@ -188,6 +198,8 @@ read -r -d '' PRESETS_JSON <<'JSON' || true
       "context": "progressbar+percent+tokens",
       "context_remaining": "progressbar+percent",
       "cache_hit": "progressbar+percent",
+      "cache_expires": "countdown_short",
+      "cache_misses": "count+cause",
       "rl_5h": "progressbar+percent+countdown",
       "rl_7d": "progressbar+percent+countdown",
       "battery": "progressbar+percent",
@@ -1376,7 +1388,7 @@ check_config() {
     return 1
   fi
   local preset; preset="$(jq -r '.preset // ""' <<<"$CONFIG_JSON")"
-  local valid_presets="minimum compact focus coder default modern rates claude fancy everything maximum"
+  local valid_presets; valid_presets="$(jq -r 'keys_unsorted | join(" ")' <<<"$PRESETS_JSON")"
   if [[ -n "$preset" && "$preset" != "null" ]] && ! grep -qw "$preset" <<<"$valid_presets"; then
     echo "check: unknown preset \"$preset\" (expected: $(echo $valid_presets | tr ' ' ', '))"
     return 1
@@ -1718,11 +1730,12 @@ _TOOLTIPS_PRESET=(
   "Coder: 1 line, 6 tokens — git-focused: model, branch, status, lines +/-, duration."
   "Default: 2 lines, 15 tokens — usage row on top; thinking / dir / git / counters / duration below."
   "Modern: 2 lines, 9 tokens — git staged/modified inline; rate-limit bars + duration on line 2."
-  "Rates: 2 lines, 7 tokens — context+cost on top; rate limits (with bars+countdown) + cache + api time below."
+  "Rates: 2 lines, 8 tokens — context+cost on top; rate limits (with bars+countdown), cache hit + expiry, and api time below."
+  "Cache: 2 lines, 9 tokens — context+cost on top; prompt-cache health (hit bar, warm, expiry, TTL, misses, writes) below."
   "Claude: 2 lines, 10 tokens — session info + cost/duration; claude state (thinking/effort/style/version) below."
   "Fancy: 3 lines, 13 tokens — context bar, rate-limit bars, OS chrome (battery, clock), git status."
-  "Everything: 4 lines, all 42 tokens, each using its default format. Coverage over compactness."
-  "Maximum: same 42 tokens as Everything, but with progress bars, countdowns, and combined views where applicable."
+  "Everything: 4 lines, all 48 tokens, each using its default format. Coverage over compactness."
+  "Maximum: same 48 tokens as Everything, but with progress bars, countdowns, and combined views where applicable."
 )
 
 # Count how many config fields differ from the built-in defaults. Used to
@@ -2040,7 +2053,7 @@ _wiz_draw_select() {  # title, current_value, mutation, examples-array-name, hea
 }
 
 # Each selection screen is wrapped as a small draw+handle pair using a shared list.
-_PRESETS=(minimum compact focus coder default modern rates claude fancy everything maximum)
+_PRESETS=(minimum compact focus coder default modern rates cache claude fancy everything maximum)
 # Theme list with inline section headers. Items starting with "__SEC__ "
 # render as group labels (no marker, no example, dimmed) and are skipped
 # by cursor navigation. The grouping matches terminal compatibility:
@@ -2071,11 +2084,12 @@ _PRESETS_EX=(
   "1 line · 6 tokens"
   "2 lines · 15 tokens"
   "2 lines · 9 tokens"
-  "2 lines · 7 tokens"
+  "2 lines · 8 tokens"
+  "2 lines · 9 tokens"
   "2 lines · 10 tokens"
   "3 lines · 13 tokens"
-  "4 lines · 42 tokens"
-  "4 lines · 42 tokens (detailed)"
+  "4 lines · 48 tokens"
+  "4 lines · 48 tokens (detailed)"
 )
 
 # _PREFIXES_EX and _SEPARATORS_EX are rebuilt at wizard start (so the
@@ -3554,7 +3568,7 @@ examples_catalog() {
   if [[ "$only" == "all" || "$only" == "presets" ]]; then
     echo "## Presets  (factory layouts; switch via --preset NAME)"
     echo
-    for p in minimum compact focus coder default modern rates claude fancy everything maximum; do
+    for p in $(jq -r 'keys_unsorted | join(" ")' <<<"$PRESETS_JSON"); do
       # `; echo` adds a trailing newline so `read` doesn't drop the last
       # line — render_all itself doesn't append one.
       while IFS= read -r line; do

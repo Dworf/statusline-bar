@@ -244,6 +244,8 @@ CASE_ENV="MOCK_GIT_STATE=in_repo STATUSLINE_BAR_FAKE_NOW=9999999999 XDG_CONFIG_H
 CASE_ENV="MOCK_GIT_STATE=in_repo STATUSLINE_BAR_FAKE_NOW=9999999999 XDG_CONFIG_HOME=/tmp/sbar-noop HOME=/tmp/sbar-noop" \
   run_case override_preset_minimum sample-input.json default-preset.json --preset minimum
 CASE_ENV="MOCK_GIT_STATE=in_repo STATUSLINE_BAR_FAKE_NOW=9999999999 XDG_CONFIG_HOME=/tmp/sbar-noop HOME=/tmp/sbar-noop" \
+  run_case override_preset_cache   sample-input.json default-preset.json --preset cache
+CASE_ENV="MOCK_GIT_STATE=in_repo STATUSLINE_BAR_FAKE_NOW=9999999999 XDG_CONFIG_HOME=/tmp/sbar-noop HOME=/tmp/sbar-noop" \
   run_case override_theme_dracula  sample-input.json default-preset.json --theme dracula
 
 # Phase 9: Examples mode

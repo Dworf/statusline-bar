@@ -15,7 +15,10 @@
 [ modern     ] 🕔 5h █████░░░░░ 50% | 🕖 7d █████░░░░░ 50% | ⏳ 3m 50s
 
 [ rates      ] 🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40
-[ rates      ] 🕔 5h █████░░░░░ 50% 🔄 3h 25m 13s | 🕖 7d █████░░░░░ 50% 🔄 5d 2h 17m 0s | 💾 ██████████ 97% | 📡 39s
+[ rates      ] 🕔 5h █████░░░░░ 50% 🔄 3h 25m 13s | 🕖 7d █████░░░░░ 50% 🔄 5d 2h 17m 0s | 💾 ██████████ 97% | ❄️ — | 📡 39s
+
+[ cache      ] 🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40
+[ cache      ] 💾 ██████████ 97% | 🔥 — | ❄️ — | ⏲️ — | ⚠️ — | ✍️ —
 
 [ claude     ] 🤖 Opus 4.7 (1M context) | 📝 Browse | 🧠 50% (49k/100k) | 💰 $0.40 | ⏳ 3m 50s
 [ claude     ] 💭 true | 💪 xhigh | 🎨 default | ⚡️ | 🏷️ 2.1.139
@@ -25,12 +28,12 @@
 [ fancy      ] 📁 example_dir | 🌿 feat/wizard | 📊 +3 ~5 ?2 | 💭 true | 💪 xhigh | 🔋 █████████░ 92% | 🕒 18:03
 
 [ everything ] 🤖 Opus 4.7 (1M context) | 📝 Browse | 🔖 browse00 | 🧠 50% (49k/100k) | 📥 49k | 📤 50 | 🪟 100k | 🆓 50%
-[ everything ] 💾 97% | 💰 $0.40 | 📡 39s | 🕔 5h █████░░░░░ 50% 🔄 3h 25m 13s | 🕖 7d █████░░░░░ 50% 🔄 5d 2h 17m 0s | 💭 true | 💪 xhigh | 🎨 default | 🏷️ 2.1.139 | 🤝 Explore | ⌨️ INSERT | ⚡️ | 📈
+[ everything ] 💾 97% | 🔥 — | ❄️ — | ⏲️ — | ⚠️ — | 🔁 — | ✍️ — | 💰 $0.40 | 📡 39s | 🕔 5h █████░░░░░ 50% 🔄 3h 25m 13s | 🕖 7d █████░░░░░ 50% 🔄 5d 2h 17m 0s | 💭 true | 💪 xhigh | 🎨 default | 🏷️ 2.1.139 | 🤝 Explore | ⌨️ INSERT | ⚡️ | 📈
 [ everything ] 📁 example_dir | 🌳 main | 📂 0 | 🌲 /tmp/example_dir/feature | 📜 browse001.jsonl | 🌿 feat/wizard | 📊 +3 ~5 ?2 | ➕ 3 | ✏️ 5 | ❓ 2 | 🔀 ↑2 ↓1 | ➕ +128 | ➖ -42
 [ everything ] ⏳ 3m 50s | 🕒 18:03 | 📅 2026-05-11 | 🖥️ mac | 👤 david | 🔋 92% | 🧬 45% | 📊 1.2
 
 [ maximum    ] 🤖 Opus 4.7 (1M context) | 📝 Browse | 🔖 browse00 | 🧠 █████░░░░░ 50% (49k/100k) | 📥 49k | 📤 50 | 🪟 100k | 🆓 █████░░░░░ 50%
-[ maximum    ] 💾 ██████████ 97% | 💰 $0.40 | 📡 39s | 🕔 5h █████░░░░░ 50% 🔄 3h 25m 13s | 🕖 7d █████░░░░░ 50% 🔄 5d 2h 17m 0s | 💭 true | 💪 xhigh | 🎨 default | 🏷️ 2.1.139 | 🤝 Explore | ⌨️ INSERT | ⚡️ | 📈
+[ maximum    ] 💾 ██████████ 97% | 🔥 — | ❄️ — | ⏲️ — | ⚠️ — | 🔁 — | ✍️ — | 💰 $0.40 | 📡 39s | 🕔 5h █████░░░░░ 50% 🔄 3h 25m 13s | 🕖 7d █████░░░░░ 50% 🔄 5d 2h 17m 0s | 💭 true | 💪 xhigh | 🎨 default | 🏷️ 2.1.139 | 🤝 Explore | ⌨️ INSERT | ⚡️ | 📈
 [ maximum    ] 📁 example_dir | 🌳 main | 📂 0 | 🌲 /tmp/example_dir/feature | 📜 browse001.jsonl | 🌿 feat/wizard | 📊 +3 ~5 ?2 | ➕ 3 | ✏️ 5 | ❓ 2 | 🔀 ↑2 ↓1 | ➕ +128 | ➖ -42
 [ maximum    ] ⏳ 3m 50s | 🕒 18:03 | 📅 2026-05-11 | 🖥️ mac | 👤 david | 🔋 █████████░ 92% | 🧬 █████░░░░░ 45% | 📊 1.2
 
