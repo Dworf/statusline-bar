@@ -187,6 +187,18 @@ is swappable, globally or one at a time:
   </tr>
 </table>
 
+Light terminals are a first-class target, not an afterthought — 6 of the 21
+themes are drawn for a light background and 3 more work on either. The same
+statusline, same preset, same session, under the `dark` and `light` themes:
+
+**…on a dark terminal:**
+
+![The default preset under the dark theme: pale grey text on a near-black background, with a blue-green model name, green progress bars and a red line-removed counter](screenshots/preset_default.png)
+
+**…and on a light one:**
+
+![The same default preset under the light theme: dark text on white, with a deep blue model name, darker green progress bars and a crimson line-removed counter — identical content, repainted for a light background](screenshots/preset_default_light.png)
+
 | | |
 |---|---|
 | **48 tokens** | 35 from Claude Code's stdin JSON, 6 from `git`, 7 from the local machine |

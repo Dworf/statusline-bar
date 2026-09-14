@@ -656,16 +656,21 @@ html_escape() { printf '%s' "$1" | sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g';
 # render_token then picks up that preset's per-token formats, which a
 # --dump-render-* call would skip. All of them use the hero payload, so the
 # presets can actually be compared against each other.
-shot_preset() {   # <file-stem> <preset> [prefix_style]
-  local stem="$1" preset="$2" prefix="${3:-}"
+# shot_preset <file-stem> <preset> [prefix_style] [theme] [surface]
+# surface defaults to dark. A light THEME must be paired with a light SURFACE:
+# its colours are chosen for a light background, so rendering them on the dark
+# card would both look wrong and misrepresent what the theme actually does.
+shot_preset() {
+  local stem="$1" preset="$2" prefix="${3:-}" theme="${4:-}" surface="${5:-dark}"
   local base; base="$(base_config)"
   local cfg="$WORK/preset-$stem.json" raw="$WORK/preset-$stem.ansi"
-  jq --arg pre "$prefix" \
-     'if $pre != "" then .global.prefix_style = $pre else . end' \
+  jq --arg pre "$prefix" --arg th "$theme" \
+     '(if $pre != "" then .global.prefix_style = $pre else . end)
+      | (if $th  != "" then .theme = $th else . end)' \
      "$base" > "$cfg"
   sb "$cfg" --preset "$preset" < "$HERO_INPUT" > "$raw"
   [[ -s "$raw" ]] || die "preset '$preset' rendered nothing"
-  ansi_shot "$raw" "$OUT_DIR/$stem.png" dark "$TERM_FS"
+  ansi_shot "$raw" "$OUT_DIR/$stem.png" "$surface" "$TERM_FS"
 }
 
 recipe_presets() {
@@ -680,6 +685,10 @@ recipe_presets() {
   shot_preset preset_fancy_dark    fancy
   shot_preset preset_default_nerd  default nerd
   shot_preset preset_default_ascii default ascii
+  # The light half of the README's dark/light pair: same preset, same payload,
+  # same everything as preset_default.png except the theme and the surface, so
+  # the two images differ in exactly the thing they are there to show.
+  shot_preset preset_default_light default "" light light
 }
 
 # ============================================================
@@ -869,4 +878,8 @@ done
 
 # Every image is on disk by now, so failing here loses no work — it just makes
 # sure nobody regenerates the hero and leaves the README quoting the old one.
-(( ran_hero )) && verify_docs
+# An `if` rather than `(( … )) && …`: as the last statement in the file the
+# short-circuit form would make a run that skipped the hero recipe exit 1.
+if (( ran_hero )); then
+  verify_docs
+fi
