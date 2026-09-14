@@ -86,7 +86,21 @@ run_case tok_tokens_input      sample-input.json "" --dump-token tokens_input
 run_case tok_tokens_output     sample-input.json "" --dump-token tokens_output
 run_case tok_context_size      sample-input.json "" --dump-token context_size
 run_case tok_context_remaining sample-input.json "" --dump-token context_remaining
-run_case tok_cache_hit         sample-input.json "" --dump-token cache_hit
+# cache_hit reads the session-wide .prompt_cache.hit_ratio when the payload has
+# one (sample: 0.91 -> 91; the old last-call derivation would have said 99), and
+# falls back to deriving from .context_window.current_usage otherwise.
+run_case tok_cache_hit          sample-input.json    "" --dump-token cache_hit
+run_case tok_cache_hit_cold     cache-cold.json      "" --dump-token cache_hit
+run_case tok_cache_hit_fallback no-prompt-cache.json "" --dump-token cache_hit
+# Colour polarity: cache_hit is inverted (high is good), so it must NOT share
+# context's ">=90 is crit" branch. Pinned against the nord theme, whose good /
+# warn / crit / accent are four distinct hexes (the default theme's accent is
+# empty, which would pin nothing).
+#   sample (91)             -> good  #a3be8c
+#   no cache data at all    -> accent #88c0d0 via the non-numeric guard; without
+#                              it awk folds the placeholder "—" to 0 -> crit.
+run_case render_cache_hit_good   sample-input.json  placeholder-color.json --dump-render-token cache_hit
+run_case render_cache_hit_absent no-cache-data.json placeholder-color.json --dump-render-token cache_hit
 
 # Phase 5: prompt_cache tokens
 run_case tok_cache_warm_true  sample-input.json          "" --dump-token cache_warm

@@ -784,7 +784,17 @@ tok_context_remaining() {
   [[ -z "$u" ]] && return
   awk -v u="$u" 'BEGIN { printf "%d", 100 - (u+0) }'
 }
+# Prefers the payload's session-wide hit_ratio (Claude Code >= 2.1.251). Falls
+# back to deriving a last-call ratio from current_usage for older payloads --
+# same formula, narrower window. The turn-based number collapses toward zero
+# after any cache write, so the session figure is the honest one.
 tok_cache_hit() {
+  local hr
+  hr="$(jq -r '.prompt_cache.hit_ratio // empty' <<<"$INPUT_JSON")"
+  if [[ -n "$hr" ]]; then
+    awk -v h="$hr" 'BEGIN { printf "%d", (h*100) }'
+    return
+  fi
   local r c i
   r="$(jq -r '.context_window.current_usage.cache_read_input_tokens // 0' <<<"$INPUT_JSON")"
   c="$(jq -r '.context_window.current_usage.cache_creation_input_tokens // 0' <<<"$INPUT_JSON")"
@@ -1403,7 +1413,7 @@ _threshold_color() {
   local id="$1" raw="$2" theme="$3"
   local pct
   case "$id" in
-    context|cache_hit|rl_5h|rl_7d)
+    context|rl_5h|rl_7d)
       pct="${raw%%|*}"
       pct="$(awk -v v="$pct" 'BEGIN{printf "%d", v+0}')"
       if   (( pct >= 90 )); then _theme_var "$theme" crit
@@ -1414,6 +1424,17 @@ _threshold_color() {
       pct="$(awk -v v="$raw" 'BEGIN{printf "%d", v+0}')"
       if   (( pct < 20 )); then _theme_var "$theme" crit
       elif (( pct < 50 )); then _theme_var "$theme" warn
+      else                      _theme_var "$theme" good
+      fi ;;
+    cache_hit)
+      # Inverted, like context_remaining: a HIGH hit rate is the good outcome,
+      # so it must not share context's ">=90 is crit" branch. The non-numeric
+      # guard catches the placeholder glyph render_token substitutes into $raw
+      # when the token is empty -- awk would fold that to 0 and paint it crit.
+      case "$raw" in ''|*[!0-9]*) _theme_var "$theme" accent; return ;; esac
+      pct="$(awk -v v="$raw" 'BEGIN{printf "%d", v+0}')"
+      if   (( pct < 40 )); then _theme_var "$theme" crit
+      elif (( pct < 70 )); then _theme_var "$theme" warn
       else                      _theme_var "$theme" good
       fi ;;
     context_remaining)
@@ -2815,7 +2836,7 @@ _token_description() {
     tokens_output)    echo "Total output tokens this session (e.g. 265)" ;;
     context_size)     echo "Configured context window size (e.g. 1M)" ;;
     context_remaining) echo "% of context window still available" ;;
-    cache_hit)        echo "% of input tokens served from cache" ;;
+    cache_hit)        echo "% of session input tokens served from cache" ;;
     cache_warm)       echo "Whether the prompt cache is still warm (warm/cold)" ;;
     cache_ttl)        echo "Prompt cache lifetime tier (5m or 1h)" ;;
     cache_expires)    echo "Countdown until the prompt cache goes cold" ;;

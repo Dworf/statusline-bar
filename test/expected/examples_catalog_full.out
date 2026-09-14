@@ -114,7 +114,7 @@
 [ tokens_output      ] 📤 50                                ⓘ Total output tokens this session (e.g. 265)
 [ context_size       ] 🪟 100k                              ⓘ Configured context window size (e.g. 1M)
 [ context_remaining  ] 🆓 50%                               ⓘ % of context window still available
-[ cache_hit          ] 💾 97%                               ⓘ % of input tokens served from cache
+[ cache_hit          ] 💾 97%                               ⓘ % of session input tokens served from cache
 [ cache_warm         ] 🔥 —                                 ⓘ Whether the prompt cache is still warm (warm/cold)
 [ cache_ttl          ] ⏲️ —                               ⓘ Prompt cache lifetime tier (5m or 1h)
 [ cache_expires      ] ❄️ —                               ⓘ Countdown until the prompt cache goes cold
