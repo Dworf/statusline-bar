@@ -247,7 +247,7 @@ read -r -d '' TOKENS_JSON <<'JSON' || true
              "applicable_formats":["value","percent","progressbar","progressbar+percent"],
              "prefix": { "none":"", "label":"Cache:", "emoji":"💾", "nerd":"", "ascii":"[H]" } },
   "cache_warm": { "source":"claude", "default_prefix":"emoji", "default_format":"value", "applicable_formats":["value","flag"],
-             "prefix": { "none":"", "label":"Cache:", "emoji":"🔥", "nerd":"\uf06d", "ascii":"[Ca]",
+             "prefix": { "none":"", "label":"State:", "emoji":"🔥", "nerd":"\uf06d", "ascii":"[Ca]",
                          "emoji_cold":"🧊", "nerd_cold":"\uf2dc" } },
   "cache_ttl": { "source":"claude", "default_prefix":"emoji", "default_format":"value", "applicable_formats":["value"],
              "prefix": { "none":"", "label":"TTL:", "emoji":"⏰", "nerd":"\uf017", "ascii":"[Ct]" } },
