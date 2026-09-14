@@ -543,7 +543,7 @@ The write is best-effort and can never break the render. Set `STATUSLINE_BAR_DEB
 - **Fixed a crash on stock macOS bash 3.2.** `set -- "${_args[@]}"` aborts under `set -u` when the array is empty — bash 3.2 treats the expansion as an unbound variable — so the script exited 1 and rendered nothing, with or without `--config`. Present since before 0.5.0 and invisible to CI, because `#!/usr/bin/env bash` resolves to a newer bash on most development machines. The guarded form `${_args[@]+"${_args[@]}"}` is byte-identical for non-empty arguments. The test runner carried the same hazard and is fixed too; the zero-argument invocation Claude Code actually uses now has end-to-end coverage.
 - **`schema.json` brought back in line with the script.** The bundled JSON Schema — referenced as `$schema` by every generated config, so editors validate against it — had drifted since 0.4.0: its preset enum listed 7 of 12, its theme enum 10 of 21, its bar-style enums 8 of 12, and its format enum 9 of 27. The per-token key pattern `^[a-z_]+$` also silently skipped `rl_5h`, `rl_7d` and `exceeds_200k`. All enums are now generated from the script's embedded tables.
 
-Tests: 160 e2e cases passing.
+Tests: 163 e2e cases passing.
 
 ### 0.5.2 — 2026-09-05
 
