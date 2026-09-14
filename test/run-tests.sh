@@ -73,7 +73,11 @@ run_case() {
   local exit_var="expect_exit_${id}"
   local expected_exit="${!exit_var:-0}"
   local actual_exit=0
-  if /usr/bin/env $env_prefix "$SCRIPT" "${args[@]}" < "$stdin_src" > "$actual_path" 2>&1; then
+  # `${args[@]+...}` guard: bash 3.2 aborts under `set -u` on an EMPTY array's
+  # [@] expansion. args is empty for a case registered with no config and no
+  # extra args (see e2e_env_config_no_args) — same bug class as the one fixed
+  # in statusline-bar.sh main(). Keep the guard.
+  if /usr/bin/env $env_prefix "$SCRIPT" ${args[@]+"${args[@]}"} < "$stdin_src" > "$actual_path" 2>&1; then
     actual_exit=0
   else
     actual_exit=$?

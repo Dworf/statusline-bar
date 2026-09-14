@@ -329,3 +329,18 @@ post_bash32_empty_args() {
   fi
 }
 run_case bash32_empty_args "" "" --version
+
+# Full render with ZERO command-line arguments — the config arrives via
+# $STATUSLINE_BAR_CONFIG (precedence level 2, ADR 0004). This is how Claude Code
+# actually invokes the script in production: JSON on stdin, no flags.
+#
+# It is also the one registration shape that leaves the runner's own `args`
+# array EMPTY (no config arg, no extra args), which is what made
+# run-tests.sh's unguarded "${args[@]}" a landmine under bash 3.2. Registering
+# it both closes a real coverage gap and keeps that harness guard exercised.
+#
+# Same fixture + config as e2e_default_preset, so the golden must match that
+# one's content: reaching the config by env var rather than by flag may not
+# change the render.
+CASE_ENV="NO_COLOR=1 MOCK_GIT_STATE=in_repo STATUSLINE_BAR_FAKE_NOW=9999999999 STATUSLINE_BAR_CONFIG=test/configs/default-preset.json XDG_CONFIG_HOME=/tmp/sbar-noop HOME=/tmp/sbar-noop" \
+  run_case e2e_env_config_no_args sample-input.json ""
