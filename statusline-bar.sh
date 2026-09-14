@@ -3310,9 +3310,18 @@ run_wizard() {
   [[ -n "$WIZARD_TUI_SCRIPT" ]] && scripted=1
 
   # Use the real terminal's color depth in the live preview so themes
-  # visibly differ when scrolling. Scripted tests force "none" to keep
-  # expected-output files ANSI-free.
-  if (( scripted )); then
+  # visibly differ when scrolling. Scripted runs (--tui-script) default to
+  # "none" so the expected-output files stay ANSI-free -- the goldens diff as
+  # plain text and never encode a palette.
+  #
+  # $STATUSLINE_BAR_TUI_COLOR opts a scripted run back into real colors. It
+  # exists for tools/shots.sh, which screenshots the wizard: a Theme screen
+  # whose 21 swatches are all the same grey is worse than no screenshot at
+  # all. No test sets it, so every wizard golden is unaffected -- if one ever
+  # moves, the variable is leaking in from the environment, not from a case.
+  # Interactive runs never reach this branch ($scripted is 0), so nothing
+  # about normal wizard use changes.
+  if (( scripted )) && [[ -z "${STATUSLINE_BAR_TUI_COLOR:-}" ]]; then
     WIZARD_COLOR_DEPTH="none"
   else
     WIZARD_COLOR_DEPTH="$(detect_color_depth)"

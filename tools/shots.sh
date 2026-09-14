@@ -683,7 +683,13 @@ shot_menu() {   # <file-stem> <tui-script> <exact screen title>
   local base; base="$(base_config)"
   local cfg="$WORK/menu-$stem.json" raw="$WORK/menu-$stem.raw" scr="$WORK/menu-$stem.ansi"
   cp "$base" "$cfg"
-  SB_EXTRA_ENV=(TERM=xterm-256color STATUSLINE_BAR_FORCE_NERD=no)
+  # TERM + FORCE_NERD as test/cases.sh gives its wizard cases. TUI_COLOR opts
+  # this scripted run back into real colors (statusline-bar.sh:3312) --
+  # without it the wizard paints in "none" so the goldens stay ANSI-free, and
+  # the Theme screen's 21 swatches all come out the same grey. PINNED_ENV
+  # already carries COLORTERM=truecolor, so detect_color_depth returns
+  # truecolor rather than a 256- or 16-color approximation.
+  SB_EXTRA_ENV=(TERM=xterm-256color STATUSLINE_BAR_FORCE_NERD=no STATUSLINE_BAR_TUI_COLOR=1)
   sb "$cfg" --wizard --tui-script "$script" < /dev/null > "$raw" 2>&1
   SB_EXTRA_ENV=()
   wiz_screen "$raw" "$title" > "$scr" || die "menu '$stem': $title not reached"
