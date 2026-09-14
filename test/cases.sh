@@ -4,7 +4,11 @@
 # Optional: prefix the call with CASE_ENV="K=V K2=V2" to override env.
 
 # Phase 1: help/version
-run_case help_basic       ""  ""  --help
+# --help prints a "Config:" line resolved from the same lookup chain load_config
+# uses, so pin the lookup to a miss: otherwise the golden depends on whether the
+# machine running the suite happens to have ~/.config/statusline-bar/config.json.
+CASE_ENV="NO_COLOR=1 XDG_CONFIG_HOME=/nonexistent HOME=/nonexistent" \
+  run_case help_basic       ""  ""  --help
 run_case version_basic    ""  ""  --version
 
 # Phase 2: data heredocs

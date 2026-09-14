@@ -97,7 +97,10 @@ run_case() {
     sed "s|$REPO_DIR|<REPO>|g" "$actual_path" > "$actual_path.norm" \
       && mv "$actual_path.norm" "$actual_path"
   fi
-  if [[ -n "${HOME:-}" ]] && grep -q "$HOME" "$actual_path" 2>/dev/null; then
+  # Skip a trivial $HOME: "/" would rewrite every slash, and a short prefix like
+  # /tmp collides with the synthetic paths baked into the fixtures and goldens.
+  if [[ -n "${HOME:-}" && "$HOME" != "/" && ${#HOME} -gt 5 ]] \
+     && grep -q "$HOME" "$actual_path" 2>/dev/null; then
     sed "s|$HOME|<HOME>|g" "$actual_path" > "$actual_path.norm" \
       && mv "$actual_path.norm" "$actual_path"
   fi
