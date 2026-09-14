@@ -232,6 +232,9 @@ read -r -d '' TOKENS_JSON <<'JSON' || true
              "prefix": { "none":"", "label":"Warm:", "emoji":"🔥", "nerd":"\uf06d", "ascii":"[Ca]" } },
   "cache_ttl": { "source":"claude", "default_prefix":"emoji", "default_format":"value", "applicable_formats":["value"],
              "prefix": { "none":"", "label":"TTL:", "emoji":"⏲️", "nerd":"\uf017", "ascii":"[Ct]" } },
+  "cache_expires": { "source":"claude", "default_prefix":"emoji", "default_format":"countdown",
+             "applicable_formats":["value","countdown","countdown_short","remaining","remaining_short"],
+             "prefix": { "none":"", "label":"Cold in:", "emoji":"❄️", "nerd":"\uf252", "ascii":"[Cx]" } },
   "cost": { "source":"claude", "default_prefix":"emoji", "default_format":"value", "applicable_formats":["value","per_hour","with_rate"],
              "prefix": { "none":"", "label":"Cost:", "emoji":"💰", "nerd":"", "ascii":"[$]" } },
   "duration": { "source":"claude", "default_prefix":"emoji", "default_format":"value", "applicable_formats":["value","short"],
@@ -791,6 +794,18 @@ tok_cache_warm() {
   jq -r '.prompt_cache.warm | if . == null then empty else tostring end' <<<"$INPUT_JSON"
 }
 tok_cache_ttl() { jq -r '.prompt_cache.ttl // empty' <<<"$INPUT_JSON"; }
+
+# Emits a bare epoch so the rl_* countdown formats apply unchanged. Gated on
+# warm: a cold cache's expires_at is stale (and usually null), so counting down
+# to it would be a lie. Cold therefore renders nothing at all.
+tok_cache_expires() {
+  local w e
+  w="$(jq -r '.prompt_cache.warm | if . == null then "" else tostring end' <<<"$INPUT_JSON")"
+  [[ "$w" != "true" ]] && return
+  e="$(jq -r '.prompt_cache.expires_at // empty' <<<"$INPUT_JSON")"
+  [[ -z "$e" ]] && return
+  printf '%s' "$e"
+}
 
 # Rate-limit tokens emit "pct|epoch"; composition parses.
 tok_rl_5h() {
@@ -1368,6 +1383,19 @@ _threshold_color() {
       if   [[ "$raw" == "true"  ]]; then _theme_var "$theme" good
       elif [[ "$raw" == "false" ]]; then _theme_var "$theme" crit
       else                               _theme_var "$theme" accent
+      fi ;;
+    cache_expires)
+      # First threshold keyed on a time delta rather than a percentage.
+      # _threshold_color is not passed the clock, so it reads the $NOW_EPOCH
+      # global that render_token also hands to apply_format. Guard on
+      # non-numeric, not merely empty: render_token substitutes the configured
+      # placeholder into $raw before calling here, and $(( "—" - n )) is an
+      # arithmetic syntax error on stderr -- which a render path must never emit.
+      case "$raw" in ''|*[!0-9]*) _theme_var "$theme" accent; return ;; esac
+      local _d=$(( raw - ${NOW_EPOCH:-0} ))
+      if   (( _d < 120 )); then _theme_var "$theme" crit
+      elif (( _d < 600 )); then _theme_var "$theme" warn
+      else                      _theme_var "$theme" good
       fi ;;
     *) _theme_var "$theme" accent ;;
   esac
@@ -2732,6 +2760,7 @@ _token_description() {
     cache_hit)        echo "% of input tokens served from cache" ;;
     cache_warm)       echo "Whether the prompt cache is still warm (warm/cold)" ;;
     cache_ttl)        echo "Prompt cache lifetime tier (5m or 1h)" ;;
+    cache_expires)    echo "Countdown until the prompt cache goes cold" ;;
     cost)             echo "Session cost in USD (formatted \$0.40)" ;;
     duration)         echo "Total wall-clock time since session start" ;;
     api_duration)     echo "Time spent waiting for API responses" ;;
@@ -3494,7 +3523,7 @@ examples_catalog() {
     echo "## Tokens  (42 total — pick any combination via Tokens & lines wizard)"
     echo
     echo "### Claude session (29 tokens, read from stdin JSON)"
-    for tok in model session_name session_id context tokens_input tokens_output context_size context_remaining cache_hit cache_warm cache_ttl cost duration api_duration lines_added lines_removed rl_5h rl_7d thinking effort output_style version fast_mode exceeds_200k dir worktree vim_mode agent_name added_dirs git_worktree transcript; do
+    for tok in model session_name session_id context tokens_input tokens_output context_size context_remaining cache_hit cache_warm cache_ttl cache_expires cost duration api_duration lines_added lines_removed rl_5h rl_7d thinking effort output_style version fast_mode exceeds_200k dir worktree vim_mode agent_name added_dirs git_worktree transcript; do
       _print_token_row "$tok"
     done
     echo

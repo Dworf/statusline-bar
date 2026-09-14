@@ -99,6 +99,18 @@ run_case fmt_cache_warm_value_on  "" "" --apply-format cache_warm value true  bl
 run_case fmt_cache_warm_value_off "" "" --apply-format cache_warm value false blocks 10 0
 run_case fmt_cache_warm_flag_on   "" "" --apply-format cache_warm flag  true  blocks 10 0
 run_case fmt_cache_warm_flag_off  "" "" --apply-format cache_warm flag  false blocks 10 0
+run_case tok_cache_expires_warm   sample-input.json     "" --dump-token cache_expires
+run_case tok_cache_expires_cold   cache-cold.json       "" --dump-token cache_expires
+run_case tok_cache_expires_absent no-prompt-cache.json  "" --dump-token cache_expires
+run_case fmt_cache_expires_countdown       "" "" --apply-format cache_expires countdown       10000003491 blocks 10 9999999999
+run_case fmt_cache_expires_countdown_short "" "" --apply-format cache_expires countdown_short 10000003491 blocks 10 9999999999
+run_case fmt_cache_expires_remaining       "" "" --apply-format cache_expires remaining       10000003491 blocks 10 9999999999
+run_case fmt_cache_expires_past            "" "" --apply-format cache_expires countdown       9999999000  blocks 10 9999999999
+# Regression: with an absent prompt_cache and empty_behavior "placeholder",
+# _threshold_color receives the placeholder glyph, not "". Its cache_expires
+# branch must not feed that to $(( )) -- the runner folds stderr into the
+# golden, so any arithmetic error would show up here.
+run_case render_cache_expires_absent no-prompt-cache.json placeholder-min.json --dump-render-token cache_expires
 # Regression: an absent prompt_cache must render the placeholder, never "cold".
 # Needs a placeholder config -- with empty_behavior "hide" render_token returns
 # before apply_format runs, so a "hide" config cannot see this at all.
