@@ -2,16 +2,23 @@
   "session_id": "test-session-0001",
   "transcript_path": "/dev/null",
   "cwd": "/tmp/statusline-bar-test",
-  "effort": { "level": "xhigh" },
+  "effort": {
+    "level": "xhigh"
+  },
   "session_name": "statusline-bar",
-  "model": { "id": "claude-opus-4-7[1m]", "display_name": "Opus 4.7 (1M context)" },
+  "model": {
+    "id": "claude-opus-4-7[1m]",
+    "display_name": "Opus 4.7 (1M context)"
+  },
   "workspace": {
     "current_dir": "/tmp/statusline-bar-test",
     "project_dir": "/tmp/statusline-bar-test",
     "added_dirs": []
   },
   "version": "2.1.139",
-  "output_style": { "name": "default" },
+  "output_style": {
+    "name": "default"
+  },
   "cost": {
     "total_cost_usd": 14.644638,
     "total_duration_ms": 5730891,
@@ -33,31 +40,22 @@
     "remaining_percentage": 80
   },
   "exceeds_200k_tokens": true,
-  "prompt_cache": {
-    "warm": true,
-    "caching_observed": true,
-    "ttl": "1h",
-    "expires_at": 10000003491,
-    "requests": 14,
-    "misses": 2,
-    "expected_rebuilds": 1,
-    "hit_ratio": 0.91,
-    "cache_write_tokens": 352000,
-    "miss_recache_tokens": 310200,
-    "last_miss_at": 9999996000,
-    "last_miss_cause": {
-      "causes": ["tools_changed"],
-      "tools_added": 2,
-      "tools_removed": 0
-    },
-    "miss_causes": { "tools_changed": 2 },
-    "recache_tokens_if_cold": 45000
-  },
   "fast_mode": false,
-  "thinking": { "enabled": true },
-  "worktree": { "name": "main", "original_cwd": "/tmp/statusline-bar-test" },
+  "thinking": {
+    "enabled": true
+  },
+  "worktree": {
+    "name": "main",
+    "original_cwd": "/tmp/statusline-bar-test"
+  },
   "rate_limits": {
-    "five_hour": { "used_percentage": 5, "resets_at": 9999999999 },
-    "seven_day": { "used_percentage": 22, "resets_at": 9999999999 }
+    "five_hour": {
+      "used_percentage": 5,
+      "resets_at": 9999999999
+    },
+    "seven_day": {
+      "used_percentage": 22,
+      "resets_at": 9999999999
+    }
   }
 }

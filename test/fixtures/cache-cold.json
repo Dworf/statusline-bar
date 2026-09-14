@@ -34,24 +34,23 @@
   },
   "exceeds_200k_tokens": true,
   "prompt_cache": {
-    "warm": true,
+    "warm": false,
     "caching_observed": true,
-    "ttl": "1h",
-    "expires_at": 10000003491,
-    "requests": 14,
-    "misses": 2,
-    "expected_rebuilds": 1,
-    "hit_ratio": 0.91,
-    "cache_write_tokens": 352000,
-    "miss_recache_tokens": 310200,
-    "last_miss_at": 9999996000,
+    "ttl": "5m",
+    "expires_at": null,
+    "requests": 20,
+    "misses": 3,
+    "expected_rebuilds": 0,
+    "hit_ratio": 0.42,
+    "cache_write_tokens": 120000,
+    "miss_recache_tokens": 90000,
+    "last_miss_at": 9999990000,
     "last_miss_cause": {
-      "causes": ["tools_changed"],
-      "tools_added": 2,
-      "tools_removed": 0
+      "causes": ["system_prompt_changed", "ttl_expired_5m"],
+      "system_char_delta": 412
     },
-    "miss_causes": { "tools_changed": 2 },
-    "recache_tokens_if_cold": 45000
+    "miss_causes": { "system_prompt_changed": 2, "ttl_expired_5m": 1 },
+    "recache_tokens_if_cold": null
   },
   "fast_mode": false,
   "thinking": { "enabled": true },
