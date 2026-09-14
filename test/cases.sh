@@ -88,6 +88,18 @@ run_case tok_context_size      sample-input.json "" --dump-token context_size
 run_case tok_context_remaining sample-input.json "" --dump-token context_remaining
 run_case tok_cache_hit         sample-input.json "" --dump-token cache_hit
 
+# Phase 5: prompt_cache tokens
+run_case tok_cache_warm_true  sample-input.json          "" --dump-token cache_warm
+run_case tok_cache_warm_false cache-cold.json            "" --dump-token cache_warm
+run_case tok_cache_warm_absent no-prompt-cache.json      "" --dump-token cache_warm
+run_case tok_cache_ttl_1h     sample-input.json          "" --dump-token cache_ttl
+run_case tok_cache_ttl_5m     cache-cold.json            "" --dump-token cache_ttl
+run_case tok_cache_ttl_absent no-prompt-cache.json       "" --dump-token cache_ttl
+run_case fmt_cache_warm_value_on  "" "" --apply-format cache_warm value true  blocks 10 0
+run_case fmt_cache_warm_value_off "" "" --apply-format cache_warm value false blocks 10 0
+run_case fmt_cache_warm_flag_on   "" "" --apply-format cache_warm flag  true  blocks 10 0
+run_case fmt_cache_warm_flag_off  "" "" --apply-format cache_warm flag  false blocks 10 0
+
 # Phase 5: rate-limit tokens
 run_case tok_rl_5h sample-input.json "" --dump-token rl_5h
 run_case tok_rl_7d sample-input.json "" --dump-token rl_7d

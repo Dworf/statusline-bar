@@ -228,6 +228,10 @@ read -r -d '' TOKENS_JSON <<'JSON' || true
   "cache_hit": { "source":"claude", "default_prefix":"emoji", "default_format":"percent",
              "applicable_formats":["value","percent","progressbar","progressbar+percent"],
              "prefix": { "none":"", "label":"Cache:", "emoji":"💾", "nerd":"", "ascii":"[H]" } },
+  "cache_warm": { "source":"claude", "default_prefix":"emoji", "default_format":"value", "applicable_formats":["value","flag"],
+             "prefix": { "none":"", "label":"Warm:", "emoji":"🔥", "nerd":"\uf06d", "ascii":"[Ca]" } },
+  "cache_ttl": { "source":"claude", "default_prefix":"emoji", "default_format":"value", "applicable_formats":["value"],
+             "prefix": { "none":"", "label":"TTL:", "emoji":"⏲️", "nerd":"\uf017", "ascii":"[Ct]" } },
   "cost": { "source":"claude", "default_prefix":"emoji", "default_format":"value", "applicable_formats":["value","per_hour","with_rate"],
              "prefix": { "none":"", "label":"Cost:", "emoji":"💰", "nerd":"", "ascii":"[$]" } },
   "duration": { "source":"claude", "default_prefix":"emoji", "default_format":"value", "applicable_formats":["value","short"],
@@ -781,6 +785,13 @@ tok_cache_hit() {
   awk -v r="$r" -v t="$total" 'BEGIN { printf "%d", (r*100/t) }'
 }
 
+# prompt_cache tokens. The whole object is absent before the first API response
+# and on Claude Code < 2.1.251, so every reader emits nothing when it is missing.
+tok_cache_warm() {
+  jq -r '.prompt_cache.warm | if . == null then empty else tostring end' <<<"$INPUT_JSON"
+}
+tok_cache_ttl() { jq -r '.prompt_cache.ttl // empty' <<<"$INPUT_JSON"; }
+
 # Rate-limit tokens emit "pct|epoch"; composition parses.
 tok_rl_5h() {
   local p e
@@ -934,7 +945,12 @@ tok_load() {
 apply_format() {
   local id="$1" fmt="$2" raw="$3" bar_style="$4" bar_width="$5" now="$6"
   case "$fmt" in
-    value) printf '%s' "$raw" ;;
+    value)
+      case "$id" in
+        cache_warm)
+          if [[ "$raw" == "true" ]]; then printf 'warm'; else printf 'cold'; fi ;;
+        *) printf '%s' "$raw" ;;
+      esac ;;
     compact)
       # Model-only today: drop the " context" qualifier from inside the
       # trailing (...) of display_name. "Opus 4.7 (1M context)" → "Opus 4.7
@@ -1341,6 +1357,10 @@ _threshold_color() {
       fi ;;
     lines_added)   _theme_var "$theme" good ;;
     lines_removed) _theme_var "$theme" crit ;;
+    cache_warm)
+      if [[ "$raw" == "true" ]]; then _theme_var "$theme" good
+      else                            _theme_var "$theme" crit
+      fi ;;
     *) _theme_var "$theme" accent ;;
   esac
 }
@@ -2702,6 +2722,8 @@ _token_description() {
     context_size)     echo "Configured context window size (e.g. 1M)" ;;
     context_remaining) echo "% of context window still available" ;;
     cache_hit)        echo "% of input tokens served from cache" ;;
+    cache_warm)       echo "Whether the prompt cache is still warm (warm/cold)" ;;
+    cache_ttl)        echo "Prompt cache lifetime tier (5m or 1h)" ;;
     cost)             echo "Session cost in USD (formatted \$0.40)" ;;
     duration)         echo "Total wall-clock time since session start" ;;
     api_duration)     echo "Time spent waiting for API responses" ;;
@@ -3464,7 +3486,7 @@ examples_catalog() {
     echo "## Tokens  (42 total — pick any combination via Tokens & lines wizard)"
     echo
     echo "### Claude session (29 tokens, read from stdin JSON)"
-    for tok in model session_name session_id context tokens_input tokens_output context_size context_remaining cache_hit cost duration api_duration lines_added lines_removed rl_5h rl_7d thinking effort output_style version fast_mode exceeds_200k dir worktree vim_mode agent_name added_dirs git_worktree transcript; do
+    for tok in model session_name session_id context tokens_input tokens_output context_size context_remaining cache_hit cache_warm cache_ttl cost duration api_duration lines_added lines_removed rl_5h rl_7d thinking effort output_style version fast_mode exceeds_200k dir worktree vim_mode agent_name added_dirs git_worktree transcript; do
       _print_token_row "$tok"
     done
     echo
