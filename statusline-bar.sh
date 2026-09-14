@@ -119,8 +119,8 @@ read -r -d '' PRESETS_JSON <<'JSON' || true
   },
   "default": {
     "lines": [
-      ["model","context","cost","rl_5h","rl_7d"],
-      ["thinking","effort","dir","worktree","git_branch","git_status","git_ahead_behind","lines_added","lines_removed","duration"]
+      ["model","context","cost","rl_5h","rl_7d","cache_expires"],
+      ["thinking","effort","dir","worktree","git_branch","git_status","git_ahead_behind","lines_added","lines_removed","cache_hit","cache_ttl","duration"]
     ],
     "token_formats": {
       "rl_5h": "progressbar+percent+countdown",
@@ -1747,7 +1747,7 @@ _TOOLTIPS_PRESET=(
   "Compact: 1 line, 6 tokens — adds git branch, duration, and the 5h rate limit (as % only)."
   "Focus: 1 line, 5 tokens — model + context + thinking/effort + cost. Quick activity glance."
   "Coder: 1 line, 6 tokens — git-focused: model, branch, status, lines +/-, duration."
-  "Default: 2 lines, 15 tokens — usage row on top; thinking / dir / git / counters / duration below."
+  "Default: 2 lines, 18 tokens — usage row on top (model, context, cost, rate limits, cache expiry); thinking / dir / git / counters / cache hit + TTL / duration below."
   "Modern: 2 lines, 9 tokens — git staged/modified inline; rate-limit bars + duration on line 2."
   "Rates: 2 lines, 8 tokens — context+cost on top; rate limits (with bars+countdown), cache hit + expiry, and api time below."
   "Cache: 2 lines, 9 tokens — context+cost on top; prompt-cache health (hit bar, warm, expiry, TTL, misses, writes) below."
@@ -2101,7 +2101,7 @@ _PRESETS_EX=(
   "1 line · 6 tokens"
   "1 line · 5 tokens"
   "1 line · 6 tokens"
-  "2 lines · 15 tokens"
+  "2 lines · 18 tokens"
   "2 lines · 9 tokens"
   "2 lines · 8 tokens"
   "2 lines · 9 tokens"

@@ -18,7 +18,8 @@
       "context",
       "cost",
       "rl_5h",
-      "rl_7d"
+      "rl_7d",
+      "cache_expires"
     ],
     [
       "thinking",
@@ -30,6 +31,8 @@
       "git_ahead_behind",
       "lines_added",
       "lines_removed",
+      "cache_hit",
+      "cache_ttl",
       "duration"
     ]
   ],
