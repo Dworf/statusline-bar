@@ -1272,14 +1272,14 @@ apply_prefix() {
     none) printf '%s' "$value" ;;
     label|emoji|nerd|ascii)
       local p
-      p="$(jq -r --arg id "$id" --arg s "$style" '.[$id].prefix[$s]' <<<"$TOKENS_JSON")"
+      p="$(jq -r --arg id "$id" --arg s "$style" '.[$id].prefix[$s] // empty' <<<"$TOKENS_JSON")"
       if [[ -z "$p" ]]; then printf '%s' "$value"
       else printf '%s %s' "$p" "$value"
       fi ;;
     emoji+label)
       local pe pl pl_bare
-      pe="$(jq -r --arg id "$id" '.[$id].prefix.emoji' <<<"$TOKENS_JSON")"
-      pl="$(jq -r --arg id "$id" '.[$id].prefix.label' <<<"$TOKENS_JSON")"
+      pe="$(jq -r --arg id "$id" '.[$id].prefix.emoji // empty' <<<"$TOKENS_JSON")"
+      pl="$(jq -r --arg id "$id" '.[$id].prefix.label // empty' <<<"$TOKENS_JSON")"
       pl_bare="${pl%:}"
       # If the emoji prefix already contains the label text (e.g. rl_5h's
       # "🕔 5h" + label "5h"), don't repeat it.
@@ -1290,8 +1290,8 @@ apply_prefix() {
       fi ;;
     label+emoji)
       local pe pl pl_bare
-      pe="$(jq -r --arg id "$id" '.[$id].prefix.emoji' <<<"$TOKENS_JSON")"
-      pl="$(jq -r --arg id "$id" '.[$id].prefix.label' <<<"$TOKENS_JSON")"
+      pe="$(jq -r --arg id "$id" '.[$id].prefix.emoji // empty' <<<"$TOKENS_JSON")"
+      pl="$(jq -r --arg id "$id" '.[$id].prefix.label // empty' <<<"$TOKENS_JSON")"
       pl_bare="${pl%:}"
       if [[ -n "$pl_bare" && "$pe" == *"$pl_bare" ]]; then
         printf '%s %s' "$pe" "$value"
@@ -1300,8 +1300,8 @@ apply_prefix() {
       fi ;;
     nerd+label)
       local pn pl pl_bare
-      pn="$(jq -r --arg id "$id" '.[$id].prefix.nerd' <<<"$TOKENS_JSON")"
-      pl="$(jq -r --arg id "$id" '.[$id].prefix.label' <<<"$TOKENS_JSON")"
+      pn="$(jq -r --arg id "$id" '.[$id].prefix.nerd // empty' <<<"$TOKENS_JSON")"
+      pl="$(jq -r --arg id "$id" '.[$id].prefix.label // empty' <<<"$TOKENS_JSON")"
       pl_bare="${pl%:}"
       if [[ -n "$pl_bare" && "$pn" == *"$pl_bare" ]]; then
         printf '%s %s' "$pn" "$value"
@@ -1533,6 +1533,13 @@ render_token() {
   if [[ -z "$bar_style" || "$bar_style" == "null" ]]; then
     bar_style="$(_theme_var "$theme" bar_style)"
   fi
+
+  # An unknown token id (a typo, or a config written by a newer build than
+  # this one) must render nothing at all -- not a "null" prefix, and not a
+  # "command not found" on stderr. A render path never writes to stderr and
+  # never crashes (ADR 0003), so skip the token silently. --check is the
+  # place that reports the typo loudly. `declare -F` is bash 3.2 safe.
+  if ! declare -F "tok_${id}" >/dev/null 2>&1; then return; fi
 
   local raw; raw="$("tok_${id}")"
 

@@ -244,6 +244,20 @@ run_case check_bad_preset    "" check-bad-preset.json --check
 expect_exit_check_unknown_token=1
 run_case check_unknown_token "" check-unknown-token.json --check
 
+# --check reports an unknown token id loudly (above). The *render* path must
+# instead degrade silently: no "tok_<id>: command not found" on stderr, and no
+# "null" prefix from the missing registry entry -- the token is skipped whole.
+# The runner folds stderr into the golden, so an empty golden proves both.
+# empty_behavior is "placeholder" here on purpose: that is the setting that
+# used to render the unknown token as "null —".
+CASE_ENV="NO_COLOR=1 XDG_CONFIG_HOME=/tmp/sbar-noop HOME=/tmp/sbar-noop" \
+  run_case render_unknown_token_silent sample-input.json unknown-token-render.json
+# Same, surrounded by known tokens: the unknown id vanishes (no stray
+# separator) while a *known* token with no value still honours the
+# placeholder -- agent_name is empty in the fixture and must stay "🤝 —".
+CASE_ENV="NO_COLOR=1 XDG_CONFIG_HOME=/tmp/sbar-noop HOME=/tmp/sbar-noop" \
+  run_case render_unknown_token_mixed sample-input.json unknown-token-mixed.json
+
 # Phase 8: e2e render via the main render path (no --dump-*)
 CASE_ENV="MOCK_GIT_STATE=in_repo STATUSLINE_BAR_FAKE_NOW=9999999999 XDG_CONFIG_HOME=/tmp/sbar-noop HOME=/tmp/sbar-noop" \
   run_case e2e_default_preset sample-input.json default-preset.json
