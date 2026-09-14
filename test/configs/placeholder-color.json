@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "preset": "default",
+  "theme": "nord",
+  "global": {
+    "prefix_style": "emoji",
+    "separator": "pipe",
+    "bar_style": null,
+    "color_depth": "truecolor",
+    "empty_behavior": "placeholder",
+    "placeholder": "—",
+    "bar_width": 10
+  },
+  "lines": [["cache_hit"]],
+  "tokens": {}
+}

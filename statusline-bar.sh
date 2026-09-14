@@ -5,7 +5,7 @@
 
 set -u
 
-VERSION="0.5.2"
+VERSION="0.6.0"
 
 # ============================================================
 # SECTION: Embedded data — themes
@@ -119,8 +119,8 @@ read -r -d '' PRESETS_JSON <<'JSON' || true
   },
   "default": {
     "lines": [
-      ["model","context","cost","rl_5h","rl_7d"],
-      ["thinking","effort","dir","worktree","git_branch","git_status","git_ahead_behind","lines_added","lines_removed","duration"]
+      ["model","context","cost","rl_5h","rl_7d","cache_expires"],
+      ["thinking","effort","dir","worktree","git_branch","git_status","git_ahead_behind","lines_added","lines_removed","cache_hit","cache_ttl","duration"]
     ],
     "token_formats": {
       "rl_5h": "progressbar+percent+countdown",
@@ -140,12 +140,22 @@ read -r -d '' PRESETS_JSON <<'JSON' || true
   "rates": {
     "lines": [
       ["model","context","cost"],
-      ["rl_5h","rl_7d","cache_hit","api_duration"]
+      ["rl_5h","rl_7d","cache_hit","cache_expires","api_duration"]
     ],
     "token_formats": {
       "rl_5h": "progressbar+percent+countdown",
       "rl_7d": "progressbar+percent+countdown",
       "cache_hit": "progressbar+percent"
+    }
+  },
+  "cache": {
+    "lines": [
+      ["model","context","cost"],
+      ["cache_hit","cache_warm","cache_expires","cache_ttl","cache_misses","cache_write"]
+    ],
+    "token_formats": {
+      "cache_hit": "progressbar+percent",
+      "cache_expires": "countdown_short"
     }
   },
   "claude": {
@@ -171,7 +181,7 @@ read -r -d '' PRESETS_JSON <<'JSON' || true
   "everything": {
     "lines": [
       ["model","session_name","session_id","context","tokens_input","tokens_output","context_size","context_remaining"],
-      ["cache_hit","cost","api_duration","rl_5h","rl_7d","thinking","effort","output_style","version","agent_name","vim_mode","fast_mode","exceeds_200k"],
+      ["cache_hit","cache_warm","cache_expires","cache_ttl","cache_misses","cache_rebuild","cache_write","cost","api_duration","rl_5h","rl_7d","thinking","effort","output_style","version","agent_name","vim_mode","fast_mode","exceeds_200k"],
       ["dir","worktree","added_dirs","git_worktree","transcript","git_branch","git_status","git_staged","git_modified","git_untracked","git_ahead_behind","lines_added","lines_removed"],
       ["duration","clock","date","hostname","user","battery","memory","load"]
     ],
@@ -180,7 +190,7 @@ read -r -d '' PRESETS_JSON <<'JSON' || true
   "maximum": {
     "lines": [
       ["model","session_name","session_id","context","tokens_input","tokens_output","context_size","context_remaining"],
-      ["cache_hit","cost","api_duration","rl_5h","rl_7d","thinking","effort","output_style","version","agent_name","vim_mode","fast_mode","exceeds_200k"],
+      ["cache_hit","cache_warm","cache_expires","cache_ttl","cache_misses","cache_rebuild","cache_write","cost","api_duration","rl_5h","rl_7d","thinking","effort","output_style","version","agent_name","vim_mode","fast_mode","exceeds_200k"],
       ["dir","worktree","added_dirs","git_worktree","transcript","git_branch","git_status","git_staged","git_modified","git_untracked","git_ahead_behind","lines_added","lines_removed"],
       ["duration","clock","date","hostname","user","battery","memory","load"]
     ],
@@ -188,6 +198,8 @@ read -r -d '' PRESETS_JSON <<'JSON' || true
       "context": "progressbar+percent+tokens",
       "context_remaining": "progressbar+percent",
       "cache_hit": "progressbar+percent",
+      "cache_expires": "countdown_short",
+      "cache_misses": "count+cause",
       "rl_5h": "progressbar+percent+countdown",
       "rl_7d": "progressbar+percent+countdown",
       "battery": "progressbar+percent",
@@ -199,107 +211,127 @@ read -r -d '' PRESETS_JSON <<'JSON' || true
 JSON
 
 # ============================================================
-# SECTION: Embedded data — tokens (39)
+# SECTION: Embedded data — tokens (48)
 # ============================================================
 # `nerd` fields use Font Awesome glyphs from any Nerd Font patched set.
 # Codepoints are written as JSON \uXXXX escapes — jq decodes them on
 # load so apply_prefix emits the actual UTF-8 byte sequence at render
 # time. Stable since Font Awesome 4 (the legacy mapping every Nerd
 # Font release through v3.4+ ships).
+#
+# A prefix map may also carry state-dependent variants: a "<style>_cold"
+# key wins over "<style>" when the token's rendered value is "cold", so a
+# cold cache is not announced with a flame. Only the styles that actually
+# differ need a variant — apply_prefix falls back to the plain key. Today
+# cache_warm is the only token that declares any.
 
 read -r -d '' TOKENS_JSON <<'JSON' || true
 {
   "model": { "source":"claude", "default_prefix":"emoji", "default_format":"value", "applicable_formats":["value","compact","short","id","id_short"],
-             "prefix": { "none":"", "label":"Model:", "emoji":"🤖", "nerd":"", "ascii":"[M]" } },
+             "prefix": { "none":"", "label":"Model:", "emoji":"🤖", "nerd":"\uf2db", "ascii":"[M]" } },
   "session_name": { "source":"claude", "default_prefix":"emoji", "default_format":"value", "applicable_formats":["value"],
-             "prefix": { "none":"", "label":"Session:", "emoji":"📝", "nerd":"", "ascii":"[S]" } },
+             "prefix": { "none":"", "label":"Session:", "emoji":"📝", "nerd":"\uf044", "ascii":"[S]" } },
   "context": { "source":"claude", "default_prefix":"emoji", "default_format":"percent+tokens",
              "applicable_formats":["value","percent","progressbar","progressbar+percent","tokens","tokens+size","percent+tokens","progressbar+percent+tokens"],
-             "prefix": { "none":"", "label":"Ctx:", "emoji":"🧠", "nerd":"", "ascii":"[C]" } },
+             "prefix": { "none":"", "label":"Ctx:", "emoji":"🧠", "nerd":"\uf0e4", "ascii":"[C]" } },
   "tokens_input": { "source":"claude", "default_prefix":"emoji", "default_format":"short", "applicable_formats":["value","short"],
-             "prefix": { "none":"", "label":"In:", "emoji":"📥", "nerd":"", "ascii":"[in]" } },
+             "prefix": { "none":"", "label":"In:", "emoji":"📥", "nerd":"\uf063", "ascii":"[in]" } },
   "tokens_output": { "source":"claude", "default_prefix":"emoji", "default_format":"short", "applicable_formats":["value","short"],
-             "prefix": { "none":"", "label":"Out:", "emoji":"📤", "nerd":"", "ascii":"[out]" } },
+             "prefix": { "none":"", "label":"Out:", "emoji":"📤", "nerd":"\uf062", "ascii":"[out]" } },
   "context_size": { "source":"claude", "default_prefix":"emoji", "default_format":"short", "applicable_formats":["value","short"],
-             "prefix": { "none":"", "label":"CtxMax:", "emoji":"🪟", "nerd":"", "ascii":"[CW]" } },
+             "prefix": { "none":"", "label":"CtxMax:", "emoji":"📦", "nerd":"\uf096", "ascii":"[CW]" } },
   "context_remaining": { "source":"claude", "default_prefix":"emoji", "default_format":"percent",
              "applicable_formats":["value","percent","progressbar","progressbar+percent"],
-             "prefix": { "none":"", "label":"Free:", "emoji":"🆓", "nerd":"", "ascii":"[F]" } },
+             "prefix": { "none":"", "label":"Free:", "emoji":"🆓", "nerd":"\uf1ce", "ascii":"[F]" } },
   "cache_hit": { "source":"claude", "default_prefix":"emoji", "default_format":"percent",
              "applicable_formats":["value","percent","progressbar","progressbar+percent"],
-             "prefix": { "none":"", "label":"Cache:", "emoji":"💾", "nerd":"", "ascii":"[H]" } },
+             "prefix": { "none":"", "label":"Cache:", "emoji":"💾", "nerd":"\uf1c0", "ascii":"[H]" } },
+  "cache_warm": { "source":"claude", "default_prefix":"emoji", "default_format":"value", "applicable_formats":["value","flag"],
+             "prefix": { "none":"", "label":"State:", "emoji":"🔥", "nerd":"\uf06d", "ascii":"[Ca]",
+                         "emoji_cold":"🧊", "nerd_cold":"\uf2dc" } },
+  "cache_ttl": { "source":"claude", "default_prefix":"emoji", "default_format":"value", "applicable_formats":["value"],
+             "prefix": { "none":"", "label":"TTL:", "emoji":"🪟", "nerd":"\uf2d0", "ascii":"[Ct]" } },
+  "cache_expires": { "source":"claude", "default_prefix":"emoji", "default_format":"countdown",
+             "applicable_formats":["value","countdown","countdown_short","remaining","remaining_short"],
+             "prefix": { "none":"", "label":"Cold in:", "emoji":"❄️", "nerd":"\uf252", "ascii":"[Cx]" } },
+  "cache_write": { "source":"claude", "default_prefix":"emoji", "default_format":"short", "applicable_formats":["value","short"],
+             "prefix": { "none":"", "label":"Wrote:", "emoji":"✍️", "nerd":"\uf040", "ascii":"[Cw]" } },
+  "cache_rebuild": { "source":"claude", "default_prefix":"emoji", "default_format":"short", "applicable_formats":["value","short"],
+             "prefix": { "none":"", "label":"Rebuild:", "emoji":"🔁", "nerd":"\uf021", "ascii":"[Cr]" } },
+  "cache_misses": { "source":"claude", "default_prefix":"emoji", "default_format":"count+cause", "applicable_formats":["value","cause","count+cause"],
+             "prefix": { "none":"", "label":"Miss:", "emoji":"⚠️", "nerd":"\uf071", "ascii":"[Cm]" } },
   "cost": { "source":"claude", "default_prefix":"emoji", "default_format":"value", "applicable_formats":["value","per_hour","with_rate"],
-             "prefix": { "none":"", "label":"Cost:", "emoji":"💰", "nerd":"", "ascii":"[$]" } },
+             "prefix": { "none":"", "label":"Cost:", "emoji":"💰", "nerd":"\uf155", "ascii":"[$]" } },
   "duration": { "source":"claude", "default_prefix":"emoji", "default_format":"value", "applicable_formats":["value","short"],
-             "prefix": { "none":"", "label":"Time:", "emoji":"⏳", "nerd":"", "ascii":"[T]" } },
+             "prefix": { "none":"", "label":"Time:", "emoji":"⏳", "nerd":"\uf017", "ascii":"[T]" } },
   "api_duration": { "source":"claude", "default_prefix":"emoji", "default_format":"value", "applicable_formats":["value","short"],
-             "prefix": { "none":"", "label":"API:", "emoji":"📡", "nerd":"", "ascii":"[A]" } },
+             "prefix": { "none":"", "label":"API:", "emoji":"📡", "nerd":"\uf233", "ascii":"[A]" } },
   "lines_added": { "source":"claude", "default_prefix":"emoji", "default_format":"value", "applicable_formats":["value","count"],
-             "prefix": { "none":"", "label":"Added:", "emoji":"➕", "nerd":"", "ascii":"+" } },
+             "prefix": { "none":"", "label":"Added:", "emoji":"➕", "nerd":"\uf067", "ascii":"+" } },
   "lines_removed": { "source":"claude", "default_prefix":"emoji", "default_format":"value", "applicable_formats":["value","count"],
-             "prefix": { "none":"", "label":"Removed:", "emoji":"➖", "nerd":"", "ascii":"-" } },
+             "prefix": { "none":"", "label":"Removed:", "emoji":"➖", "nerd":"\uf068", "ascii":"-" } },
   "rl_5h": { "source":"claude", "default_prefix":"label", "default_format":"progressbar+percent+countdown",
              "applicable_formats":["value","percent","progressbar","progressbar+percent","countdown","countdown_short","remaining","remaining_short","progressbar+percent+countdown","progressbar+percent+countdown_short","progressbar+percent+remaining","progressbar+percent+remaining_short"],
-             "prefix": { "none":"", "label":"5h", "emoji":"🕔 5h", "nerd":" 5h", "ascii":"[5h]" } },
+             "prefix": { "none":"", "label":"5h", "emoji":"🕔 5h", "nerd":"\uf017 5h", "ascii":"[5h]" } },
   "rl_7d": { "source":"claude", "default_prefix":"label", "default_format":"progressbar+percent+countdown",
              "applicable_formats":["value","percent","progressbar","progressbar+percent","countdown","countdown_short","remaining","remaining_short","progressbar+percent+countdown","progressbar+percent+countdown_short","progressbar+percent+remaining","progressbar+percent+remaining_short"],
-             "prefix": { "none":"", "label":"7d", "emoji":"🕖 7d", "nerd":" 7d", "ascii":"[7d]" } },
+             "prefix": { "none":"", "label":"7d", "emoji":"🕖 7d", "nerd":"\uf073 7d", "ascii":"[7d]" } },
   "thinking": { "source":"claude", "default_prefix":"emoji", "default_format":"value", "applicable_formats":["value","flag"],
-             "prefix": { "none":"", "label":"Think:", "emoji":"💭", "nerd":"", "ascii":"[?]" } },
+             "prefix": { "none":"", "label":"Think:", "emoji":"💭", "nerd":"\uf0eb", "ascii":"[?]" } },
   "effort": { "source":"claude", "default_prefix":"emoji", "default_format":"value", "applicable_formats":["value"],
-             "prefix": { "none":"", "label":"Effort:", "emoji":"💪", "nerd":"", "ascii":"[E]" } },
+             "prefix": { "none":"", "label":"Effort:", "emoji":"💪", "nerd":"\uf0e7", "ascii":"[E]" } },
   "output_style": { "source":"claude", "default_prefix":"emoji", "default_format":"value", "applicable_formats":["value"],
-             "prefix": { "none":"", "label":"Style:", "emoji":"🎨", "nerd":"", "ascii":"[Y]" } },
+             "prefix": { "none":"", "label":"Style:", "emoji":"🎨", "nerd":"\uf1fc", "ascii":"[Y]" } },
   "version": { "source":"claude", "default_prefix":"emoji", "default_format":"value", "applicable_formats":["value"],
-             "prefix": { "none":"", "label":"Version:", "emoji":"🏷️", "nerd":"", "ascii":"[V]" } },
+             "prefix": { "none":"", "label":"Version:", "emoji":"🏷️", "nerd":"\uf02b", "ascii":"[V]" } },
   "fast_mode": { "source":"claude", "default_prefix":"emoji", "default_format":"flag", "applicable_formats":["flag","value"],
-             "prefix": { "none":"", "label":"Fast", "emoji":"⚡️", "nerd":"", "ascii":"[F]" } },
+             "prefix": { "none":"", "label":"Fast", "emoji":"⚡️", "nerd":"\uf135", "ascii":"[F]" } },
   "exceeds_200k": { "source":"claude", "default_prefix":"emoji", "default_format":"flag", "applicable_formats":["flag","value"],
-             "prefix": { "none":"", "label":">200k", "emoji":"📈", "nerd":"", "ascii":"[>]" } },
+             "prefix": { "none":"", "label":">200k", "emoji":"📈", "nerd":"\uf071", "ascii":"[>]" } },
   "dir": { "source":"claude", "default_prefix":"emoji", "default_format":"value", "applicable_formats":["value"],
-             "prefix": { "none":"", "label":"Dir:", "emoji":"📁", "nerd":"", "ascii":"[D]" } },
+             "prefix": { "none":"", "label":"Dir:", "emoji":"📁", "nerd":"\uf07b", "ascii":"[D]" } },
   "worktree": { "source":"claude", "default_prefix":"emoji", "default_format":"value", "applicable_formats":["value"],
-             "prefix": { "none":"", "label":"Tree:", "emoji":"🌳", "nerd":"", "ascii":"[W]" } },
+             "prefix": { "none":"", "label":"Tree:", "emoji":"🌳", "nerd":"\uf1bb", "ascii":"[W]" } },
   "vim_mode": { "source":"claude", "default_prefix":"emoji", "default_format":"value", "applicable_formats":["value"],
-             "prefix": { "none":"", "label":"Vim:", "emoji":"⌨️", "nerd":"", "ascii":"[Vm]" } },
+             "prefix": { "none":"", "label":"Vim:", "emoji":"⌨️", "nerd":"\uf11c", "ascii":"[Vm]" } },
   "agent_name": { "source":"claude", "default_prefix":"emoji", "default_format":"value", "applicable_formats":["value"],
-             "prefix": { "none":"", "label":"Agent:", "emoji":"🤝", "nerd":"", "ascii":"[Ag]" } },
+             "prefix": { "none":"", "label":"Agent:", "emoji":"🤝", "nerd":"\uf0c0", "ascii":"[Ag]" } },
   "session_id": { "source":"claude", "default_prefix":"emoji", "default_format":"value", "applicable_formats":["value"],
-             "prefix": { "none":"", "label":"ID:", "emoji":"🔖", "nerd":"", "ascii":"[ID]" } },
+             "prefix": { "none":"", "label":"ID:", "emoji":"🔖", "nerd":"\uf2c1", "ascii":"[ID]" } },
   "added_dirs": { "source":"claude", "default_prefix":"emoji", "default_format":"value", "applicable_formats":["value","flag"],
-             "prefix": { "none":"", "label":"+dirs:", "emoji":"📂", "nerd":"", "ascii":"[+D]" } },
+             "prefix": { "none":"", "label":"+dirs:", "emoji":"📂", "nerd":"\uf07c", "ascii":"[+D]" } },
   "git_worktree": { "source":"claude", "default_prefix":"emoji", "default_format":"value", "applicable_formats":["value"],
-             "prefix": { "none":"", "label":"WT:", "emoji":"🌲", "nerd":"", "ascii":"[WT]" } },
+             "prefix": { "none":"", "label":"WT:", "emoji":"🌲", "nerd":"\uf0e8", "ascii":"[WT]" } },
   "transcript": { "source":"claude", "default_prefix":"emoji", "default_format":"value", "applicable_formats":["value"],
-             "prefix": { "none":"", "label":"Log:", "emoji":"📜", "nerd":"", "ascii":"[L]" } },
+             "prefix": { "none":"", "label":"Log:", "emoji":"📜", "nerd":"\uf0f6", "ascii":"[L]" } },
   "git_branch": { "source":"git", "default_prefix":"emoji", "default_format":"value", "applicable_formats":["value"],
-             "prefix": { "none":"", "label":"Branch:", "emoji":"🌿", "nerd":"", "ascii":"[B]" } },
+             "prefix": { "none":"", "label":"Branch:", "emoji":"🌿", "nerd":"\uf126", "ascii":"[B]" } },
   "git_status": { "source":"git", "default_prefix":"none", "default_format":"combined", "applicable_formats":["combined","value"],
-             "prefix": { "none":"", "label":"Status:", "emoji":"📊", "nerd":"", "ascii":"" } },
+             "prefix": { "none":"", "label":"Status:", "emoji":"📊", "nerd":"\uf0ae", "ascii":"" } },
   "git_staged": { "source":"git", "default_prefix":"ascii", "default_format":"value", "applicable_formats":["value"],
-             "prefix": { "none":"", "label":"Staged:", "emoji":"➕", "nerd":"", "ascii":"+" } },
+             "prefix": { "none":"", "label":"Staged:", "emoji":"➕", "nerd":"\uf067", "ascii":"+" } },
   "git_modified": { "source":"git", "default_prefix":"ascii", "default_format":"value", "applicable_formats":["value"],
-             "prefix": { "none":"", "label":"Mod:", "emoji":"✏️", "nerd":"", "ascii":"~" } },
+             "prefix": { "none":"", "label":"Mod:", "emoji":"✏️", "nerd":"\uf040", "ascii":"~" } },
   "git_untracked": { "source":"git", "default_prefix":"ascii", "default_format":"value", "applicable_formats":["value"],
-             "prefix": { "none":"", "label":"Untracked:", "emoji":"❓", "nerd":"", "ascii":"?" } },
+             "prefix": { "none":"", "label":"Untracked:", "emoji":"❓", "nerd":"\uf059", "ascii":"?" } },
   "git_ahead_behind": { "source":"git", "default_prefix":"emoji", "default_format":"value", "applicable_formats":["value"],
-             "prefix": { "none":"", "label":"AB:", "emoji":"🔀", "nerd":"", "ascii":"[AB]" } },
+             "prefix": { "none":"", "label":"AB:", "emoji":"🔀", "nerd":"\uf0ec", "ascii":"[AB]" } },
   "clock": { "source":"os", "default_prefix":"emoji", "default_format":"value", "applicable_formats":["value"],
-             "prefix": { "none":"", "label":"Time:", "emoji":"🕒", "nerd":"", "ascii":"[t]" } },
+             "prefix": { "none":"", "label":"Time:", "emoji":"🕒", "nerd":"\uf017", "ascii":"[t]" } },
   "date": { "source":"os", "default_prefix":"emoji", "default_format":"value", "applicable_formats":["value"],
-             "prefix": { "none":"", "label":"Date:", "emoji":"📅", "nerd":"", "ascii":"[d]" } },
+             "prefix": { "none":"", "label":"Date:", "emoji":"📅", "nerd":"\uf073", "ascii":"[d]" } },
   "hostname": { "source":"os", "default_prefix":"emoji", "default_format":"value", "applicable_formats":["value"],
-             "prefix": { "none":"", "label":"Host:", "emoji":"🖥️", "nerd":"", "ascii":"[h]" } },
+             "prefix": { "none":"", "label":"Host:", "emoji":"🖥️", "nerd":"\uf108", "ascii":"[h]" } },
   "user": { "source":"os", "default_prefix":"emoji", "default_format":"value", "applicable_formats":["value"],
-             "prefix": { "none":"", "label":"User:", "emoji":"👤", "nerd":"", "ascii":"[u]" } },
+             "prefix": { "none":"", "label":"User:", "emoji":"👤", "nerd":"\uf007", "ascii":"[u]" } },
   "battery": { "source":"os", "default_prefix":"emoji", "default_format":"percent",
              "applicable_formats":["value","percent","progressbar","progressbar+percent"], "threshold_inverted":true,
-             "prefix": { "none":"", "label":"Bat:", "emoji":"🔋", "nerd":"", "ascii":"[b]" } },
+             "prefix": { "none":"", "label":"Bat:", "emoji":"🔋", "nerd":"\uf240", "ascii":"[b]" } },
   "memory": { "source":"os", "default_prefix":"emoji", "default_format":"percent",
              "applicable_formats":["value","percent","progressbar","progressbar+percent"],
-             "prefix": { "none":"", "label":"Mem:", "emoji":"🧬", "nerd":"", "ascii":"[m]" } },
+             "prefix": { "none":"", "label":"Mem:", "emoji":"🧬", "nerd":"\uf2db", "ascii":"[m]" } },
   "load": { "source":"os", "default_prefix":"emoji", "default_format":"value", "applicable_formats":["value"],
-             "prefix": { "none":"", "label":"Load:", "emoji":"📊", "nerd":"", "ascii":"[l]" } }
+             "prefix": { "none":"", "label":"Load:", "emoji":"📊", "nerd":"\uf0e4", "ascii":"[l]" } }
 }
 JSON
 
@@ -351,6 +383,22 @@ read -r -d '' EXAMPLES_INPUT_JSON <<'JSON' || true
   "rate_limits": {
     "five_hour": { "used_percentage": 50, "resets_at": 1778534893 },
     "seven_day": { "used_percentage": 50, "resets_at": 1778962800 }
+  },
+  "prompt_cache": {
+    "warm": true,
+    "caching_observed": true,
+    "ttl": "1h",
+    "expires_at": 1778526072,
+    "requests": 14,
+    "misses": 2,
+    "expected_rebuilds": 1,
+    "hit_ratio": 0.97,
+    "cache_write_tokens": 352000,
+    "miss_recache_tokens": 310200,
+    "last_miss_at": 1778520000,
+    "last_miss_cause": { "causes": ["tools_changed"], "tools_added": 2, "tools_removed": 0 },
+    "miss_causes": { "tools_changed": 2 },
+    "recache_tokens_if_cold": 45000
   }
 }
 JSON
@@ -771,7 +819,20 @@ tok_context_remaining() {
   [[ -z "$u" ]] && return
   awk -v u="$u" 'BEGIN { printf "%d", 100 - (u+0) }'
 }
+# Prefers the payload's session-wide hit_ratio (Claude Code >= 2.1.251). Falls
+# back to deriving a last-call ratio from current_usage for older payloads --
+# same formula, narrower window. The turn-based number collapses toward zero
+# after any cache write, so the session figure is the honest one.
 tok_cache_hit() {
+  local hr
+  hr="$(jq -r '.prompt_cache.hit_ratio // empty' <<<"$INPUT_JSON")"
+  if [[ -n "$hr" ]]; then
+    # Round, don't truncate: %d floors an IEEE double, so 0.29*100 lands on
+    # 28.999... and renders 28 -- 3 of the 101 two-decimal ratios (0.29, 0.57,
+    # 0.58). Arbitrary-precision ratios floor a point low about half the time.
+    awk -v h="$hr" 'BEGIN { printf "%.0f", (h*100) }'
+    return
+  fi
   local r c i
   r="$(jq -r '.context_window.current_usage.cache_read_input_tokens // 0' <<<"$INPUT_JSON")"
   c="$(jq -r '.context_window.current_usage.cache_creation_input_tokens // 0' <<<"$INPUT_JSON")"
@@ -779,6 +840,53 @@ tok_cache_hit() {
   local total=$(( r + c + i ))
   (( total <= 0 )) && return
   awk -v r="$r" -v t="$total" 'BEGIN { printf "%d", (r*100/t) }'
+}
+
+# prompt_cache tokens. The whole object is absent before the first API response
+# and on Claude Code < 2.1.251, so every reader emits nothing when it is missing.
+tok_cache_warm() {
+  jq -r '.prompt_cache.warm | if . == null then empty else tostring end' <<<"$INPUT_JSON"
+}
+tok_cache_ttl() { jq -r '.prompt_cache.ttl // empty' <<<"$INPUT_JSON"; }
+
+# Emits a bare epoch so the rl_* countdown formats apply unchanged. Gated on
+# warm: a cold cache's expires_at is stale (and usually null), so counting down
+# to it would be a lie. Cold therefore renders nothing at all.
+tok_cache_expires() {
+  local w e
+  w="$(jq -r '.prompt_cache.warm | if . == null then "" else tostring end' <<<"$INPUT_JSON")"
+  [[ "$w" != "true" ]] && return
+  e="$(jq -r '.prompt_cache.expires_at // empty' <<<"$INPUT_JSON")"
+  [[ -z "$e" ]] && return
+  printf '%s' "$e"
+}
+
+# Bare token counts, rendered short ("352k") by the default format. Hidden at
+# zero: "wrote 0 tokens to the cache" is noise, not information.
+tok_cache_write() {
+  local n; n="$(jq -r '.prompt_cache.cache_write_tokens // empty' <<<"$INPUT_JSON")"
+  [[ -z "$n" || "$n" == "0" ]] && return
+  printf '%s' "$n"
+}
+# recache_tokens_if_cold is null transiently after every /compact, until the next
+# request records the rewritten conversation's size. The token blinking out for a
+# turn is correct, not a bug -- null and 0 are treated identically.
+tok_cache_rebuild() {
+  local n; n="$(jq -r '.prompt_cache.recache_tokens_if_cold // empty' <<<"$INPUT_JSON")"
+  [[ -z "$n" || "$n" == "0" ]] && return
+  printf '%s' "$n"
+}
+
+# Emits "<count>|<causes>". Hidden at zero: a miss is only counted when a request
+# re-processed >5% and >=2000 cacheable tokens with no compaction to explain it,
+# so any non-zero value is a real prefix invalidation worth showing. last_miss_cause
+# is null until the first miss, and again whenever no cause could be diagnosed.
+tok_cache_misses() {
+  local m c
+  m="$(jq -r '.prompt_cache.misses // empty' <<<"$INPUT_JSON")"
+  [[ -z "$m" || "$m" == "0" ]] && return
+  c="$(jq -r '(.prompt_cache.last_miss_cause.causes // []) | join(",")' <<<"$INPUT_JSON")"
+  printf '%s|%s' "$m" "$c"
 }
 
 # Rate-limit tokens emit "pct|epoch"; composition parses.
@@ -934,7 +1042,25 @@ tok_load() {
 apply_format() {
   local id="$1" fmt="$2" raw="$3" bar_style="$4" bar_width="$5" now="$6"
   case "$fmt" in
-    value) printf '%s' "$raw" ;;
+    value)
+      case "$id" in
+        cache_warm)
+          # Three-way: anything that is not a real boolean (notably the
+          # placeholder, when prompt_cache is absent) passes through verbatim
+          # rather than being asserted as "cold".
+          case "$raw" in
+            true)  printf 'warm' ;;
+            false) printf 'cold' ;;
+            *)     printf '%s' "$raw" ;;
+          esac ;;
+        cache_misses)
+          # Count alone, so "value" does not leak the "|<causes>" tail. When no
+          # "|" is present -- notably the placeholder render_token substitutes
+          # for an absent prompt_cache -- the expansion strips nothing and the
+          # value passes through verbatim.
+          printf '%s' "${raw%%|*}" ;;
+        *) printf '%s' "$raw" ;;
+      esac ;;
     compact)
       # Model-only today: drop the " context" qualifier from inside the
       # trailing (...) of display_name. "Opus 4.7 (1M context)" → "Opus 4.7
@@ -955,7 +1081,7 @@ apply_format() {
         model)
           local _dn; _dn="$(jq -r '.model.display_name // ""' <<<"$INPUT_JSON")"
           printf '%s' "$(_strip_trailing_paren "$_dn")" ;;
-        tokens_input|tokens_output|context_size)
+        tokens_input|tokens_output|context_size|cache_write|cache_rebuild)
           _fmt_short "$raw" ;;
         duration)
           local _ms; _ms="$(jq -r '.cost.total_duration_ms // 0' <<<"$INPUT_JSON")"
@@ -1126,6 +1252,19 @@ apply_format() {
       printf '%s' "$raw" | tr '|' ' ' ;;
     flag)
       if [[ "$raw" == "true" ]]; then printf '__FLAG_ON__'; fi ;;
+    cause)
+      # cache_misses: just the "<count>|<causes>" tail. Cause names come from an
+      # open-ended server-side vocabulary, so they are emitted verbatim -- never
+      # matched against a closed set that would drop an unknown one.
+      [[ -z "$raw" ]] && return
+      printf '%s' "${raw#*|}" ;;
+    "count+cause")
+      # "2 (tools_changed)" -- count first, cause parenthesised. A miss whose
+      # cause could not be diagnosed (empty tail) renders as the bare count.
+      [[ -z "$raw" ]] && return
+      local _n="${raw%%|*}" _c="${raw#*|}"
+      if [[ -n "$_c" ]]; then printf '%s (%s)' "$_n" "$_c"
+      else printf '%s' "$_n"; fi ;;
     *) printf '%s' "$raw" ;;
   esac
 }
@@ -1134,20 +1273,38 @@ apply_format() {
 # SECTION: Prefix dispatcher
 # ============================================================
 
+# Look up one prefix field for a token, honouring state-dependent variants.
+# A registry entry may declare "<style>_cold" beside "<style>"; that variant
+# wins when the value being labeled is "cold", so a cold cache is not
+# announced with a flame (see the TOKENS_JSON header). Purely registry-driven
+# — a token with no "_cold" key behaves exactly as before, and no icon is
+# hard-coded here. Every apply_prefix branch, composites included, resolves
+# its fields through this.
+_prefix_field() {
+  local id="$1" style="$2" value="$3" p=""
+  if [[ "$value" == "cold" ]]; then
+    p="$(jq -r --arg id "$id" --arg s "${style}_cold" '.[$id].prefix[$s] // empty' <<<"$TOKENS_JSON")"
+  fi
+  if [[ -z "$p" ]]; then
+    p="$(jq -r --arg id "$id" --arg s "$style" '.[$id].prefix[$s] // empty' <<<"$TOKENS_JSON")"
+  fi
+  printf '%s' "$p"
+}
+
 apply_prefix() {
   local id="$1" style="$2" value="$3"
   case "$style" in
     none) printf '%s' "$value" ;;
     label|emoji|nerd|ascii)
       local p
-      p="$(jq -r --arg id "$id" --arg s "$style" '.[$id].prefix[$s]' <<<"$TOKENS_JSON")"
+      p="$(_prefix_field "$id" "$style" "$value")"
       if [[ -z "$p" ]]; then printf '%s' "$value"
       else printf '%s %s' "$p" "$value"
       fi ;;
     emoji+label)
       local pe pl pl_bare
-      pe="$(jq -r --arg id "$id" '.[$id].prefix.emoji' <<<"$TOKENS_JSON")"
-      pl="$(jq -r --arg id "$id" '.[$id].prefix.label' <<<"$TOKENS_JSON")"
+      pe="$(_prefix_field "$id" emoji "$value")"
+      pl="$(_prefix_field "$id" label "$value")"
       pl_bare="${pl%:}"
       # If the emoji prefix already contains the label text (e.g. rl_5h's
       # "🕔 5h" + label "5h"), don't repeat it.
@@ -1158,8 +1315,8 @@ apply_prefix() {
       fi ;;
     label+emoji)
       local pe pl pl_bare
-      pe="$(jq -r --arg id "$id" '.[$id].prefix.emoji' <<<"$TOKENS_JSON")"
-      pl="$(jq -r --arg id "$id" '.[$id].prefix.label' <<<"$TOKENS_JSON")"
+      pe="$(_prefix_field "$id" emoji "$value")"
+      pl="$(_prefix_field "$id" label "$value")"
       pl_bare="${pl%:}"
       if [[ -n "$pl_bare" && "$pe" == *"$pl_bare" ]]; then
         printf '%s %s' "$pe" "$value"
@@ -1168,8 +1325,8 @@ apply_prefix() {
       fi ;;
     nerd+label)
       local pn pl pl_bare
-      pn="$(jq -r --arg id "$id" '.[$id].prefix.nerd' <<<"$TOKENS_JSON")"
-      pl="$(jq -r --arg id "$id" '.[$id].prefix.label' <<<"$TOKENS_JSON")"
+      pn="$(_prefix_field "$id" nerd "$value")"
+      pl="$(_prefix_field "$id" label "$value")"
       pl_bare="${pl%:}"
       if [[ -n "$pl_bare" && "$pn" == *"$pl_bare" ]]; then
         printf '%s %s' "$pn" "$value"
@@ -1275,7 +1432,7 @@ check_config() {
     return 1
   fi
   local preset; preset="$(jq -r '.preset // ""' <<<"$CONFIG_JSON")"
-  local valid_presets="minimum compact focus coder default modern rates claude fancy everything maximum"
+  local valid_presets; valid_presets="$(jq -r 'keys_unsorted | join(" ")' <<<"$PRESETS_JSON")"
   if [[ -n "$preset" && "$preset" != "null" ]] && ! grep -qw "$preset" <<<"$valid_presets"; then
     echo "check: unknown preset \"$preset\" (expected: $(echo $valid_presets | tr ' ' ', '))"
     return 1
@@ -1312,7 +1469,7 @@ _threshold_color() {
   local id="$1" raw="$2" theme="$3"
   local pct
   case "$id" in
-    context|cache_hit|rl_5h|rl_7d)
+    context|rl_5h|rl_7d)
       pct="${raw%%|*}"
       pct="$(awk -v v="$pct" 'BEGIN{printf "%d", v+0}')"
       if   (( pct >= 90 )); then _theme_var "$theme" crit
@@ -1323,6 +1480,17 @@ _threshold_color() {
       pct="$(awk -v v="$raw" 'BEGIN{printf "%d", v+0}')"
       if   (( pct < 20 )); then _theme_var "$theme" crit
       elif (( pct < 50 )); then _theme_var "$theme" warn
+      else                      _theme_var "$theme" good
+      fi ;;
+    cache_hit)
+      # Inverted, like context_remaining: a HIGH hit rate is the good outcome,
+      # so it must not share context's ">=90 is crit" branch. The non-numeric
+      # guard catches the placeholder glyph render_token substitutes into $raw
+      # when the token is empty -- awk would fold that to 0 and paint it crit.
+      case "$raw" in ''|*[!0-9]*) _theme_var "$theme" accent; return ;; esac
+      pct="$(awk -v v="$raw" 'BEGIN{printf "%d", v+0}')"
+      if   (( pct < 40 )); then _theme_var "$theme" crit
+      elif (( pct < 70 )); then _theme_var "$theme" warn
       else                      _theme_var "$theme" good
       fi ;;
     context_remaining)
@@ -1341,6 +1509,29 @@ _threshold_color() {
       fi ;;
     lines_added)   _theme_var "$theme" good ;;
     lines_removed) _theme_var "$theme" crit ;;
+    cache_warm)
+      if   [[ "$raw" == "true"  ]]; then _theme_var "$theme" good
+      elif [[ "$raw" == "false" ]]; then _theme_var "$theme" crit
+      else                               _theme_var "$theme" accent
+      fi ;;
+    cache_expires)
+      # First threshold keyed on a time delta rather than a percentage.
+      # _threshold_color is not passed the clock, so it reads the $NOW_EPOCH
+      # global that render_token also hands to apply_format. Guard on
+      # non-numeric, not merely empty: render_token substitutes the configured
+      # placeholder into $raw before calling here, and $(( "—" - n )) is an
+      # arithmetic syntax error on stderr -- which a render path must never emit.
+      case "$raw" in ''|*[!0-9]*) _theme_var "$theme" accent; return ;; esac
+      local _d=$(( raw - ${NOW_EPOCH:-0} ))
+      if   (( _d < 120 )); then _theme_var "$theme" crit
+      elif (( _d < 600 )); then _theme_var "$theme" warn
+      else                      _theme_var "$theme" good
+      fi ;;
+    cache_misses)
+      # Unconditional: the token is hidden at zero, so anything it renders is a
+      # real prefix invalidation. No arithmetic and no split on $raw here, so
+      # the placeholder needs no guard -- unlike cache_expires above.
+      _theme_var "$theme" warn ;;
     *) _theme_var "$theme" accent ;;
   esac
 }
@@ -1367,6 +1558,13 @@ render_token() {
   if [[ -z "$bar_style" || "$bar_style" == "null" ]]; then
     bar_style="$(_theme_var "$theme" bar_style)"
   fi
+
+  # An unknown token id (a typo, or a config written by a newer build than
+  # this one) must render nothing at all -- not a "null" prefix, and not a
+  # "command not found" on stderr. A render path never writes to stderr and
+  # never crashes (ADR 0003), so skip the token silently. --check is the
+  # place that reports the typo loudly. `declare -F` is bash 3.2 safe.
+  if ! declare -F "tok_${id}" >/dev/null 2>&1; then return; fi
 
   local raw; raw="$("tok_${id}")"
 
@@ -1581,13 +1779,14 @@ _TOOLTIPS_PRESET=(
   "Compact: 1 line, 6 tokens — adds git branch, duration, and the 5h rate limit (as % only)."
   "Focus: 1 line, 5 tokens — model + context + thinking/effort + cost. Quick activity glance."
   "Coder: 1 line, 6 tokens — git-focused: model, branch, status, lines +/-, duration."
-  "Default: 2 lines, 15 tokens — usage row on top; thinking / dir / git / counters / duration below."
+  "Default: 2 lines, 18 tokens — usage row on top (model, context, cost, rate limits, cache expiry); thinking / dir / git / counters / cache hit + TTL / duration below."
   "Modern: 2 lines, 9 tokens — git staged/modified inline; rate-limit bars + duration on line 2."
-  "Rates: 2 lines, 7 tokens — context+cost on top; rate limits (with bars+countdown) + cache + api time below."
+  "Rates: 2 lines, 8 tokens — context+cost on top; rate limits (with bars+countdown), cache hit + expiry, and api time below."
+  "Cache: 2 lines, 9 tokens — context+cost on top; prompt-cache health (hit bar, warm, expiry, TTL, misses, writes) below."
   "Claude: 2 lines, 10 tokens — session info + cost/duration; claude state (thinking/effort/style/version) below."
   "Fancy: 3 lines, 13 tokens — context bar, rate-limit bars, OS chrome (battery, clock), git status."
-  "Everything: 4 lines, all 42 tokens, each using its default format. Coverage over compactness."
-  "Maximum: same 42 tokens as Everything, but with progress bars, countdowns, and combined views where applicable."
+  "Everything: 4 lines, all 48 tokens, each using its default format. Coverage over compactness."
+  "Maximum: same 48 tokens as Everything, but with progress bars, countdowns, and combined views where applicable."
 )
 
 # Count how many config fields differ from the built-in defaults. Used to
@@ -1905,7 +2104,7 @@ _wiz_draw_select() {  # title, current_value, mutation, examples-array-name, hea
 }
 
 # Each selection screen is wrapped as a small draw+handle pair using a shared list.
-_PRESETS=(minimum compact focus coder default modern rates claude fancy everything maximum)
+_PRESETS=(minimum compact focus coder default modern rates cache claude fancy everything maximum)
 # Theme list with inline section headers. Items starting with "__SEC__ "
 # render as group labels (no marker, no example, dimmed) and are skipped
 # by cursor navigation. The grouping matches terminal compatibility:
@@ -1934,13 +2133,14 @@ _PRESETS_EX=(
   "1 line · 6 tokens"
   "1 line · 5 tokens"
   "1 line · 6 tokens"
-  "2 lines · 15 tokens"
+  "2 lines · 18 tokens"
   "2 lines · 9 tokens"
-  "2 lines · 7 tokens"
+  "2 lines · 8 tokens"
+  "2 lines · 9 tokens"
   "2 lines · 10 tokens"
   "3 lines · 13 tokens"
-  "4 lines · 42 tokens"
-  "4 lines · 42 tokens (detailed)"
+  "4 lines · 48 tokens"
+  "4 lines · 48 tokens (detailed)"
 )
 
 # _PREFIXES_EX and _SEPARATORS_EX are rebuilt at wizard start (so the
@@ -2652,7 +2852,7 @@ _tl_paste_mark() {
 # ============================================================
 # SECTION: Token picker (Tokens & Lines → press 'a')
 # ============================================================
-# Full-screen grouped list of all 42 tokens. Pressing Enter inserts the
+# Full-screen grouped list of all 48 tokens. Pressing Enter inserts the
 # selected token after the cursor in the calling Tokens & Lines screen.
 
 TOK_PICKER_LIST=()    # ordered ids
@@ -2697,16 +2897,22 @@ _token_description() {
     model)            echo "Current Claude model display name" ;;
     session_name)     echo "Custom session name set via --name or /rename" ;;
     context)          echo "% of context window used; rich formats include tokens used and window size" ;;
-    tokens_input)     echo "Total input tokens this session (e.g. 202k)" ;;
-    tokens_output)    echo "Total output tokens this session (e.g. 265)" ;;
-    context_size)     echo "Configured context window size (e.g. 1M)" ;;
+    tokens_input)     echo "Total input tokens this session" ;;
+    tokens_output)    echo "Total output tokens this session" ;;
+    context_size)     echo "Configured context window size" ;;
     context_remaining) echo "% of context window still available" ;;
-    cache_hit)        echo "% of input tokens served from cache" ;;
-    cost)             echo "Session cost in USD (formatted \$0.40)" ;;
+    cache_hit)        echo "% of session input tokens served from cache" ;;
+    cache_warm)       echo "Whether the prompt cache is still warm (warm/cold)" ;;
+    cache_ttl)        echo "Prompt cache lifetime tier (5m or 1h)" ;;
+    cache_expires)    echo "Countdown until the prompt cache goes cold" ;;
+    cache_write)      echo "Tokens written to the prompt cache this session" ;;
+    cache_rebuild)    echo "Tokens the next request re-caches if the cache goes cold" ;;
+    cache_misses)     echo "Prompt-cache misses this session + the latest cause" ;;
+    cost)             echo "Session cost in USD" ;;
     duration)         echo "Total wall-clock time since session start" ;;
     api_duration)     echo "Time spent waiting for API responses" ;;
-    lines_added)      echo "Lines of code added in this session (+128)" ;;
-    lines_removed)    echo "Lines of code removed in this session (-42)" ;;
+    lines_added)      echo "Lines of code added in this session" ;;
+    lines_removed)    echo "Lines of code removed in this session" ;;
     rl_5h)            echo "5-hour rate limit % + reset countdown" ;;
     rl_7d)            echo "7-day rate limit % + reset countdown" ;;
     thinking)         echo "Whether extended thinking is enabled" ;;
@@ -3104,9 +3310,18 @@ run_wizard() {
   [[ -n "$WIZARD_TUI_SCRIPT" ]] && scripted=1
 
   # Use the real terminal's color depth in the live preview so themes
-  # visibly differ when scrolling. Scripted tests force "none" to keep
-  # expected-output files ANSI-free.
-  if (( scripted )); then
+  # visibly differ when scrolling. Scripted runs (--tui-script) default to
+  # "none" so the expected-output files stay ANSI-free -- the goldens diff as
+  # plain text and never encode a palette.
+  #
+  # $STATUSLINE_BAR_TUI_COLOR opts a scripted run back into real colors. It
+  # exists for tools/shots.sh, which screenshots the wizard: a Theme screen
+  # whose 21 swatches are all the same grey is worse than no screenshot at
+  # all. No test sets it, so every wizard golden is unaffected -- if one ever
+  # moves, the variable is leaking in from the environment, not from a case.
+  # Interactive runs never reach this branch ($scripted is 0), so nothing
+  # about normal wizard use changes.
+  if (( scripted )) && [[ -z "${STATUSLINE_BAR_TUI_COLOR:-}" ]]; then
     WIZARD_COLOR_DEPTH="none"
   else
     WIZARD_COLOR_DEPTH="$(detect_color_depth)"
@@ -3271,6 +3486,7 @@ _render_sample() {
     STATUSLINE_BAR_FAKE_MEMORY=45 \
     STATUSLINE_BAR_FAKE_LOAD=1.2 \
     HOSTNAME_OVERRIDE=mac \
+    USER=alice \
     render_all
 }
 
@@ -3298,6 +3514,7 @@ _render_token_alone() {
     STATUSLINE_BAR_FAKE_LOAD=1.2 \
     STATUSLINE_BAR_FAKE_NOW=1778522580 \
     HOSTNAME_OVERRIDE=mac \
+    USER=alice \
     render_all
 }
 
@@ -3413,7 +3630,7 @@ examples_catalog() {
   if [[ "$only" == "all" || "$only" == "presets" ]]; then
     echo "## Presets  (factory layouts; switch via --preset NAME)"
     echo
-    for p in minimum compact focus coder default modern rates claude fancy everything maximum; do
+    for p in $(jq -r 'keys_unsorted | join(" ")' <<<"$PRESETS_JSON"); do
       # `; echo` adds a trailing newline so `read` doesn't drop the last
       # line — render_all itself doesn't append one.
       while IFS= read -r line; do
@@ -3461,10 +3678,10 @@ examples_catalog() {
   fi
 
   if [[ "$only" == "all" || "$only" == "tokens" ]]; then
-    echo "## Tokens  (42 total — pick any combination via Tokens & lines wizard)"
+    echo "## Tokens  (48 total — pick any combination via Tokens & lines wizard)"
     echo
-    echo "### Claude session (29 tokens, read from stdin JSON)"
-    for tok in model session_name session_id context tokens_input tokens_output context_size context_remaining cache_hit cost duration api_duration lines_added lines_removed rl_5h rl_7d thinking effort output_style version fast_mode exceeds_200k dir worktree vim_mode agent_name added_dirs git_worktree transcript; do
+    echo "### Claude session (35 tokens, read from stdin JSON)"
+    for tok in model session_name session_id context tokens_input tokens_output context_size context_remaining cache_hit cache_warm cache_ttl cache_expires cache_write cache_rebuild cache_misses cost duration api_duration lines_added lines_removed rl_5h rl_7d thinking effort output_style version fast_mode exceeds_200k dir worktree vim_mode agent_name added_dirs git_worktree transcript; do
       _print_token_row "$tok"
     done
     echo
@@ -3531,7 +3748,14 @@ main() {
     esac
     _i=$((_i+1))
   done
-  set -- "${_args[@]}"
+  # bash 3.2 (stock macOS) treats an EMPTY array's [@] expansion as an unbound
+  # variable under `set -u` and aborts, so a bare quoted expansion here exits 1
+  # whenever every argument was consumed by the parser above (no args at all,
+  # or e.g. only --config/--version). The `${arr[@]+...}` guard expands to
+  # nothing when the array is empty, and to the properly-quoted elements
+  # otherwise. Do not "simplify" away the guard — see ADR 0002 (bash 3.2+
+  # floor) and ADR 0003 (never crash the statusline). Test: bash32_empty_args.
+  set -- ${_args[@]+"${_args[@]}"}
   # --dump-data is a test hook surfacing the embedded data tables.
   if [[ "${1:-}" == "--dump-data" ]]; then
     case "${2:-}" in

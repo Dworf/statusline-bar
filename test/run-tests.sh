@@ -73,7 +73,11 @@ run_case() {
   local exit_var="expect_exit_${id}"
   local expected_exit="${!exit_var:-0}"
   local actual_exit=0
-  if /usr/bin/env $env_prefix "$SCRIPT" "${args[@]}" < "$stdin_src" > "$actual_path" 2>&1; then
+  # `${args[@]+...}` guard: bash 3.2 aborts under `set -u` on an EMPTY array's
+  # [@] expansion. args is empty for a case registered with no config and no
+  # extra args (see e2e_env_config_no_args) — same bug class as the one fixed
+  # in statusline-bar.sh main(). Keep the guard.
+  if /usr/bin/env $env_prefix "$SCRIPT" ${args[@]+"${args[@]}"} < "$stdin_src" > "$actual_path" 2>&1; then
     actual_exit=0
   else
     actual_exit=$?
@@ -84,10 +88,20 @@ run_case() {
     FAILED_IDS+=("$id")
     return
   fi
-  # Normalize the checkout path so expected outputs stay portable: a golden must
-  # not depend on where the repo happens to live.
+  # Normalize machine-specific paths so expected outputs stay portable: a golden
+  # must not depend on where the repo happens to live, nor on whose home it sits
+  # in. $REPO_DIR is substituted first because it is usually a path *under*
+  # $HOME -- doing $HOME first would leave a half-rewritten "<HOME>/..." that the
+  # $REPO_DIR pattern no longer matches.
   if grep -q "$REPO_DIR" "$actual_path" 2>/dev/null; then
     sed "s|$REPO_DIR|<REPO>|g" "$actual_path" > "$actual_path.norm" \
+      && mv "$actual_path.norm" "$actual_path"
+  fi
+  # Skip a trivial $HOME: "/" would rewrite every slash, and a short prefix like
+  # /tmp collides with the synthetic paths baked into the fixtures and goldens.
+  if [[ -n "${HOME:-}" && "$HOME" != "/" && ${#HOME} -gt 5 ]] \
+     && grep -q "$HOME" "$actual_path" 2>/dev/null; then
+    sed "s|$HOME|<HOME>|g" "$actual_path" > "$actual_path.norm" \
       && mv "$actual_path.norm" "$actual_path"
   fi
   if (( UPDATE )); then

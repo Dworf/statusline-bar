@@ -4,7 +4,11 @@
 # Optional: prefix the call with CASE_ENV="K=V K2=V2" to override env.
 
 # Phase 1: help/version
-run_case help_basic       ""  ""  --help
+# --help prints a "Config:" line resolved from the same lookup chain load_config
+# uses, so pin the lookup to a miss: otherwise the golden depends on whether the
+# machine running the suite happens to have ~/.config/statusline-bar/config.json.
+CASE_ENV="NO_COLOR=1 XDG_CONFIG_HOME=/nonexistent HOME=/nonexistent" \
+  run_case help_basic       ""  ""  --help
 run_case version_basic    ""  ""  --version
 
 # Phase 2: data heredocs
@@ -58,6 +62,27 @@ run_case prefix_label_model "" "" --dump-prefix model label       "Opus 4.7"
 run_case prefix_combo_model "" "" --dump-prefix model emoji+label "Opus 4.7"
 run_case prefix_none_model  "" "" --dump-prefix model none        "Opus 4.7"
 
+# cache_warm's prefix is state-dependent. The registry carries "<style>_cold"
+# variants beside the plain keys, and apply_prefix prefers them when the value
+# being labeled is "cold" -- so a cold cache is never announced with a flame,
+# and the label reads the neutral "Cache:" rather than the assertion "Warm:".
+# Every branch of apply_prefix resolves through the same lookup, so the three
+# composite styles are pinned too: they read prefix.emoji / prefix.nerd /
+# prefix.label directly and would otherwise keep showing a flame beside "cold".
+run_case prefix_cache_warm_emoji_warm       "" "" --dump-prefix cache_warm emoji       warm
+run_case prefix_cache_warm_emoji_cold       "" "" --dump-prefix cache_warm emoji       cold
+run_case prefix_cache_warm_label_warm       "" "" --dump-prefix cache_warm label       warm
+run_case prefix_cache_warm_label_cold       "" "" --dump-prefix cache_warm label       cold
+run_case prefix_cache_warm_nerd_cold        "" "" --dump-prefix cache_warm nerd        cold
+run_case prefix_cache_warm_emoji_label_warm "" "" --dump-prefix cache_warm emoji+label warm
+run_case prefix_cache_warm_emoji_label_cold "" "" --dump-prefix cache_warm emoji+label cold
+run_case prefix_cache_warm_label_emoji_cold "" "" --dump-prefix cache_warm label+emoji cold
+run_case prefix_cache_warm_nerd_label_cold  "" "" --dump-prefix cache_warm nerd+label  cold
+# Fallback guards: a style with no declared variant keeps the plain key, and a
+# token that declares no variants at all is untouched by a "cold" value.
+run_case prefix_cache_warm_ascii_cold       "" "" --dump-prefix cache_warm ascii       cold
+run_case prefix_cold_no_variant             "" "" --dump-prefix cache_expires emoji    cold
+
 # Phase 5: simple string tokens
 run_case tok_model                sample-input.json   "" --dump-token model
 run_case tok_session_name         sample-input.json   "" --dump-token session_name
@@ -86,7 +111,83 @@ run_case tok_tokens_input      sample-input.json "" --dump-token tokens_input
 run_case tok_tokens_output     sample-input.json "" --dump-token tokens_output
 run_case tok_context_size      sample-input.json "" --dump-token context_size
 run_case tok_context_remaining sample-input.json "" --dump-token context_remaining
-run_case tok_cache_hit         sample-input.json "" --dump-token cache_hit
+# cache_hit reads the session-wide .prompt_cache.hit_ratio when the payload has
+# one (sample: 0.91 -> 91; the old last-call derivation would have said 99), and
+# falls back to deriving from .context_window.current_usage otherwise.
+run_case tok_cache_hit          sample-input.json    "" --dump-token cache_hit
+run_case tok_cache_hit_cold     cache-cold.json      "" --dump-token cache_hit
+run_case tok_cache_hit_fallback no-prompt-cache.json "" --dump-token cache_hit
+# hit_ratio is rounded, not truncated: 0.29*100 is 28.999... as an IEEE
+# double, so a %d format would render 28. The 0.91 / 0.42 fixtures above both
+# round-trip exactly and cannot catch it.
+run_case tok_cache_hit_rounds   cache-hit-rounding.json "" --dump-token cache_hit
+# Colour polarity: cache_hit is inverted (high is good), so it must NOT share
+# context's ">=90 is crit" branch. Pinned against the nord theme, whose good /
+# warn / crit / accent are four distinct hexes (the default theme's accent is
+# empty, which would pin nothing).
+#   sample (91)             -> good  #a3be8c
+#   no cache data at all    -> accent #88c0d0 via the non-numeric guard; without
+#                              it awk folds the placeholder "—" to 0 -> crit.
+run_case render_cache_hit_good   sample-input.json  placeholder-color.json --dump-render-token cache_hit
+run_case render_cache_hit_absent no-cache-data.json placeholder-color.json --dump-render-token cache_hit
+
+# Phase 5: prompt_cache tokens
+run_case tok_cache_warm_true  sample-input.json          "" --dump-token cache_warm
+run_case tok_cache_warm_false cache-cold.json            "" --dump-token cache_warm
+run_case tok_cache_warm_absent no-prompt-cache.json      "" --dump-token cache_warm
+run_case tok_cache_ttl_1h     sample-input.json          "" --dump-token cache_ttl
+run_case tok_cache_ttl_5m     cache-cold.json            "" --dump-token cache_ttl
+run_case tok_cache_ttl_absent no-prompt-cache.json       "" --dump-token cache_ttl
+run_case fmt_cache_warm_value_on  "" "" --apply-format cache_warm value true  blocks 10 0
+run_case fmt_cache_warm_value_off "" "" --apply-format cache_warm value false blocks 10 0
+run_case fmt_cache_warm_flag_on   "" "" --apply-format cache_warm flag  true  blocks 10 0
+run_case fmt_cache_warm_flag_off  "" "" --apply-format cache_warm flag  false blocks 10 0
+run_case tok_cache_expires_warm   sample-input.json     "" --dump-token cache_expires
+run_case tok_cache_expires_cold   cache-cold.json       "" --dump-token cache_expires
+run_case tok_cache_expires_absent no-prompt-cache.json  "" --dump-token cache_expires
+run_case fmt_cache_expires_countdown       "" "" --apply-format cache_expires countdown       10000003491 blocks 10 9999999999
+run_case fmt_cache_expires_countdown_short "" "" --apply-format cache_expires countdown_short 10000003491 blocks 10 9999999999
+run_case fmt_cache_expires_remaining       "" "" --apply-format cache_expires remaining       10000003491 blocks 10 9999999999
+run_case fmt_cache_expires_past            "" "" --apply-format cache_expires countdown       9999999000  blocks 10 9999999999
+# Regression: with an absent prompt_cache and empty_behavior "placeholder",
+# _threshold_color receives the placeholder glyph, not "". Its cache_expires
+# branch must not feed that to $(( )) -- the runner folds stderr into the
+# golden, so any arithmetic error would show up here.
+run_case render_cache_expires_absent no-prompt-cache.json placeholder-min.json --dump-render-token cache_expires
+# Regression: an absent prompt_cache must render the placeholder, never "cold".
+# Needs a placeholder config -- with empty_behavior "hide" render_token returns
+# before apply_format runs, so a "hide" config cannot see this at all.
+run_case render_cache_warm_absent no-prompt-cache.json placeholder-min.json --dump-render-token cache_warm
+# ... and a cache that really is cold renders the cold icon, not the flame --
+# the same swap as prefix_cache_warm_emoji_cold, but through the whole render
+# path (tok_ -> apply_format -> apply_prefix) rather than the dump hook.
+run_case render_cache_warm_cold   cache-cold.json       placeholder-min.json --dump-render-token cache_warm
+run_case tok_cache_write_value    sample-input.json     "" --dump-token cache_write
+run_case tok_cache_write_absent   no-prompt-cache.json  "" --dump-token cache_write
+run_case tok_cache_rebuild_value  sample-input.json     "" --dump-token cache_rebuild
+# recache_tokens_if_cold is null transiently after every /compact -- the token
+# blinking out for a turn is correct behaviour, not a bug.
+run_case tok_cache_rebuild_null   cache-cold.json       "" --dump-token cache_rebuild
+run_case tok_cache_rebuild_absent no-prompt-cache.json  "" --dump-token cache_rebuild
+run_case fmt_cache_write_short   "" "" --apply-format cache_write   short 352000 blocks 10 0
+run_case fmt_cache_rebuild_short "" "" --apply-format cache_rebuild short 45000  blocks 10 0
+# cache_misses emits "<count>|<causes>": the count is session-total misses, the
+# cause is the most recent miss's (several causes are comma-joined). Cause names
+# come from an open-ended server-side vocabulary, so nothing switches on them --
+# unknown names must pass through verbatim.
+run_case tok_cache_misses_one     sample-input.json     "" --dump-token cache_misses
+run_case tok_cache_misses_multi   cache-cold.json       "" --dump-token cache_misses
+run_case tok_cache_misses_absent  no-prompt-cache.json  "" --dump-token cache_misses
+run_case fmt_cache_misses_count_cause  "" "" --apply-format cache_misses "count+cause" "2|tools_changed" blocks 10 0
+run_case fmt_cache_misses_cause        "" "" --apply-format cache_misses cause         "2|tools_changed" blocks 10 0
+run_case fmt_cache_misses_value        "" "" --apply-format cache_misses value         "2|tools_changed" blocks 10 0
+run_case fmt_cache_misses_no_cause     "" "" --apply-format cache_misses "count+cause" "2|"              blocks 10 0
+run_case fmt_cache_misses_multi_cause  "" "" --apply-format cache_misses "count+cause" "3|system_prompt_changed,ttl_expired_5m" blocks 10 0
+# Regression: with an absent prompt_cache, render_token substitutes the
+# placeholder into $raw and forces format "value" -- which for cache_misses is
+# id-specific code that splits on "|". The placeholder must survive that split
+# verbatim, and _threshold_color must not choke on it either.
+run_case render_cache_misses_absent no-prompt-cache.json placeholder-min.json --dump-render-token cache_misses
 
 # Phase 5: rate-limit tokens
 run_case tok_rl_5h sample-input.json "" --dump-token rl_5h
@@ -109,7 +210,7 @@ CASE_ENV="MOCK_GIT_STATE=in_repo"     run_case tok_git_ahead_behind   sample-inp
 
 # Phase 5: OS tokens
 CASE_ENV="HOSTNAME_OVERRIDE=mbp"                run_case tok_hostname sample-input.json "" --dump-token hostname
-CASE_ENV="USER=david"                           run_case tok_user     sample-input.json "" --dump-token user
+CASE_ENV="USER=alice"                           run_case tok_user     sample-input.json "" --dump-token user
 CASE_ENV="STATUSLINE_BAR_FAKE_NOW=1715450580"   run_case tok_clock    sample-input.json "" --dump-token clock
 CASE_ENV="STATUSLINE_BAR_FAKE_NOW=1715450580"   run_case tok_date     sample-input.json "" --dump-token date
 CASE_ENV="STATUSLINE_BAR_FAKE_BATTERY=87"       run_case tok_battery_fake     sample-input.json "" --dump-token battery
@@ -168,6 +269,20 @@ run_case check_bad_preset    "" check-bad-preset.json --check
 expect_exit_check_unknown_token=1
 run_case check_unknown_token "" check-unknown-token.json --check
 
+# --check reports an unknown token id loudly (above). The *render* path must
+# instead degrade silently: no "tok_<id>: command not found" on stderr, and no
+# "null" prefix from the missing registry entry -- the token is skipped whole.
+# The runner folds stderr into the golden, so an empty golden proves both.
+# empty_behavior is "placeholder" here on purpose: that is the setting that
+# used to render the unknown token as "null —".
+CASE_ENV="NO_COLOR=1 XDG_CONFIG_HOME=/tmp/sbar-noop HOME=/tmp/sbar-noop" \
+  run_case render_unknown_token_silent sample-input.json unknown-token-render.json
+# Same, surrounded by known tokens: the unknown id vanishes (no stray
+# separator) while a *known* token with no value still honours the
+# placeholder -- agent_name is empty in the fixture and must stay "🤝 —".
+CASE_ENV="NO_COLOR=1 XDG_CONFIG_HOME=/tmp/sbar-noop HOME=/tmp/sbar-noop" \
+  run_case render_unknown_token_mixed sample-input.json unknown-token-mixed.json
+
 # Phase 8: e2e render via the main render path (no --dump-*)
 CASE_ENV="MOCK_GIT_STATE=in_repo STATUSLINE_BAR_FAKE_NOW=9999999999 XDG_CONFIG_HOME=/tmp/sbar-noop HOME=/tmp/sbar-noop" \
   run_case e2e_default_preset sample-input.json default-preset.json
@@ -175,6 +290,8 @@ CASE_ENV="MOCK_GIT_STATE=in_repo STATUSLINE_BAR_FAKE_NOW=9999999999 XDG_CONFIG_H
 # Phase 8: --preset and --theme one-shot overrides
 CASE_ENV="MOCK_GIT_STATE=in_repo STATUSLINE_BAR_FAKE_NOW=9999999999 XDG_CONFIG_HOME=/tmp/sbar-noop HOME=/tmp/sbar-noop" \
   run_case override_preset_minimum sample-input.json default-preset.json --preset minimum
+CASE_ENV="MOCK_GIT_STATE=in_repo STATUSLINE_BAR_FAKE_NOW=9999999999 XDG_CONFIG_HOME=/tmp/sbar-noop HOME=/tmp/sbar-noop" \
+  run_case override_preset_cache   sample-input.json default-preset.json --preset cache
 CASE_ENV="MOCK_GIT_STATE=in_repo STATUSLINE_BAR_FAKE_NOW=9999999999 XDG_CONFIG_HOME=/tmp/sbar-noop HOME=/tmp/sbar-noop" \
   run_case override_theme_dracula  sample-input.json default-preset.json --theme dracula
 
@@ -234,3 +351,59 @@ pre_wizard_tokens_lines_nav() {
 }
 CASE_ENV="STATUSLINE_BAR_CONFIG=/tmp/sbar-tl.json TERM=xterm-256color STATUSLINE_BAR_FAKE_MEMORY=50 STATUSLINE_BAR_FAKE_LOAD=1.0 STATUSLINE_BAR_FAKE_BATTERY=92 HOSTNAME_OVERRIDE=Mac STATUSLINE_BAR_FORCE_NERD=no MOCK_GIT_STATE=in_repo STATUSLINE_BAR_FAKE_NOW=9999999999" \
   run_case wizard_tokens_lines_nav "" "" --wizard --tui-script "$(printf 'DDDDD\nDDDq')"
+
+# Phase: bash 3.2 compatibility guard
+# Regression guard for the `set -- "${_args[@]}"` crash (pre-existing, shipped
+# through v0.5.2). Under `set -u`, bash 3.2 — the stock macOS /bin/bash and the
+# documented floor (ADR 0002) — treats an EMPTY array's [@] expansion as an
+# unbound variable and aborts, so every macOS user on the system bash got
+# exit 1 and an empty statusline (ADR 0003 says a degraded render always beats
+# a non-zero exit).
+#
+# This case runs `--version`, which the parser consumes entirely and so leaves
+# _args EMPTY — the exact trigger. Under bash 3.2 that alone reproduces it, but
+# CI runs bash 5.x where the buggy line is harmless, so the golden proves
+# nothing on its own. The post-hook therefore adds a SOURCE-level assertion
+# that holds under any interpreter, plus a real bash 3.2 execution when
+# /bin/bash happens to be 3.2.
+post_bash32_empty_args() {
+  local src="$REPO_DIR/statusline-bar.sh"
+  # Compare against code only — a comment mentioning the buggy form is fine.
+  local code; code="$(grep -v '^[[:space:]]*#' "$src")"
+  # 1. The unguarded form must not come back.
+  if printf '%s\n' "$code" | grep -qF 'set -- "${_args[@]}"'; then
+    echo "FAIL bash32_empty_args (unguarded 'set -- \"\${_args[@]}\"' is back in statusline-bar.sh;"
+    echo "     bash 3.2 aborts on an empty array under set -u. Use: set -- \${_args[@]+\"\${_args[@]}\"})"
+    return 1
+  fi
+  # 2. The guard must be present.
+  if ! printf '%s\n' "$code" | grep -qF 'set -- ${_args[@]+"${_args[@]}"}'; then
+    echo "FAIL bash32_empty_args (the \${_args[@]+...} bash 3.2 guard is missing from statusline-bar.sh)"
+    return 1
+  fi
+  # 3. Where a real bash 3.2 exists, actually execute the empty-_args path.
+  if [[ -x /bin/bash ]] && /bin/bash --version 2>/dev/null | head -n 1 | grep -q 'version 3\.2'; then
+    local out rc=0
+    out="$(/bin/bash "$src" --version </dev/null 2>&1)" || rc=$?
+    if (( rc != 0 )) || [[ -z "$out" ]]; then
+      echo "FAIL bash32_empty_args (real bash 3.2: exit $rc, output: '$out')"
+      return 1
+    fi
+  fi
+}
+run_case bash32_empty_args "" "" --version
+
+# Full render with ZERO command-line arguments — the config arrives via
+# $STATUSLINE_BAR_CONFIG (precedence level 2, ADR 0004). This is how Claude Code
+# actually invokes the script in production: JSON on stdin, no flags.
+#
+# It is also the one registration shape that leaves the runner's own `args`
+# array EMPTY (no config arg, no extra args), which is what made
+# run-tests.sh's unguarded "${args[@]}" a landmine under bash 3.2. Registering
+# it both closes a real coverage gap and keeps that harness guard exercised.
+#
+# Same fixture + config as e2e_default_preset, so the golden must match that
+# one's content: reaching the config by env var rather than by flag may not
+# change the render.
+CASE_ENV="NO_COLOR=1 MOCK_GIT_STATE=in_repo STATUSLINE_BAR_FAKE_NOW=9999999999 STATUSLINE_BAR_CONFIG=test/configs/default-preset.json XDG_CONFIG_HOME=/tmp/sbar-noop HOME=/tmp/sbar-noop" \
+  run_case e2e_env_config_no_args sample-input.json ""

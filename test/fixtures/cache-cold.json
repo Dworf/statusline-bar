@@ -1,0 +1,62 @@
+{
+  "session_id": "test-session-0001",
+  "transcript_path": "/dev/null",
+  "cwd": "/tmp/statusline-bar-test",
+  "effort": { "level": "xhigh" },
+  "session_name": "statusline-bar",
+  "model": { "id": "claude-opus-4-7[1m]", "display_name": "Opus 4.7 (1M context)" },
+  "workspace": {
+    "current_dir": "/tmp/statusline-bar-test",
+    "project_dir": "/tmp/statusline-bar-test",
+    "added_dirs": []
+  },
+  "version": "2.1.139",
+  "output_style": { "name": "default" },
+  "cost": {
+    "total_cost_usd": 14.644638,
+    "total_duration_ms": 5730891,
+    "total_api_duration_ms": 1257080,
+    "total_lines_added": 212,
+    "total_lines_removed": 52
+  },
+  "context_window": {
+    "total_input_tokens": 202378,
+    "total_output_tokens": 265,
+    "context_window_size": 1000000,
+    "current_usage": {
+      "input_tokens": 1,
+      "output_tokens": 265,
+      "cache_creation_input_tokens": 1045,
+      "cache_read_input_tokens": 201332
+    },
+    "used_percentage": 20,
+    "remaining_percentage": 80
+  },
+  "exceeds_200k_tokens": true,
+  "prompt_cache": {
+    "warm": false,
+    "caching_observed": true,
+    "ttl": "5m",
+    "expires_at": null,
+    "requests": 20,
+    "misses": 3,
+    "expected_rebuilds": 0,
+    "hit_ratio": 0.42,
+    "cache_write_tokens": 120000,
+    "miss_recache_tokens": 90000,
+    "last_miss_at": 9999990000,
+    "last_miss_cause": {
+      "causes": ["system_prompt_changed", "ttl_expired_5m"],
+      "system_char_delta": 412
+    },
+    "miss_causes": { "system_prompt_changed": 2, "ttl_expired_5m": 1 },
+    "recache_tokens_if_cold": null
+  },
+  "fast_mode": false,
+  "thinking": { "enabled": true },
+  "worktree": { "name": "main", "original_cwd": "/tmp/statusline-bar-test" },
+  "rate_limits": {
+    "five_hour": { "used_percentage": 5, "resets_at": 9999999999 },
+    "seven_day": { "used_percentage": 22, "resets_at": 9999999999 }
+  }
+}
