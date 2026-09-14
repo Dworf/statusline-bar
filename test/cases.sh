@@ -288,3 +288,44 @@ pre_wizard_tokens_lines_nav() {
 }
 CASE_ENV="STATUSLINE_BAR_CONFIG=/tmp/sbar-tl.json TERM=xterm-256color STATUSLINE_BAR_FAKE_MEMORY=50 STATUSLINE_BAR_FAKE_LOAD=1.0 STATUSLINE_BAR_FAKE_BATTERY=92 HOSTNAME_OVERRIDE=Mac STATUSLINE_BAR_FORCE_NERD=no MOCK_GIT_STATE=in_repo STATUSLINE_BAR_FAKE_NOW=9999999999" \
   run_case wizard_tokens_lines_nav "" "" --wizard --tui-script "$(printf 'DDDDD\nDDDq')"
+
+# Phase: bash 3.2 compatibility guard
+# Regression guard for the `set -- "${_args[@]}"` crash (pre-existing, shipped
+# through v0.5.2). Under `set -u`, bash 3.2 — the stock macOS /bin/bash and the
+# documented floor (ADR 0002) — treats an EMPTY array's [@] expansion as an
+# unbound variable and aborts, so every macOS user on the system bash got
+# exit 1 and an empty statusline (ADR 0003 says a degraded render always beats
+# a non-zero exit).
+#
+# This case runs `--version`, which the parser consumes entirely and so leaves
+# _args EMPTY — the exact trigger. Under bash 3.2 that alone reproduces it, but
+# CI runs bash 5.x where the buggy line is harmless, so the golden proves
+# nothing on its own. The post-hook therefore adds a SOURCE-level assertion
+# that holds under any interpreter, plus a real bash 3.2 execution when
+# /bin/bash happens to be 3.2.
+post_bash32_empty_args() {
+  local src="$REPO_DIR/statusline-bar.sh"
+  # Compare against code only — a comment mentioning the buggy form is fine.
+  local code; code="$(grep -v '^[[:space:]]*#' "$src")"
+  # 1. The unguarded form must not come back.
+  if printf '%s\n' "$code" | grep -qF 'set -- "${_args[@]}"'; then
+    echo "FAIL bash32_empty_args (unguarded 'set -- \"\${_args[@]}\"' is back in statusline-bar.sh;"
+    echo "     bash 3.2 aborts on an empty array under set -u. Use: set -- \${_args[@]+\"\${_args[@]}\"})"
+    return 1
+  fi
+  # 2. The guard must be present.
+  if ! printf '%s\n' "$code" | grep -qF 'set -- ${_args[@]+"${_args[@]}"}'; then
+    echo "FAIL bash32_empty_args (the \${_args[@]+...} bash 3.2 guard is missing from statusline-bar.sh)"
+    return 1
+  fi
+  # 3. Where a real bash 3.2 exists, actually execute the empty-_args path.
+  if [[ -x /bin/bash ]] && /bin/bash --version 2>/dev/null | head -n 1 | grep -q 'version 3\.2'; then
+    local out rc=0
+    out="$(/bin/bash "$src" --version </dev/null 2>&1)" || rc=$?
+    if (( rc != 0 )) || [[ -z "$out" ]]; then
+      echo "FAIL bash32_empty_args (real bash 3.2: exit $rc, output: '$out')"
+      return 1
+    fi
+  fi
+}
+run_case bash32_empty_args "" "" --version

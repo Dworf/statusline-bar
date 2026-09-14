@@ -3651,7 +3651,14 @@ main() {
     esac
     _i=$((_i+1))
   done
-  set -- "${_args[@]}"
+  # bash 3.2 (stock macOS) treats an EMPTY array's [@] expansion as an unbound
+  # variable under `set -u` and aborts, so a bare quoted expansion here exits 1
+  # whenever every argument was consumed by the parser above (no args at all,
+  # or e.g. only --config/--version). The `${arr[@]+...}` guard expands to
+  # nothing when the array is empty, and to the properly-quoted elements
+  # otherwise. Do not "simplify" away the guard — see ADR 0002 (bash 3.2+
+  # floor) and ADR 0003 (never crash the statusline). Test: bash32_empty_args.
+  set -- ${_args[@]+"${_args[@]}"}
   # --dump-data is a test hook surfacing the embedded data tables.
   if [[ "${1:-}" == "--dump-data" ]]; then
     case "${2:-}" in
