@@ -22,5 +22,5 @@ Flags:
 To customize colors, layout, tokens, etc., launch the wizard:
   statusline-bar.sh -w
 
-Config: using /Users/david/.config/statusline-bar/config.json
+Config: using <HOME>/.config/statusline-bar/config.json
 Docs:   https://github.com/Dworf/statusline-bar

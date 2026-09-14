@@ -181,7 +181,7 @@ CASE_ENV="MOCK_GIT_STATE=in_repo"     run_case tok_git_ahead_behind   sample-inp
 
 # Phase 5: OS tokens
 CASE_ENV="HOSTNAME_OVERRIDE=mbp"                run_case tok_hostname sample-input.json "" --dump-token hostname
-CASE_ENV="USER=david"                           run_case tok_user     sample-input.json "" --dump-token user
+CASE_ENV="USER=alice"                           run_case tok_user     sample-input.json "" --dump-token user
 CASE_ENV="STATUSLINE_BAR_FAKE_NOW=1715450580"   run_case tok_clock    sample-input.json "" --dump-token clock
 CASE_ENV="STATUSLINE_BAR_FAKE_NOW=1715450580"   run_case tok_date     sample-input.json "" --dump-token date
 CASE_ENV="STATUSLINE_BAR_FAKE_BATTERY=87"       run_case tok_battery_fake     sample-input.json "" --dump-token battery

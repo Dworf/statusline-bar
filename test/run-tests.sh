@@ -88,10 +88,17 @@ run_case() {
     FAILED_IDS+=("$id")
     return
   fi
-  # Normalize the checkout path so expected outputs stay portable: a golden must
-  # not depend on where the repo happens to live.
+  # Normalize machine-specific paths so expected outputs stay portable: a golden
+  # must not depend on where the repo happens to live, nor on whose home it sits
+  # in. $REPO_DIR is substituted first because it is usually a path *under*
+  # $HOME -- doing $HOME first would leave a half-rewritten "<HOME>/..." that the
+  # $REPO_DIR pattern no longer matches.
   if grep -q "$REPO_DIR" "$actual_path" 2>/dev/null; then
     sed "s|$REPO_DIR|<REPO>|g" "$actual_path" > "$actual_path.norm" \
+      && mv "$actual_path.norm" "$actual_path"
+  fi
+  if [[ -n "${HOME:-}" ]] && grep -q "$HOME" "$actual_path" 2>/dev/null; then
+    sed "s|$HOME|<HOME>|g" "$actual_path" > "$actual_path.norm" \
       && mv "$actual_path.norm" "$actual_path"
   fi
   if (( UPDATE )); then

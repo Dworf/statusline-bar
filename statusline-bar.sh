@@ -3445,6 +3445,7 @@ _render_sample() {
     STATUSLINE_BAR_FAKE_MEMORY=45 \
     STATUSLINE_BAR_FAKE_LOAD=1.2 \
     HOSTNAME_OVERRIDE=mac \
+    USER=alice \
     render_all
 }
 
@@ -3472,6 +3473,7 @@ _render_token_alone() {
     STATUSLINE_BAR_FAKE_LOAD=1.2 \
     STATUSLINE_BAR_FAKE_NOW=1778522580 \
     HOSTNAME_OVERRIDE=mac \
+    USER=alice \
     render_all
 }
 
