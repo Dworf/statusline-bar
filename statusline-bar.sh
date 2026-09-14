@@ -235,6 +235,10 @@ read -r -d '' TOKENS_JSON <<'JSON' || true
   "cache_expires": { "source":"claude", "default_prefix":"emoji", "default_format":"countdown",
              "applicable_formats":["value","countdown","countdown_short","remaining","remaining_short"],
              "prefix": { "none":"", "label":"Cold in:", "emoji":"❄️", "nerd":"\uf252", "ascii":"[Cx]" } },
+  "cache_write": { "source":"claude", "default_prefix":"emoji", "default_format":"short", "applicable_formats":["value","short"],
+             "prefix": { "none":"", "label":"Wrote:", "emoji":"✍️", "nerd":"\uf040", "ascii":"[Cw]" } },
+  "cache_rebuild": { "source":"claude", "default_prefix":"emoji", "default_format":"short", "applicable_formats":["value","short"],
+             "prefix": { "none":"", "label":"Rebuild:", "emoji":"🔁", "nerd":"\uf021", "ascii":"[Cr]" } },
   "cost": { "source":"claude", "default_prefix":"emoji", "default_format":"value", "applicable_formats":["value","per_hour","with_rate"],
              "prefix": { "none":"", "label":"Cost:", "emoji":"💰", "nerd":"", "ascii":"[$]" } },
   "duration": { "source":"claude", "default_prefix":"emoji", "default_format":"value", "applicable_formats":["value","short"],
@@ -807,6 +811,22 @@ tok_cache_expires() {
   printf '%s' "$e"
 }
 
+# Bare token counts, rendered short ("352k") by the default format. Hidden at
+# zero: "wrote 0 tokens to the cache" is noise, not information.
+tok_cache_write() {
+  local n; n="$(jq -r '.prompt_cache.cache_write_tokens // empty' <<<"$INPUT_JSON")"
+  [[ -z "$n" || "$n" == "0" ]] && return
+  printf '%s' "$n"
+}
+# recache_tokens_if_cold is null transiently after every /compact, until the next
+# request records the rewritten conversation's size. The token blinking out for a
+# turn is correct, not a bug -- null and 0 are treated identically.
+tok_cache_rebuild() {
+  local n; n="$(jq -r '.prompt_cache.recache_tokens_if_cold // empty' <<<"$INPUT_JSON")"
+  [[ -z "$n" || "$n" == "0" ]] && return
+  printf '%s' "$n"
+}
+
 # Rate-limit tokens emit "pct|epoch"; composition parses.
 tok_rl_5h() {
   local p e
@@ -993,7 +1013,7 @@ apply_format() {
         model)
           local _dn; _dn="$(jq -r '.model.display_name // ""' <<<"$INPUT_JSON")"
           printf '%s' "$(_strip_trailing_paren "$_dn")" ;;
-        tokens_input|tokens_output|context_size)
+        tokens_input|tokens_output|context_size|cache_write|cache_rebuild)
           _fmt_short "$raw" ;;
         duration)
           local _ms; _ms="$(jq -r '.cost.total_duration_ms // 0' <<<"$INPUT_JSON")"
@@ -2761,6 +2781,8 @@ _token_description() {
     cache_warm)       echo "Whether the prompt cache is still warm (warm/cold)" ;;
     cache_ttl)        echo "Prompt cache lifetime tier (5m or 1h)" ;;
     cache_expires)    echo "Countdown until the prompt cache goes cold" ;;
+    cache_write)      echo "Tokens written to the prompt cache this session" ;;
+    cache_rebuild)    echo "Tokens the next request re-caches if the cache goes cold" ;;
     cost)             echo "Session cost in USD (formatted \$0.40)" ;;
     duration)         echo "Total wall-clock time since session start" ;;
     api_duration)     echo "Time spent waiting for API responses" ;;
@@ -3523,7 +3545,7 @@ examples_catalog() {
     echo "## Tokens  (42 total — pick any combination via Tokens & lines wizard)"
     echo
     echo "### Claude session (29 tokens, read from stdin JSON)"
-    for tok in model session_name session_id context tokens_input tokens_output context_size context_remaining cache_hit cache_warm cache_ttl cache_expires cost duration api_duration lines_added lines_removed rl_5h rl_7d thinking effort output_style version fast_mode exceeds_200k dir worktree vim_mode agent_name added_dirs git_worktree transcript; do
+    for tok in model session_name session_id context tokens_input tokens_output context_size context_remaining cache_hit cache_warm cache_ttl cache_expires cache_write cache_rebuild cost duration api_duration lines_added lines_removed rl_5h rl_7d thinking effort output_style version fast_mode exceeds_200k dir worktree vim_mode agent_name added_dirs git_worktree transcript; do
       _print_token_row "$tok"
     done
     echo

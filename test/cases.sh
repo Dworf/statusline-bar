@@ -115,6 +115,15 @@ run_case render_cache_expires_absent no-prompt-cache.json placeholder-min.json -
 # Needs a placeholder config -- with empty_behavior "hide" render_token returns
 # before apply_format runs, so a "hide" config cannot see this at all.
 run_case render_cache_warm_absent no-prompt-cache.json placeholder-min.json --dump-render-token cache_warm
+run_case tok_cache_write_value    sample-input.json     "" --dump-token cache_write
+run_case tok_cache_write_absent   no-prompt-cache.json  "" --dump-token cache_write
+run_case tok_cache_rebuild_value  sample-input.json     "" --dump-token cache_rebuild
+# recache_tokens_if_cold is null transiently after every /compact -- the token
+# blinking out for a turn is correct behaviour, not a bug.
+run_case tok_cache_rebuild_null   cache-cold.json       "" --dump-token cache_rebuild
+run_case tok_cache_rebuild_absent no-prompt-cache.json  "" --dump-token cache_rebuild
+run_case fmt_cache_write_short   "" "" --apply-format cache_write   short 352000 blocks 10 0
+run_case fmt_cache_rebuild_short "" "" --apply-format cache_rebuild short 45000  blocks 10 0
 
 # Phase 5: rate-limit tokens
 run_case tok_rl_5h sample-input.json "" --dump-token rl_5h

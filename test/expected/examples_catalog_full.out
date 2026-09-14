@@ -118,6 +118,8 @@
 [ cache_warm         ] 🔥 —                                 ⓘ Whether the prompt cache is still warm (warm/cold)
 [ cache_ttl          ] ⏲️ —                               ⓘ Prompt cache lifetime tier (5m or 1h)
 [ cache_expires      ] ❄️ —                               ⓘ Countdown until the prompt cache goes cold
+[ cache_write        ] ✍️ —                               ⓘ Tokens written to the prompt cache this session
+[ cache_rebuild      ] 🔁 —                                 ⓘ Tokens the next request re-caches if the cache goes cold
 [ cost               ] 💰 $0.40                             ⓘ Session cost in USD (formatted $0.40)
 [ duration           ] ⏳ 3m 50s                             ⓘ Total wall-clock time since session start
 [ api_duration       ] 📡 39s                               ⓘ Time spent waiting for API responses
