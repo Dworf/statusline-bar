@@ -92,6 +92,10 @@ run_case tok_context_remaining sample-input.json "" --dump-token context_remaini
 run_case tok_cache_hit          sample-input.json    "" --dump-token cache_hit
 run_case tok_cache_hit_cold     cache-cold.json      "" --dump-token cache_hit
 run_case tok_cache_hit_fallback no-prompt-cache.json "" --dump-token cache_hit
+# hit_ratio is rounded, not truncated: 0.29*100 is 28.999... as an IEEE
+# double, so a %d format would render 28. The 0.91 / 0.42 fixtures above both
+# round-trip exactly and cannot catch it.
+run_case tok_cache_hit_rounds   cache-hit-rounding.json "" --dump-token cache_hit
 # Colour polarity: cache_hit is inverted (high is good), so it must NOT share
 # context's ">=90 is crit" branch. Pinned against the nord theme, whose good /
 # warn / crit / accent are four distinct hexes (the default theme's accent is

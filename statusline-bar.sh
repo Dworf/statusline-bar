@@ -820,7 +820,10 @@ tok_cache_hit() {
   local hr
   hr="$(jq -r '.prompt_cache.hit_ratio // empty' <<<"$INPUT_JSON")"
   if [[ -n "$hr" ]]; then
-    awk -v h="$hr" 'BEGIN { printf "%d", (h*100) }'
+    # Round, don't truncate: %d floors an IEEE double, so 0.29*100 lands on
+    # 28.999... and would render 28. Roughly a third of two-decimal ratios
+    # display a point low that way.
+    awk -v h="$hr" 'BEGIN { printf "%.0f", (h*100) }'
     return
   fi
   local r c i
