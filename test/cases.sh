@@ -124,6 +124,23 @@ run_case tok_cache_rebuild_null   cache-cold.json       "" --dump-token cache_re
 run_case tok_cache_rebuild_absent no-prompt-cache.json  "" --dump-token cache_rebuild
 run_case fmt_cache_write_short   "" "" --apply-format cache_write   short 352000 blocks 10 0
 run_case fmt_cache_rebuild_short "" "" --apply-format cache_rebuild short 45000  blocks 10 0
+# cache_misses emits "<count>|<causes>": the count is session-total misses, the
+# cause is the most recent miss's (several causes are comma-joined). Cause names
+# come from an open-ended server-side vocabulary, so nothing switches on them --
+# unknown names must pass through verbatim.
+run_case tok_cache_misses_one     sample-input.json     "" --dump-token cache_misses
+run_case tok_cache_misses_multi   cache-cold.json       "" --dump-token cache_misses
+run_case tok_cache_misses_absent  no-prompt-cache.json  "" --dump-token cache_misses
+run_case fmt_cache_misses_count_cause  "" "" --apply-format cache_misses "count+cause" "2|tools_changed" blocks 10 0
+run_case fmt_cache_misses_cause        "" "" --apply-format cache_misses cause         "2|tools_changed" blocks 10 0
+run_case fmt_cache_misses_value        "" "" --apply-format cache_misses value         "2|tools_changed" blocks 10 0
+run_case fmt_cache_misses_no_cause     "" "" --apply-format cache_misses "count+cause" "2|"              blocks 10 0
+run_case fmt_cache_misses_multi_cause  "" "" --apply-format cache_misses "count+cause" "3|system_prompt_changed,ttl_expired_5m" blocks 10 0
+# Regression: with an absent prompt_cache, render_token substitutes the
+# placeholder into $raw and forces format "value" -- which for cache_misses is
+# id-specific code that splits on "|". The placeholder must survive that split
+# verbatim, and _threshold_color must not choke on it either.
+run_case render_cache_misses_absent no-prompt-cache.json placeholder-min.json --dump-render-token cache_misses
 
 # Phase 5: rate-limit tokens
 run_case tok_rl_5h sample-input.json "" --dump-token rl_5h

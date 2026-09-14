@@ -239,6 +239,8 @@ read -r -d '' TOKENS_JSON <<'JSON' || true
              "prefix": { "none":"", "label":"Wrote:", "emoji":"✍️", "nerd":"\uf040", "ascii":"[Cw]" } },
   "cache_rebuild": { "source":"claude", "default_prefix":"emoji", "default_format":"short", "applicable_formats":["value","short"],
              "prefix": { "none":"", "label":"Rebuild:", "emoji":"🔁", "nerd":"\uf021", "ascii":"[Cr]" } },
+  "cache_misses": { "source":"claude", "default_prefix":"emoji", "default_format":"count+cause", "applicable_formats":["value","cause","count+cause"],
+             "prefix": { "none":"", "label":"Miss:", "emoji":"⚠️", "nerd":"\uf071", "ascii":"[Cm]" } },
   "cost": { "source":"claude", "default_prefix":"emoji", "default_format":"value", "applicable_formats":["value","per_hour","with_rate"],
              "prefix": { "none":"", "label":"Cost:", "emoji":"💰", "nerd":"", "ascii":"[$]" } },
   "duration": { "source":"claude", "default_prefix":"emoji", "default_format":"value", "applicable_formats":["value","short"],
@@ -827,6 +829,18 @@ tok_cache_rebuild() {
   printf '%s' "$n"
 }
 
+# Emits "<count>|<causes>". Hidden at zero: a miss is only counted when a request
+# re-processed >5% and >=2000 cacheable tokens with no compaction to explain it,
+# so any non-zero value is a real prefix invalidation worth showing. last_miss_cause
+# is null until the first miss, and again whenever no cause could be diagnosed.
+tok_cache_misses() {
+  local m c
+  m="$(jq -r '.prompt_cache.misses // empty' <<<"$INPUT_JSON")"
+  [[ -z "$m" || "$m" == "0" ]] && return
+  c="$(jq -r '(.prompt_cache.last_miss_cause.causes // []) | join(",")' <<<"$INPUT_JSON")"
+  printf '%s|%s' "$m" "$c"
+}
+
 # Rate-limit tokens emit "pct|epoch"; composition parses.
 tok_rl_5h() {
   local p e
@@ -991,6 +1005,12 @@ apply_format() {
             false) printf 'cold' ;;
             *)     printf '%s' "$raw" ;;
           esac ;;
+        cache_misses)
+          # Count alone, so "value" does not leak the "|<causes>" tail. When no
+          # "|" is present -- notably the placeholder render_token substitutes
+          # for an absent prompt_cache -- the expansion strips nothing and the
+          # value passes through verbatim.
+          printf '%s' "${raw%%|*}" ;;
         *) printf '%s' "$raw" ;;
       esac ;;
     compact)
@@ -1184,6 +1204,19 @@ apply_format() {
       printf '%s' "$raw" | tr '|' ' ' ;;
     flag)
       if [[ "$raw" == "true" ]]; then printf '__FLAG_ON__'; fi ;;
+    cause)
+      # cache_misses: just the "<count>|<causes>" tail. Cause names come from an
+      # open-ended server-side vocabulary, so they are emitted verbatim -- never
+      # matched against a closed set that would drop an unknown one.
+      [[ -z "$raw" ]] && return
+      printf '%s' "${raw#*|}" ;;
+    "count+cause")
+      # "2 (tools_changed)" -- count first, cause parenthesised. A miss whose
+      # cause could not be diagnosed (empty tail) renders as the bare count.
+      [[ -z "$raw" ]] && return
+      local _n="${raw%%|*}" _c="${raw#*|}"
+      if [[ -n "$_c" ]]; then printf '%s (%s)' "$_n" "$_c"
+      else printf '%s' "$_n"; fi ;;
     *) printf '%s' "$raw" ;;
   esac
 }
@@ -1417,6 +1450,11 @@ _threshold_color() {
       elif (( _d < 600 )); then _theme_var "$theme" warn
       else                      _theme_var "$theme" good
       fi ;;
+    cache_misses)
+      # Unconditional: the token is hidden at zero, so anything it renders is a
+      # real prefix invalidation. No arithmetic and no split on $raw here, so
+      # the placeholder needs no guard -- unlike cache_expires above.
+      _theme_var "$theme" warn ;;
     *) _theme_var "$theme" accent ;;
   esac
 }
@@ -2783,6 +2821,7 @@ _token_description() {
     cache_expires)    echo "Countdown until the prompt cache goes cold" ;;
     cache_write)      echo "Tokens written to the prompt cache this session" ;;
     cache_rebuild)    echo "Tokens the next request re-caches if the cache goes cold" ;;
+    cache_misses)     echo "Prompt-cache misses this session + the latest cause" ;;
     cost)             echo "Session cost in USD (formatted \$0.40)" ;;
     duration)         echo "Total wall-clock time since session start" ;;
     api_duration)     echo "Time spent waiting for API responses" ;;
@@ -3545,7 +3584,7 @@ examples_catalog() {
     echo "## Tokens  (42 total — pick any combination via Tokens & lines wizard)"
     echo
     echo "### Claude session (29 tokens, read from stdin JSON)"
-    for tok in model session_name session_id context tokens_input tokens_output context_size context_remaining cache_hit cache_warm cache_ttl cache_expires cache_write cache_rebuild cost duration api_duration lines_added lines_removed rl_5h rl_7d thinking effort output_style version fast_mode exceeds_200k dir worktree vim_mode agent_name added_dirs git_worktree transcript; do
+    for tok in model session_name session_id context tokens_input tokens_output context_size context_remaining cache_hit cache_warm cache_ttl cache_expires cache_write cache_rebuild cache_misses cost duration api_duration lines_added lines_removed rl_5h rl_7d thinking effort output_style version fast_mode exceeds_200k dir worktree vim_mode agent_name added_dirs git_worktree transcript; do
       _print_token_row "$tok"
     done
     echo
