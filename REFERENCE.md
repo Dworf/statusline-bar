@@ -70,14 +70,14 @@ globally; any token can override it with `tokens.<id>.prefix`.
 
 | Style | `model` renders as |
 |---|---|
-| `none` | `Opus 4.7 (1M context)` |
-| `label` | `Model: Opus 4.7 (1M context)` |
-| `emoji` | `🤖 Opus 4.7 (1M context)` |
-| `nerd` | *(Font Awesome glyph)* `Opus 4.7 (1M context)` |
-| `ascii` | `[M] Opus 4.7 (1M context)` |
-| `emoji+label` | `🤖 Model: Opus 4.7 (1M context)` |
-| `label+emoji` | `Model 🤖 Opus 4.7 (1M context)` |
-| `nerd+label` | *(glyph)* `Model: Opus 4.7 (1M context)` |
+| `none` | `Fable 5.1` |
+| `label` | `Model: Fable 5.1` |
+| `emoji` | `🤖 Fable 5.1` |
+| `nerd` | *(Font Awesome glyph)* `Fable 5.1` |
+| `ascii` | `[M] Fable 5.1` |
+| `emoji+label` | `🤖 Model: Fable 5.1` |
+| `label+emoji` | `Model 🤖 Fable 5.1` |
+| `nerd+label` | *(glyph)* `Model: Fable 5.1` |
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="screenshots/showroom_prefix_sets_dark.png">
@@ -186,8 +186,8 @@ not send a `prompt_cache` object.
 | `api_duration` | 📡 | Time spent waiting for API responses | **`value`** `short` |
 | `lines_added` | ➕ | Lines of code added in this session | **`value`** `count` |
 | `lines_removed` | ➖ | Lines of code removed in this session | **`value`** `count` |
-| `rl_5h` | 🕔 | 5-hour rate limit % + reset countdown | `value` `percent` `progressbar` `progressbar+percent` `countdown` `countdown_short` `remaining` `remaining_short` **`progressbar+percent+countdown`** `progressbar+percent+countdown_short` `progressbar+percent+remaining` `progressbar+percent+remaining_short` |
-| `rl_7d` | 🕖 | 7-day rate limit % + reset countdown | `value` `percent` `progressbar` `progressbar+percent` `countdown` `countdown_short` `remaining` `remaining_short` **`progressbar+percent+countdown`** `progressbar+percent+countdown_short` `progressbar+percent+remaining` `progressbar+percent+remaining_short` |
+| `rl_5h` | 🕔 5h | 5-hour rate limit % + reset countdown | `value` `percent` `progressbar` `progressbar+percent` `countdown` `countdown_short` `remaining` `remaining_short` **`progressbar+percent+countdown`** `progressbar+percent+countdown_short` `progressbar+percent+remaining` `progressbar+percent+remaining_short` |
+| `rl_7d` | 🕖 7d | 7-day rate limit % + reset countdown | `value` `percent` `progressbar` `progressbar+percent` `countdown` `countdown_short` `remaining` `remaining_short` **`progressbar+percent+countdown`** `progressbar+percent+countdown_short` `progressbar+percent+remaining` `progressbar+percent+remaining_short` |
 | `thinking` | 💭 | Whether extended thinking is enabled | **`value`** `flag` |
 | `effort` | 💪 | Current reasoning effort (low/medium/high/xhigh/max) | **`value`** |
 | `output_style` | 🎨 | Active output style name | **`value`** |
@@ -239,20 +239,20 @@ Read from the machine running the statusline. No network, no daemon — just
 
 | Format | Renders |
 |---|---|
-| `value` | the token's natural value — `$0.40`, `feat/wizard`, `50%` |
+| `value` | the token's natural value — `$8.47`, `feat/wizard`, `47%` |
 | `percent` | bare percentage |
 | `progressbar` | bar only |
 | `progressbar+percent` | bar then percentage |
 | `flag` | the prefix alone, and only when the value is true |
-| `short` | abbreviated — `49k` for counts, `3h 25m` for durations |
+| `short` | abbreviated — `471k` for counts, `2h 18m` for durations |
 | `combined` | `git_status`'s `+3 ~5 ?2` roll-up |
 | `count` | `lines_added` / `lines_removed` without the leading `+`/`-` |
 | `compact` / `short` / `id` / `id_short` | `model`: drop " context" from the parens, drop the parens entirely, the raw model id, or a shortened id |
 | `tokens` / `tokens+size` / `percent+tokens` / `progressbar+percent+tokens` | `context`: token count, token count + window size, and the combined views |
-| `per_hour` / `with_rate` | `cost`: projected burn rate (`$6.20/hr`), or value plus rate |
+| `per_hour` / `with_rate` | `cost`: projected burn rate (`$3.68/hr`), or value plus rate (`$8.47 ($3.68/hr)`) |
 | `cause` / `count+cause` | `cache_misses`: the latest diagnosed cause, with or without the count |
 | `countdown` / `remaining` | time until a reset, and the same as a remaining-time reading |
-| `countdown_short` / `remaining_short` | as above at top-two-unit precision — `3h 25m`, not `3h 25m 13s` |
+| `countdown_short` / `remaining_short` | as above at top-two-unit precision — `2h 14m`, not `2h 14m 37s` |
 | `progressbar+percent+countdown` (and `_short`) | rate limits: bar, percentage, and countdown in one token |
 | `progressbar+percent+remaining` (and `_short`) | same, with the remaining-time wording |
 
@@ -396,16 +396,19 @@ live sample, with `✓` next to the ones already placed somewhere.
 ## CLI
 
 ```text
-statusline-bar.sh [FLAGS]            render from stdin (Claude Code mode)
-statusline-bar.sh -w | --wizard      interactive setup
-statusline-bar.sh -e | --examples    print a catalog of presets/themes/etc
-statusline-bar.sh -c | --check       validate config; exit 0/1
+Usage:
+  statusline-bar.sh [FLAGS]            render from stdin (Claude Code mode)
+  statusline-bar.sh -w | --wizard      interactive setup
+  statusline-bar.sh -e | --examples    print a catalog of presets/themes/etc
+  statusline-bar.sh -c | --check       validate config; exit 0/1
 
 Flags:
-  -h, --help                show help
+  -h, --help                show this help
   -V, --version             print version
   -w, --wizard              enter setup wizard
-  -e, --examples            print the catalog
+  -e, --examples            print a catalog of presets / themes / prefixes /
+                            separators / bar styles / tokens / lines, with
+                            live samples for each
   -c, --check               validate config and exit
       --config PATH         use this config file instead of default
       --preset NAME         one-shot render with this preset
@@ -453,11 +456,20 @@ e2e suite uses, converts the ANSI to HTML, and screenshots it in headless
 Chrome. Two runs of the same recipe produce byte-identical files.
 
 ```bash
-tools/shots.sh              # rebuild every recipe
-tools/shots.sh --list       # hero, presets, showrooms, menus
-tools/shots.sh showrooms    # rebuild one recipe
+tools/shots.sh                # rebuild every recipe
+tools/shots.sh --list         # hero, presets, showrooms, menus
+tools/shots.sh showrooms      # rebuild one recipe
+tools/shots.sh --verify-docs  # check the docs against real output
 ```
 
 If you add or change a token, a preset, or a theme, rerun it so the catalogs in
 this file stay honest. It needs headless Chrome, which is a maintainer-machine
 concern — the shipped script itself still needs nothing beyond bash and `jq`.
+
+The hero recipe also writes `screenshots/hero.txt`: the two lines in the PNG as
+plain text, composed from the same token renders, for the copy-pasteable block
+under the image in the README. `--verify-docs` compares that block against
+`hero.txt`, and the fenced block under [CLI](#cli) against `--help`, and fails
+with a diff if either has gone stale. It runs automatically at the end of any
+`tools/shots.sh` run that includes the hero recipe, so a regenerated hero
+cannot quietly leave the README quoting the old one.

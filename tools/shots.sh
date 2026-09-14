@@ -11,7 +11,19 @@
 #   tools/shots.sh              # build every recipe
 #   tools/shots.sh hero         # build one recipe by name
 #   tools/shots.sh --list       # list recipe names
+#   tools/shots.sh --verify-docs  # the docs' quoted blocks vs real output
 #   OUT_DIR=/tmp/x tools/shots.sh hero    # write elsewhere (determinism check)
+#
+# The hero recipe also writes screenshots/hero.txt — the same two lines as
+# plain text, for the copy-pasteable block under the image in README.md.
+#
+# --verify-docs compares every block the docs quote from the script against
+# what the script actually produces right now:
+#   README.md    "Text-only version" block  vs  screenshots/hero.txt
+#   REFERENCE.md the fenced block under ## CLI  vs  statusline-bar.sh --help
+# Any run that includes the hero recipe ends with the same check, and fails
+# if a block has gone stale. Prose that merely *describes* output is not
+# covered — see the doc drift check section for what that means.
 #
 # Pipeline, per recipe:
 #   1. build a config from the script's OWN defaults (--dump-default-config)
@@ -86,6 +98,12 @@ sb() {
 }
 
 die() { printf 'shots: %s\n' "$*" >&2; exit 1; }
+
+# Drop every SGR sequence, leaving copy-pasteable text. Same escape set
+# ansi_to_html handles below; awk rather than sed because BSD sed has no \x1b.
+strip_ansi() {
+  awk 'BEGIN { RE = sprintf("%c", 27) "\\[[0-9;]*m" } { gsub(RE, ""); print }'
+}
 
 # ============================================================
 # SECTION: ANSI -> HTML
@@ -511,6 +529,7 @@ recipe_hero() {
   fi
 
   local cfg; cfg="$(base_config)"
+  HERO_TEXT=""
 
   local ids_l0 ids_l1
   ids_l0="$(jq -r '.lines[0][]' "$cfg")"
@@ -532,8 +551,9 @@ recipe_hero() {
 
   # _sep_chars is internal; the rendered line is the source of truth for the
   # separator, so take it from a real render instead of guessing.
-  local sep
-  sep="$(hero_separator "$cfg")"
+  local sep_raw sep
+  sep_raw="$(hero_separator "$cfg")"
+  sep="$(html_escape "$sep_raw")"
 
   # Both counts come from the script, so the caption ages with the catalog
   # instead of going stale the way the hand-captured shots did.
@@ -553,17 +573,23 @@ recipe_hero() {
     local line_ids i=0
     for line_ids in "$ids_l0" "$ids_l1"; do
       printf '<div class="rowline"><span class="line" data-i="%s">' "$i"
-      local first=1 id body
+      local first=1 id raw body
       while IFS= read -r id; do
         [[ -z "$id" ]] && continue
-        body="$(sb "$cfg" --dump-render-token "$id" < "$HERO_INPUT" | ansi_to_html)"
+        raw="$(sb "$cfg" --dump-render-token "$id" < "$HERO_INPUT")"
+        body="$(printf '%s' "$raw" | ansi_to_html)"
         [[ -z "$body" ]] && die "token '$id' rendered empty — the hero would mis-number"
         (( first )) || printf '<span class="sep">%s</span>' "$sep"
+        # Accumulate the same renders as plain text, so hero.txt is the image's
+        # own content rather than a second, independently-produced reading.
+        (( first )) || HERO_TEXT="${HERO_TEXT}${sep_raw}"
+        HERO_TEXT="${HERO_TEXT}${raw}"
         first=0
         n=$((n + 1))
         printf '<span class="tok" data-id="%s" data-n="%s">%s</span>' "$id" "$n" "$body"
       done <<< "$line_ids"
       printf '</span></div>\n'
+      HERO_TEXT="${HERO_TEXT}"$'\n'
       i=$((i + 1))
     done
     printf '<div class="markers bot"></div>\n</div>\n<div class="legend">\n'
@@ -587,19 +613,40 @@ recipe_hero() {
   if [[ -n "${KEEP_HTML:-}" ]]; then cp "$html" "$OUT_DIR/hero.html"; fi
   # 960 css x2 = a 1920px PNG, the ballpark the hand-captured shots live in.
   shoot "$html" "$OUT_DIR/hero.png" 960
+
+  # Side-output: the same two lines as copy-pasteable text, for the README
+  # block that sits under the image. Composed from the token renders the PNG
+  # was built from, so the two cannot say different things.
+  printf '%s' "$HERO_TEXT" | strip_ansi > "$OUT_DIR/hero.txt"
+  [[ -s "$OUT_DIR/hero.txt" ]] || die "hero.txt came out empty"
+
+  # ...and cross-checked against the real render path. The image is assembled
+  # token by token; render_all is what a user's terminal actually gets. If
+  # they ever disagree the picture is lying, so stop rather than ship it.
+  local via_render_all
+  via_render_all="$(sb "$cfg" --dump-render-all < "$HERO_INPUT" | strip_ansi)"
+  if [[ "$via_render_all" != "$(cat "$OUT_DIR/hero.txt")" ]]; then
+    printf 'shots: hero.png composition does not match --dump-render-all\n' >&2
+    diff <(printf '%s\n' "$via_render_all") "$OUT_DIR/hero.txt" >&2 || true
+    die "refusing to ship a hero image that disagrees with the render path"
+  fi
+  printf '  %-44s %s lines\n' "hero.txt" "$(wc -l < "$OUT_DIR/hero.txt" | tr -d ' ')"
 }
 
 # The separator the config asks for, taken from a real render rather than
 # from the script's internals: render two tokens standalone, render the line
-# they belong to, and the leftover in the middle is the separator.
+# they belong to, and the leftover in the middle is the separator. Returned
+# raw (ANSI and all) — callers escape or strip as they need.
 hero_separator() {
   local cfg="$1" a b whole
   a="$(sb "$cfg" --dump-render-token "$(jq -r '.lines[0][0]' "$cfg")" < "$HERO_INPUT")"
   b="$(sb "$cfg" --dump-render-token "$(jq -r '.lines[0][1]' "$cfg")" < "$HERO_INPUT")"
   whole="$(sb "$cfg" --dump-render-line 0 < "$HERO_INPUT")"
   whole="${whole#"$a"}"
-  printf '%s' "${whole%%"$b"*}" | sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g'
+  printf '%s' "${whole%%"$b"*}"
 }
+
+html_escape() { printf '%s' "$1" | sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g'; }
 
 # ============================================================
 # SECTION: recipes — presets
@@ -725,12 +772,79 @@ recipe_menus() {
 }
 
 # ============================================================
+# SECTION: doc drift check
+# ============================================================
+# README.md carries the hero's two lines as text, under the image. That block
+# is a copy, and copies rot: before hero.txt existed it had drifted onto a
+# different payload entirely and disagreed with the picture it sat beneath.
+# This compares the two and fails loudly, so the drift cannot survive a
+# regeneration unnoticed.
+README_MD="$ROOT/README.md"
+REFERENCE_MD="$ROOT/REFERENCE.md"
+HERO_TXT_MARKER='Text-only version (copy-pasteable)'
+CLI_MARKER='## CLI'
+
+# Print the first fenced block that follows the marker line in a file.
+fenced_block_after() {
+  awk -v marker="$2" '
+    index($0, marker) { seen = 1; next }
+    seen && !inblock && $0 ~ /^```/ { inblock = 1; next }
+    inblock && $0 ~ /^```/ { exit }
+    inblock { print }
+  ' "$1"
+}
+
+# The slice of --help that REFERENCE.md quotes: usage through the last flag.
+# Deliberately stops before the "Config:" line, which names whichever config
+# the running machine resolved, and starts after the version banner, so the
+# block does not have to be touched for every release.
+help_slice() {
+  "$SCRIPT" --help 2>&1 | awk '/^Usage:/ { f = 1 } f { print } /--no-color/ { exit }'
+}
+
+# compare_block <label> <have> <want> <fix-hint>
+compare_block() {
+  local label="$1" have="$2" want="$3" hint="$4"
+  if [[ "$want" != "$have" ]]; then
+    printf 'shots: %s is out of date.\n' "$label" >&2
+    printf '       - is what the doc says, + is what the script produces\n' >&2
+    diff <(printf '%s\n' "$have") <(printf '%s\n' "$want") >&2 || true
+    die "$hint"
+  fi
+  printf 'shots: %s matches\n' "$label"
+}
+
+verify_readme_hero() {
+  [[ -f "$README_MD" ]]        || die "README.md not found at $README_MD"
+  [[ -f "$OUT_DIR/hero.txt" ]] || die "hero.txt not found — run: $0 hero"
+  local have
+  have="$(fenced_block_after "$README_MD" "$HERO_TXT_MARKER")"
+  [[ -n "$have" ]] || die "could not find the '$HERO_TXT_MARKER' block in README.md"
+  compare_block "README.md text-only block vs screenshots/hero.txt" \
+    "$have" "$(cat "$OUT_DIR/hero.txt")" \
+    "paste screenshots/hero.txt into the '$HERO_TXT_MARKER' block"
+}
+
+verify_reference_cli() {
+  [[ -f "$REFERENCE_MD" ]] || die "REFERENCE.md not found at $REFERENCE_MD"
+  local have
+  have="$(fenced_block_after "$REFERENCE_MD" "$CLI_MARKER")"
+  [[ -n "$have" ]] || die "could not find the fenced block under '$CLI_MARKER' in REFERENCE.md"
+  compare_block "REFERENCE.md CLI block vs --help" \
+    "$have" "$(help_slice)" \
+    "replace the block under '$CLI_MARKER' with: $SCRIPT --help"
+}
+
+verify_docs() { verify_readme_hero; verify_reference_cli; }
+
+# ============================================================
 # SECTION: driver
 # ============================================================
 RECIPES=(hero presets showrooms menus)
 
 case "${1:-}" in
   --list|-l) printf '%s\n' "${RECIPES[@]}"; exit 0 ;;
+  --verify-docs) verify_docs; exit 0 ;;
   -h|--help)
     sed -n '2,25p' "$0" | sed 's/^# \{0,1\}//'
     exit 0 ;;
@@ -743,10 +857,16 @@ command -v jq >/dev/null 2>&1 || die "jq is required"
 wanted=("$@")
 (( ${#wanted[@]} )) || wanted=("${RECIPES[@]}")
 
+ran_hero=0
 for name in "${wanted[@]}"; do
   if ! declare -F "recipe_$name" >/dev/null; then
     die "unknown recipe '$name' (known: ${RECIPES[*]})"
   fi
   printf 'shots: %s\n' "$name"
   "recipe_$name"
+  [[ "$name" == hero ]] && ran_hero=1
 done
+
+# Every image is on disk by now, so failing here loses no work — it just makes
+# sure nobody regenerates the hero and leaves the README quoting the old one.
+(( ran_hero )) && verify_docs

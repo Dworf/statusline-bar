@@ -9,8 +9,8 @@ Rust, no daemon, no network calls.
 <summary>Text-only version (copy-pasteable)</summary>
 
 ```
-🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40 | 🕔 5h █████░░░░░ 50% 🔄 3h 25m 13s | 🕖 7d █████░░░░░ 50% 🔄 5d 2h 17m 0s | ❄️ 58m 12s
-💭 true | 💪 xhigh | 📁 example_dir | 🌳 main | 🌿 feat/wizard | 📊 +3 ~5 ?2 | 🔀 ↑2 ↓1 | ➕ +128 | ➖ -42 | 💾 97% | 🪟 1h | ⏳ 3m 50s
+🤖 Fable 5.1 | 🧠 47% (471k/1M) | 💰 $8.47 | 🕔 5h █████░░░░░ 45% 🔄 2h 14m 37s | 🕖 7d ██████░░░░ 62% 🔄 3d 6h 41m 12s | ❄️ 47m 18s
+💭 true | 💪 high | 📁 statusline-bar | 🌳 main | 🌿 feat/wizard | 📊 +3 ~5 ?2 | 🔀 ↑2 ↓1 | ➕ +342 | ➖ -118 | 💾 87% | 🪟 1h | ⏳ 2h 18m 4s
 ```
 
 </details>
