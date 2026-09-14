@@ -5,6 +5,14 @@ Rust, no daemon, no network calls.
 
 ![The default preset rendered and annotated: 18 of 48 tokens across two lines, covering model, context, cost, rate limits, prompt cache, git state, line counters and duration](screenshots/hero.png)
 
+That is the `default` preset on a dark terminal — 18 of the 48 tokens available.
+Here is the same statusline, same session, on a light one:
+
+![The same default preset under the light theme: dark text on white, with a deep blue model name, darker green progress bars and a crimson line-removed counter — identical content, repainted for a light background](screenshots/preset_default_light.png)
+
+6 of the 21 themes are drawn for a light background and 3 more work on either, so
+light terminals are a first-class target, not an afterthought.
+
 <details>
 <summary>Text-only version (copy-pasteable)</summary>
 
@@ -14,14 +22,6 @@ Rust, no daemon, no network calls.
 ```
 
 </details>
-
-That is the `default` preset on a dark terminal — 18 of the 48 tokens available.
-Here is the same statusline, same session, on a light one:
-
-![The same default preset under the light theme: dark text on white, with a deep blue model name, darker green progress bars and a crimson line-removed counter — identical content, repainted for a light background](screenshots/preset_default_light.png)
-
-6 of the 21 themes are drawn for a light background and 3 more work on either, so
-light terminals are a first-class target, not an afterthought.
 
 ## Why
 
