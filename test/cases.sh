@@ -62,6 +62,27 @@ run_case prefix_label_model "" "" --dump-prefix model label       "Opus 4.7"
 run_case prefix_combo_model "" "" --dump-prefix model emoji+label "Opus 4.7"
 run_case prefix_none_model  "" "" --dump-prefix model none        "Opus 4.7"
 
+# cache_warm's prefix is state-dependent. The registry carries "<style>_cold"
+# variants beside the plain keys, and apply_prefix prefers them when the value
+# being labeled is "cold" -- so a cold cache is never announced with a flame,
+# and the label reads the neutral "Cache:" rather than the assertion "Warm:".
+# Every branch of apply_prefix resolves through the same lookup, so the three
+# composite styles are pinned too: they read prefix.emoji / prefix.nerd /
+# prefix.label directly and would otherwise keep showing a flame beside "cold".
+run_case prefix_cache_warm_emoji_warm       "" "" --dump-prefix cache_warm emoji       warm
+run_case prefix_cache_warm_emoji_cold       "" "" --dump-prefix cache_warm emoji       cold
+run_case prefix_cache_warm_label_warm       "" "" --dump-prefix cache_warm label       warm
+run_case prefix_cache_warm_label_cold       "" "" --dump-prefix cache_warm label       cold
+run_case prefix_cache_warm_nerd_cold        "" "" --dump-prefix cache_warm nerd        cold
+run_case prefix_cache_warm_emoji_label_warm "" "" --dump-prefix cache_warm emoji+label warm
+run_case prefix_cache_warm_emoji_label_cold "" "" --dump-prefix cache_warm emoji+label cold
+run_case prefix_cache_warm_label_emoji_cold "" "" --dump-prefix cache_warm label+emoji cold
+run_case prefix_cache_warm_nerd_label_cold  "" "" --dump-prefix cache_warm nerd+label  cold
+# Fallback guards: a style with no declared variant keeps the plain key, and a
+# token that declares no variants at all is untouched by a "cold" value.
+run_case prefix_cache_warm_ascii_cold       "" "" --dump-prefix cache_warm ascii       cold
+run_case prefix_cold_no_variant             "" "" --dump-prefix cache_expires emoji    cold
+
 # Phase 5: simple string tokens
 run_case tok_model                sample-input.json   "" --dump-token model
 run_case tok_session_name         sample-input.json   "" --dump-token session_name
@@ -137,6 +158,10 @@ run_case render_cache_expires_absent no-prompt-cache.json placeholder-min.json -
 # Needs a placeholder config -- with empty_behavior "hide" render_token returns
 # before apply_format runs, so a "hide" config cannot see this at all.
 run_case render_cache_warm_absent no-prompt-cache.json placeholder-min.json --dump-render-token cache_warm
+# ... and a cache that really is cold renders the cold icon, not the flame --
+# the same swap as prefix_cache_warm_emoji_cold, but through the whole render
+# path (tok_ -> apply_format -> apply_prefix) rather than the dump hook.
+run_case render_cache_warm_cold   cache-cold.json       placeholder-min.json --dump-render-token cache_warm
 run_case tok_cache_write_value    sample-input.json     "" --dump-token cache_write
 run_case tok_cache_write_absent   no-prompt-cache.json  "" --dump-token cache_write
 run_case tok_cache_rebuild_value  sample-input.json     "" --dump-token cache_rebuild

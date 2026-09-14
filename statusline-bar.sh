@@ -218,6 +218,12 @@ JSON
 # load so apply_prefix emits the actual UTF-8 byte sequence at render
 # time. Stable since Font Awesome 4 (the legacy mapping every Nerd
 # Font release through v3.4+ ships).
+#
+# A prefix map may also carry state-dependent variants: a "<style>_cold"
+# key wins over "<style>" when the token's rendered value is "cold", so a
+# cold cache is not announced with a flame. Only the styles that actually
+# differ need a variant — apply_prefix falls back to the plain key. Today
+# cache_warm is the only token that declares any.
 
 read -r -d '' TOKENS_JSON <<'JSON' || true
 {
@@ -241,9 +247,10 @@ read -r -d '' TOKENS_JSON <<'JSON' || true
              "applicable_formats":["value","percent","progressbar","progressbar+percent"],
              "prefix": { "none":"", "label":"Cache:", "emoji":"💾", "nerd":"", "ascii":"[H]" } },
   "cache_warm": { "source":"claude", "default_prefix":"emoji", "default_format":"value", "applicable_formats":["value","flag"],
-             "prefix": { "none":"", "label":"Warm:", "emoji":"🔥", "nerd":"\uf06d", "ascii":"[Ca]" } },
+             "prefix": { "none":"", "label":"Cache:", "emoji":"🔥", "nerd":"\uf06d", "ascii":"[Ca]",
+                         "emoji_cold":"🧊", "nerd_cold":"\uf2dc" } },
   "cache_ttl": { "source":"claude", "default_prefix":"emoji", "default_format":"value", "applicable_formats":["value"],
-             "prefix": { "none":"", "label":"TTL:", "emoji":"⏲️", "nerd":"\uf017", "ascii":"[Ct]" } },
+             "prefix": { "none":"", "label":"TTL:", "emoji":"⏰", "nerd":"\uf017", "ascii":"[Ct]" } },
   "cache_expires": { "source":"claude", "default_prefix":"emoji", "default_format":"countdown",
              "applicable_formats":["value","countdown","countdown_short","remaining","remaining_short"],
              "prefix": { "none":"", "label":"Cold in:", "emoji":"❄️", "nerd":"\uf252", "ascii":"[Cx]" } },
@@ -1266,20 +1273,38 @@ apply_format() {
 # SECTION: Prefix dispatcher
 # ============================================================
 
+# Look up one prefix field for a token, honouring state-dependent variants.
+# A registry entry may declare "<style>_cold" beside "<style>"; that variant
+# wins when the value being labeled is "cold", so a cold cache is not
+# announced with a flame (see the TOKENS_JSON header). Purely registry-driven
+# — a token with no "_cold" key behaves exactly as before, and no icon is
+# hard-coded here. Every apply_prefix branch, composites included, resolves
+# its fields through this.
+_prefix_field() {
+  local id="$1" style="$2" value="$3" p=""
+  if [[ "$value" == "cold" ]]; then
+    p="$(jq -r --arg id "$id" --arg s "${style}_cold" '.[$id].prefix[$s] // empty' <<<"$TOKENS_JSON")"
+  fi
+  if [[ -z "$p" ]]; then
+    p="$(jq -r --arg id "$id" --arg s "$style" '.[$id].prefix[$s] // empty' <<<"$TOKENS_JSON")"
+  fi
+  printf '%s' "$p"
+}
+
 apply_prefix() {
   local id="$1" style="$2" value="$3"
   case "$style" in
     none) printf '%s' "$value" ;;
     label|emoji|nerd|ascii)
       local p
-      p="$(jq -r --arg id "$id" --arg s "$style" '.[$id].prefix[$s] // empty' <<<"$TOKENS_JSON")"
+      p="$(_prefix_field "$id" "$style" "$value")"
       if [[ -z "$p" ]]; then printf '%s' "$value"
       else printf '%s %s' "$p" "$value"
       fi ;;
     emoji+label)
       local pe pl pl_bare
-      pe="$(jq -r --arg id "$id" '.[$id].prefix.emoji // empty' <<<"$TOKENS_JSON")"
-      pl="$(jq -r --arg id "$id" '.[$id].prefix.label // empty' <<<"$TOKENS_JSON")"
+      pe="$(_prefix_field "$id" emoji "$value")"
+      pl="$(_prefix_field "$id" label "$value")"
       pl_bare="${pl%:}"
       # If the emoji prefix already contains the label text (e.g. rl_5h's
       # "🕔 5h" + label "5h"), don't repeat it.
@@ -1290,8 +1315,8 @@ apply_prefix() {
       fi ;;
     label+emoji)
       local pe pl pl_bare
-      pe="$(jq -r --arg id "$id" '.[$id].prefix.emoji // empty' <<<"$TOKENS_JSON")"
-      pl="$(jq -r --arg id "$id" '.[$id].prefix.label // empty' <<<"$TOKENS_JSON")"
+      pe="$(_prefix_field "$id" emoji "$value")"
+      pl="$(_prefix_field "$id" label "$value")"
       pl_bare="${pl%:}"
       if [[ -n "$pl_bare" && "$pe" == *"$pl_bare" ]]; then
         printf '%s %s' "$pe" "$value"
@@ -1300,8 +1325,8 @@ apply_prefix() {
       fi ;;
     nerd+label)
       local pn pl pl_bare
-      pn="$(jq -r --arg id "$id" '.[$id].prefix.nerd // empty' <<<"$TOKENS_JSON")"
-      pl="$(jq -r --arg id "$id" '.[$id].prefix.label // empty' <<<"$TOKENS_JSON")"
+      pn="$(_prefix_field "$id" nerd "$value")"
+      pl="$(_prefix_field "$id" label "$value")"
       pl_bare="${pl%:}"
       if [[ -n "$pl_bare" && "$pn" == *"$pl_bare" ]]; then
         printf '%s %s' "$pn" "$value"

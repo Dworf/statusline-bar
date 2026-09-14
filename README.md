@@ -337,7 +337,7 @@ All 48 tokens grouped by source — Claude session (35), Git (6), Local OS (7) �
 [ rates      ] 🕔 5h █████░░░░░ 50% 🔄 3h 25m 13s | 🕖 7d █████░░░░░ 50% 🔄 5d 2h 17m 0s | 💾 ██████████ 97% | ❄️ 58m 12s | 📡 39s
 
 [ cache      ] 🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40
-[ cache      ] 💾 ██████████ 97% | 🔥 warm | ❄️ 58m 12s | ⏲️ 1h | ⚠️ 2 (tools_changed) | ✍️ 352k
+[ cache      ] 💾 ██████████ 97% | 🔥 warm | ❄️ 58m 12s | ⏰ 1h | ⚠️ 2 (tools_changed) | ✍️ 352k
 
 [ claude     ] 🤖 Opus 4.7 (1M context) | 📝 Browse | 🧠 50% (49k/100k) | 💰 $0.40 | ⏳ 3m 50s
 [ claude     ] 💭 true | 💪 xhigh | 🎨 default | ⚡️ | 🏷️ 2.1.139
@@ -347,12 +347,12 @@ All 48 tokens grouped by source — Claude session (35), Git (6), Local OS (7) �
 [ fancy      ] 📁 example_dir | 🌿 feat/wizard | 📊 +3 ~5 ?2 | 💭 true | 💪 xhigh | 🔋 █████████░ 92% | 🕒 18:03
 
 [ everything ] 🤖 Opus 4.7 (1M context) | 📝 Browse | 🔖 browse00 | 🧠 50% (49k/100k) | 📥 49k | 📤 50 | 🪟 100k | 🆓 50%
-[ everything ] 💾 97% | 🔥 warm | ❄️ 58m 12s | ⏲️ 1h | ⚠️ 2 (tools_changed) | 🔁 45k | ✍️ 352k | 💰 $0.40 | 📡 39s | 🕔 5h █████░░░░░ 50% 🔄 3h 25m 13s | 🕖 7d █████░░░░░ 50% 🔄 5d 2h 17m 0s | 💭 true | 💪 xhigh | 🎨 default | 🏷️ 2.1.139 | 🤝 Explore | ⌨️ INSERT | ⚡️ | 📈
+[ everything ] 💾 97% | 🔥 warm | ❄️ 58m 12s | ⏰ 1h | ⚠️ 2 (tools_changed) | 🔁 45k | ✍️ 352k | 💰 $0.40 | 📡 39s | 🕔 5h █████░░░░░ 50% 🔄 3h 25m 13s | 🕖 7d █████░░░░░ 50% 🔄 5d 2h 17m 0s | 💭 true | 💪 xhigh | 🎨 default | 🏷️ 2.1.139 | 🤝 Explore | ⌨️ INSERT | ⚡️ | 📈
 [ everything ] 📁 example_dir | 🌳 main | 📂 0 | 🌲 /tmp/example_dir/feature | 📜 browse001.jsonl | 🌿 feat/wizard | 📊 +3 ~5 ?2 | ➕ 3 | ✏️ 5 | ❓ 2 | 🔀 ↑2 ↓1 | ➕ +128 | ➖ -42
 [ everything ] ⏳ 3m 50s | 🕒 18:03 | 📅 2026-05-11 | 🖥️ mac | 👤 alice | 🔋 92% | 🧬 45% | 📊 1.2
 
 [ maximum    ] 🤖 Opus 4.7 (1M context) | 📝 Browse | 🔖 browse00 | 🧠 █████░░░░░ 50% (49k/100k) | 📥 49k | 📤 50 | 🪟 100k | 🆓 █████░░░░░ 50%
-[ maximum    ] 💾 ██████████ 97% | 🔥 warm | ❄️ 58m 12s | ⏲️ 1h | ⚠️ 2 (tools_changed) | 🔁 45k | ✍️ 352k | 💰 $0.40 | 📡 39s | 🕔 5h █████░░░░░ 50% 🔄 3h 25m 13s | 🕖 7d █████░░░░░ 50% 🔄 5d 2h 17m 0s | 💭 true | 💪 xhigh | 🎨 default | 🏷️ 2.1.139 | 🤝 Explore | ⌨️ INSERT | ⚡️ | 📈
+[ maximum    ] 💾 ██████████ 97% | 🔥 warm | ❄️ 58m 12s | ⏰ 1h | ⚠️ 2 (tools_changed) | 🔁 45k | ✍️ 352k | 💰 $0.40 | 📡 39s | 🕔 5h █████░░░░░ 50% 🔄 3h 25m 13s | 🕖 7d █████░░░░░ 50% 🔄 5d 2h 17m 0s | 💭 true | 💪 xhigh | 🎨 default | 🏷️ 2.1.139 | 🤝 Explore | ⌨️ INSERT | ⚡️ | 📈
 [ maximum    ] 📁 example_dir | 🌳 main | 📂 0 | 🌲 /tmp/example_dir/feature | 📜 browse001.jsonl | 🌿 feat/wizard | 📊 +3 ~5 ?2 | ➕ 3 | ✏️ 5 | ❓ 2 | 🔀 ↑2 ↓1 | ➕ +128 | ➖ -42
 [ maximum    ] ⏳ 3m 50s | 🕒 18:03 | 📅 2026-05-11 | 🖥️ mac | 👤 alice | 🔋 █████████░ 92% | 🧬 █████░░░░░ 45% | 📊 1.2
 
@@ -438,7 +438,7 @@ All 48 tokens grouped by source — Claude session (35), Git (6), Local OS (7) �
 [ context_remaining  ] 🆓 50%                               ⓘ % of context window still available
 [ cache_hit          ] 💾 97%                               ⓘ % of session input tokens served from cache
 [ cache_warm         ] 🔥 warm                              ⓘ Whether the prompt cache is still warm (warm/cold)
-[ cache_ttl          ] ⏲️ 1h                               ⓘ Prompt cache lifetime tier (5m or 1h)
+[ cache_ttl          ] ⏰ 1h                                 ⓘ Prompt cache lifetime tier (5m or 1h)
 [ cache_expires      ] ❄️ 58m 12s                          ⓘ Countdown until the prompt cache goes cold
 [ cache_write        ] ✍️ 352k                             ⓘ Tokens written to the prompt cache this session
 [ cache_rebuild      ] 🔁 45k                               ⓘ Tokens the next request re-caches if the cache goes cold
@@ -541,9 +541,11 @@ The write is best-effort and can never break the render. Set `STATUSLINE_BAR_DEB
 - **`cache_hit` now reports the session-wide hit ratio** from `prompt_cache.hit_ratio`, not a ratio derived from the last API call alone. The old number collapsed toward zero after any cache write. Payloads without `prompt_cache` still fall back to the derived value.
 - **`cache_hit`'s color is no longer inverted.** A high hit rate rendered red because the token shared a threshold rule with `context` and the rate limits, where high means "running out". High now renders green.
 - **Fixed a crash on stock macOS bash 3.2.** `set -- "${_args[@]}"` aborts under `set -u` when the array is empty — bash 3.2 treats the expansion as an unbound variable — so the script exited 1 and rendered nothing, with or without `--config`. Present since before 0.5.0 and invisible to CI, because `#!/usr/bin/env bash` resolves to a newer bash on most development machines. The guarded form `${_args[@]+"${_args[@]}"}` is byte-identical for non-empty arguments. The test runner carried the same hazard and is fixed too; the zero-argument invocation Claude Code actually uses now has end-to-end coverage.
+- **The cold cache no longer renders as a flame.** `cache_warm`'s prefix now follows its value: 🔥 warm / 🧊 cold under `emoji`, fa-fire / fa-snowflake-o under `nerd`, and the `label` style reads the neutral `Cache:` instead of the assertion `Warm:`. The composite styles (`emoji+label`, `label+emoji`, `nerd+label`) swap too. A registry entry declares the variants as `<style>_cold` beside `<style>`; styles and tokens without one are unchanged.
+- **`cache_ttl`'s icon is now ⏰ (alarm clock), was ⏲️ (timer).** The old glyph carried a zero-width variation selector, which threw off the column math in the `--examples` token catalog and left that one row hanging left of every other.
 - **`schema.json` brought back in line with the script.** The bundled JSON Schema — referenced as `$schema` by every generated config, so editors validate against it — had drifted since 0.4.0: its preset enum listed 7 of 12, its theme enum 10 of 21, its bar-style enums 8 of 12, and its format enum 9 of 27. The per-token key pattern `^[a-z_]+$` also silently skipped `rl_5h`, `rl_7d` and `exceeds_200k`. All enums are now generated from the script's embedded tables.
 
-Tests: 163 e2e cases passing.
+Tests: 175 e2e cases passing.
 
 ### 0.5.2 — 2026-09-05
 
