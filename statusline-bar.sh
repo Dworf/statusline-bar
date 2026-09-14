@@ -2897,9 +2897,9 @@ _token_description() {
     model)            echo "Current Claude model display name" ;;
     session_name)     echo "Custom session name set via --name or /rename" ;;
     context)          echo "% of context window used; rich formats include tokens used and window size" ;;
-    tokens_input)     echo "Total input tokens this session (e.g. 202k)" ;;
-    tokens_output)    echo "Total output tokens this session (e.g. 265)" ;;
-    context_size)     echo "Configured context window size (e.g. 1M)" ;;
+    tokens_input)     echo "Total input tokens this session" ;;
+    tokens_output)    echo "Total output tokens this session" ;;
+    context_size)     echo "Configured context window size" ;;
     context_remaining) echo "% of context window still available" ;;
     cache_hit)        echo "% of session input tokens served from cache" ;;
     cache_warm)       echo "Whether the prompt cache is still warm (warm/cold)" ;;
@@ -2908,11 +2908,11 @@ _token_description() {
     cache_write)      echo "Tokens written to the prompt cache this session" ;;
     cache_rebuild)    echo "Tokens the next request re-caches if the cache goes cold" ;;
     cache_misses)     echo "Prompt-cache misses this session + the latest cause" ;;
-    cost)             echo "Session cost in USD (formatted \$0.40)" ;;
+    cost)             echo "Session cost in USD" ;;
     duration)         echo "Total wall-clock time since session start" ;;
     api_duration)     echo "Time spent waiting for API responses" ;;
-    lines_added)      echo "Lines of code added in this session (+128)" ;;
-    lines_removed)    echo "Lines of code removed in this session (-42)" ;;
+    lines_added)      echo "Lines of code added in this session" ;;
+    lines_removed)    echo "Lines of code removed in this session" ;;
     rl_5h)            echo "5-hour rate limit % + reset countdown" ;;
     rl_7d)            echo "7-day rate limit % + reset countdown" ;;
     thinking)         echo "Whether extended thinking is enabled" ;;
