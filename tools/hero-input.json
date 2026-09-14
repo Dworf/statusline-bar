@@ -1,0 +1,84 @@
+{
+  "_comment": [
+    "Synthetic payload for tools/shots.sh — the hero recipe only. Never a real",
+    "capture: no real paths, usernames, session ids or costs (ADR 0005).",
+    "",
+    "Every epoch below is relative to STATUSLINE_BAR_FAKE_NOW=9999999999, the",
+    "clock tools/shots.sh pins (the same one test/cases.sh pins). Keep them in",
+    "step or the countdowns go negative or flat:",
+    "  rate_limits.five_hour.resets_at  = now + 8077   -> 2h 14m 37s",
+    "  rate_limits.seven_day.resets_at  = now + 283272 -> 3d 6h 41m 12s",
+    "  prompt_cache.expires_at          = now + 2838   -> 47m 18s",
+    "",
+    "workspace.current_dir is deliberately a path that does not exist: tok_dir",
+    "cds into it and asks git for the toplevel, and the test mock answers with",
+    "its own fixture path for any cwd it can reach. A cd that fails makes the",
+    "token fall back to this basename instead. shots.sh asserts the path is",
+    "still absent before it renders.",
+    "",
+    "test/sample-input.json remains the schema reference and the goldens'",
+    "fixture — this file is decoration and must never be pointed at by a test."
+  ],
+
+  "session_id": "0f3c8a91-7d24-4e6b-9c15-2ab6d80f4e77",
+  "transcript_path": "/statusline-bar-demo/statusline-bar/transcript.jsonl",
+  "cwd": "/statusline-bar-demo/statusline-bar",
+  "session_name": "statusline-bar",
+  "effort": { "level": "high" },
+  "model": { "id": "claude-fable-5-1", "display_name": "Fable 5.1" },
+  "workspace": {
+    "current_dir": "/statusline-bar-demo/statusline-bar",
+    "project_dir": "/statusline-bar-demo/statusline-bar",
+    "added_dirs": []
+  },
+  "version": "2.1.139",
+  "output_style": { "name": "default" },
+  "cost": {
+    "total_cost_usd": 8.4712,
+    "total_duration_ms": 8284000,
+    "total_api_duration_ms": 1943500,
+    "total_lines_added": 342,
+    "total_lines_removed": 118
+  },
+  "context_window": {
+    "total_input_tokens": 471236,
+    "total_output_tokens": 3184,
+    "context_window_size": 1000000,
+    "current_usage": {
+      "input_tokens": 12,
+      "output_tokens": 640,
+      "cache_creation_input_tokens": 2180,
+      "cache_read_input_tokens": 469044
+    },
+    "used_percentage": 47,
+    "remaining_percentage": 53
+  },
+  "exceeds_200k_tokens": true,
+  "prompt_cache": {
+    "warm": true,
+    "caching_observed": true,
+    "ttl": "1h",
+    "expires_at": 10000002837,
+    "requests": 31,
+    "misses": 1,
+    "expected_rebuilds": 0,
+    "hit_ratio": 0.87,
+    "cache_write_tokens": 418000,
+    "miss_recache_tokens": 96400,
+    "last_miss_at": 9999994200,
+    "last_miss_cause": {
+      "causes": ["tools_changed"],
+      "tools_added": 1,
+      "tools_removed": 0
+    },
+    "miss_causes": { "tools_changed": 1 },
+    "recache_tokens_if_cold": 52000
+  },
+  "fast_mode": false,
+  "thinking": { "enabled": true },
+  "worktree": { "name": "main" },
+  "rate_limits": {
+    "five_hour": { "used_percentage": 45, "resets_at": 10000008076 },
+    "seven_day": { "used_percentage": 62, "resets_at": 10000283271 }
+  }
+}

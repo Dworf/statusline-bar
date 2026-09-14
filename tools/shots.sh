@@ -35,7 +35,13 @@ set -euo pipefail
 TOOLS_DIR="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(cd "$TOOLS_DIR/.." && pwd)"
 SCRIPT="$ROOT/statusline-bar.sh"
+# test/sample-input.json is the schema reference and the goldens' fixture; its
+# values are picked for test determinism, not for looking good (both rate
+# limits reset exactly at the pinned clock, so they render "0s"). The hero gets
+# its own synthetic payload — still no real capture, no real paths or
+# usernames (ADR 0005) — and the test fixture is left alone.
 PAYLOAD="$ROOT/test/sample-input.json"
+HERO_INPUT="$TOOLS_DIR/hero-input.json"
 OUT_DIR="${OUT_DIR:-$ROOT/screenshots}"
 CHROME="${CHROME:-/Applications/Google Chrome.app/Contents/MacOS/Google Chrome}"
 
@@ -229,24 +235,35 @@ page_head() {
     background: var(--panel); border: 1px solid var(--edge); border-radius: 7px;
     padding: 9px 10px 11px; margin-bottom: 19px;
   }
-  .block { position: relative; }
-  .block + .block { margin-top: 13px; }
-  .markers { position: relative; height: 17px; }
+  /* The two rendered rows sit directly on top of each other, at their own
+     line-height, exactly as a terminal would print them. Markers go OUTSIDE
+     that pair — above the first row, below the second — each with a 1px
+     connector running back to the token it labels. Nothing is allowed
+     between the rows. */
+  .rowline { line-height: 0; }
+  .line {
+    display: inline-block;  /* shrink-to-fit, so the measured width is the content */
+    vertical-align: top;
+    font-family: var(--mono); white-space: pre; line-height: 1.55;
+    font-variant-ligatures: none;
+  }
+  /* 13px bubble + 10px connector; no margin, so the connector runs right up
+     to the row's box and the association is unambiguous. */
+  .markers { position: relative; height: 23px; }
   .mk {
-    position: absolute; top: 0; transform: translateX(-50%);
+    position: absolute; transform: translateX(-50%);
     font: 700 9.5px/13px var(--sans); text-align: center;
     width: 13px; height: 13px; border-radius: 50%;
     background: var(--accent); color: #05090f;
   }
   .tick {
-    position: absolute; top: 13px; transform: translateX(-50%);
-    width: 1px; height: 4px; background: var(--accent); opacity: .5;
+    position: absolute; transform: translateX(-50%);
+    width: 1px; height: 10px; background: var(--accent); opacity: .7;
   }
-  .line {
-    display: inline-block;           /* shrink-to-fit, so the measured width is the content */
-    font-family: var(--mono); white-space: pre; line-height: 1.5;
-    font-variant-ligatures: none;
-  }
+  .markers.top .mk   { top: 0; }
+  .markers.top .tick { top: 13px; }   /* hangs down from the bubble to row 1 */
+  .markers.bot .tick { top: 0; }      /* rises from row 2 up to the bubble */
+  .markers.bot .mk   { top: 10px; }
   .sep { color: var(--muted); opacity: .55; }
   /* CSS columns rather than a grid: one description wraps to two lines, and a
      grid would stretch its whole row to match. Columns flow instead, so the
@@ -268,18 +285,22 @@ page_head() {
 CSS
 }
 
-# The layout script. Two jobs:
-#   1. fit  — pick one font size so the widest line fills the stage exactly,
-#             measured at a large base size for sub-pixel accuracy.
-#   2. mark — put a numbered bubble over the centre of each real token span,
-#             so the markers track the actual glyphs instead of guessed
-#             offsets. A left-to-right nudge keeps adjacent bubbles apart.
+# The layout script. Three jobs:
+#   1. fit   — pick one font size so the widest row fills the stage exactly,
+#              measured at a large base size for sub-pixel accuracy.
+#   2. mark  — put a numbered bubble over the centre of each real token span,
+#              so the markers track the actual glyphs instead of guessed
+#              offsets. Row 1's markers go in the strip above the pair of
+#              rows, row 2's in the strip below. A left-to-right nudge keeps
+#              adjacent bubbles apart.
+#   3. size  — never let the legend out-shout its subject: the legend text is
+#              capped at the fitted statusline size.
 page_tail() {
   cat <<'JS'
 <div id="__h" style="display:none"></div>
 <script>
 (function () {
-  var BASE = 72, MAXPX = 17, MINGAP = 14;
+  var BASE = 72, MAXPX = 17, MINGAP = 14, LEGEND_MAX = 11;
   var lines = [].slice.call(document.querySelectorAll('.line'));
   var avail = document.querySelector('.stage').clientWidth
             - 20; /* .stage horizontal padding */
@@ -291,9 +312,11 @@ page_tail() {
   var size = Math.min(MAXPX, BASE * avail / widest);
   lines.forEach(function (el) { el.style.fontSize = size.toFixed(4) + 'px'; });
 
+  var strips = { '0': document.querySelector('.markers.top'),
+                 '1': document.querySelector('.markers.bot') };
   lines.forEach(function (line) {
-    var row  = line.parentNode.querySelector('.markers');
-    var base = line.getBoundingClientRect();
+    var row  = strips[line.getAttribute('data-i')];
+    var base = row.getBoundingClientRect();
     var prev = -1e9;
     [].slice.call(line.querySelectorAll('.tok')).forEach(function (tok) {
       var r = tok.getBoundingClientRect();
@@ -310,6 +333,11 @@ page_tail() {
     });
   });
 
+  var lsize = Math.min(LEGEND_MAX, size);
+  [].slice.call(document.querySelectorAll('.item .t')).forEach(function (el) {
+    el.style.fontSize = lsize.toFixed(4) + 'px';
+  });
+
   document.getElementById('__h').textContent =
     Math.ceil(document.documentElement.getBoundingClientRect().height);
 })();
@@ -324,6 +352,17 @@ JS
 # numbered, with a legend whose wording is lifted from the script's own
 # catalog so it cannot drift from the code.
 recipe_hero() {
+  [[ -f "$HERO_INPUT" ]] || die "hero payload not found at $HERO_INPUT"
+  # tok_dir cds into workspace.current_dir and asks git for the toplevel; the
+  # test mock answers with its own fixture path for any cwd it can reach, so
+  # the hero's payload points at a path that does not exist and the token
+  # falls back to that path's basename. If the path ever springs into
+  # existence the dir token silently changes, so say so loudly instead.
+  local hero_cwd; hero_cwd="$(jq -r '.workspace.current_dir' "$HERO_INPUT")"
+  if [[ -e "$hero_cwd" ]]; then
+    die "$hero_cwd exists; the hero payload needs an absent path (see its _comment)"
+  fi
+
   local cfg="$WORK/hero.json" boot="$WORK/boot.json"
   printf '{"version":1}\n' > "$boot"
 
@@ -367,23 +406,26 @@ recipe_hero() {
     printf '<div id="card">\n'
     printf '<div class="caption">statusline-bar &nbsp;·&nbsp; <b>%s</b> preset &nbsp;·&nbsp; %s of %s tokens</div>\n' \
       "$preset" "$shown" "$total"
-    printf '<div class="stage">\n'
-    local line_ids
+    # Marker strip, both rendered rows back to back, marker strip. Nothing is
+    # emitted between the two rows — they have to read as one statusline.
+    printf '<div class="stage">\n<div class="markers top"></div>\n'
+    local line_ids i=0
     for line_ids in "$ids_l0" "$ids_l1"; do
-      printf '<div class="block"><div class="markers"></div><div class="line">'
+      printf '<div class="rowline"><span class="line" data-i="%s">' "$i"
       local first=1 id body
       while IFS= read -r id; do
         [[ -z "$id" ]] && continue
-        body="$(sb "$cfg" --dump-render-token "$id" < "$PAYLOAD" | ansi_to_html)"
+        body="$(sb "$cfg" --dump-render-token "$id" < "$HERO_INPUT" | ansi_to_html)"
         [[ -z "$body" ]] && die "token '$id' rendered empty — the hero would mis-number"
         (( first )) || printf '<span class="sep">%s</span>' "$sep"
         first=0
         n=$((n + 1))
         printf '<span class="tok" data-id="%s" data-n="%s">%s</span>' "$id" "$n" "$body"
       done <<< "$line_ids"
-      printf '</div></div>\n'
+      printf '</span></div>\n'
+      i=$((i + 1))
     done
-    printf '</div>\n<div class="legend">\n'
+    printf '<div class="markers bot"></div>\n</div>\n<div class="legend">\n'
     n=0
     for line_ids in "$ids_l0" "$ids_l1"; do
       while IFS= read -r id; do
@@ -411,9 +453,9 @@ recipe_hero() {
 # they belong to, and the leftover in the middle is the separator.
 hero_separator() {
   local cfg="$1" a b whole
-  a="$(sb "$cfg" --dump-render-token "$(jq -r '.lines[0][0]' "$cfg")" < "$PAYLOAD")"
-  b="$(sb "$cfg" --dump-render-token "$(jq -r '.lines[0][1]' "$cfg")" < "$PAYLOAD")"
-  whole="$(sb "$cfg" --dump-render-line 0 < "$PAYLOAD")"
+  a="$(sb "$cfg" --dump-render-token "$(jq -r '.lines[0][0]' "$cfg")" < "$HERO_INPUT")"
+  b="$(sb "$cfg" --dump-render-token "$(jq -r '.lines[0][1]' "$cfg")" < "$HERO_INPUT")"
+  whole="$(sb "$cfg" --dump-render-line 0 < "$HERO_INPUT")"
   whole="${whole#"$a"}"
   printf '%s' "${whole%%"$b"*}" | sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g'
 }
