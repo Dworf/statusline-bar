@@ -9,18 +9,18 @@
     "preset": {
       "anyOf": [
         { "type": "null" },
-        { "enum": ["minimum","compact","default","modern","fancy","everything","maximum"] }
+        { "enum": ["minimum","compact","focus","coder","default","modern","rates","cache","claude","fancy","everything","maximum"] }
       ]
     },
     "theme": {
-      "enum": ["default","dark","light","graphite","solarized","dracula","nord","gruvbox","tokyo-night","catppuccin"]
+      "enum": ["default","solarized","graphite","light","solarized-light","catppuccin-latte","tokyo-day","ayu-light","garden","dark","dracula","nord","gruvbox","tokyo-night","catppuccin","one-dark","rose-pine","monokai","mocha","silver","ocean"]
     },
     "global": {
       "type": "object",
       "properties": {
         "prefix_style": { "enum": ["none","label","emoji","nerd","ascii","emoji+label","label+emoji","nerd+label"] },
         "separator":    { "enum": ["space","pipe","slash","dot","vbar","dash","bullet","diamond","arrow","tri","star","sparkle","gear","check","heart","music","chevron","slant","chevron_thin"] },
-        "bar_style":    { "anyOf": [{ "type": "null" }, { "enum": ["blocks","heavy","line","braille","dots","arrows","ascii","gradient"] }] },
+        "bar_style":    { "anyOf": [{ "type": "null" }, { "enum": ["blocks","heavy","line","braille","dots","arrows","ascii","gradient","gradient_dots","gradient_fade","gradient_shade","gradient_braille"] }] },
         "color_depth":  { "enum": ["auto","truecolor","256","16","none"] },
         "empty_behavior": { "enum": ["hide","placeholder"] },
         "placeholder":  { "type": "string" },
@@ -40,12 +40,12 @@
     "tokens": {
       "type": "object",
       "patternProperties": {
-        "^[a-z_]+$": {
+        "^[a-z0-9_]+$": {
           "type": "object",
           "properties": {
             "prefix":    { "enum": ["none","label","emoji","nerd","ascii","emoji+label","label+emoji","nerd+label"] },
-            "format":    { "enum": ["value","percent","progressbar","progressbar+percent","countdown","remaining","progressbar+percent+countdown","combined","flag"] },
-            "bar_style": { "enum": ["blocks","heavy","line","braille","dots","arrows","ascii","gradient"] },
+            "format":    { "enum": ["value","compact","short","id","id_short","percent","progressbar","progressbar+percent","tokens","tokens+size","percent+tokens","progressbar+percent+tokens","flag","countdown","countdown_short","remaining","remaining_short","cause","count+cause","per_hour","with_rate","count","progressbar+percent+countdown","progressbar+percent+countdown_short","progressbar+percent+remaining","progressbar+percent+remaining_short","combined"] },
+            "bar_style": { "enum": ["blocks","heavy","line","braille","dots","arrows","ascii","gradient","gradient_dots","gradient_fade","gradient_shade","gradient_braille"] },
             "separator_after": { "enum": ["space","pipe","slash","dot","vbar","dash","bullet","diamond","arrow","tri","star","sparkle","gear","check","heart","music","chevron","slant","chevron_thin"] }
           },
           "additionalProperties": false

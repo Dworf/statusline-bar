@@ -5,7 +5,7 @@
 
 set -u
 
-VERSION="0.5.2"
+VERSION="0.6.0"
 
 # ============================================================
 # SECTION: Embedded data — themes
@@ -211,7 +211,7 @@ read -r -d '' PRESETS_JSON <<'JSON' || true
 JSON
 
 # ============================================================
-# SECTION: Embedded data — tokens (39)
+# SECTION: Embedded data — tokens (48)
 # ============================================================
 # `nerd` fields use Font Awesome glyphs from any Nerd Font patched set.
 # Codepoints are written as JSON \uXXXX escapes — jq decodes them on
@@ -376,6 +376,22 @@ read -r -d '' EXAMPLES_INPUT_JSON <<'JSON' || true
   "rate_limits": {
     "five_hour": { "used_percentage": 50, "resets_at": 1778534893 },
     "seven_day": { "used_percentage": 50, "resets_at": 1778962800 }
+  },
+  "prompt_cache": {
+    "warm": true,
+    "caching_observed": true,
+    "ttl": "1h",
+    "expires_at": 1778526072,
+    "requests": 14,
+    "misses": 2,
+    "expected_rebuilds": 1,
+    "hit_ratio": 0.97,
+    "cache_write_tokens": 352000,
+    "miss_recache_tokens": 310200,
+    "last_miss_at": 1778520000,
+    "last_miss_cause": { "causes": ["tools_changed"], "tools_added": 2, "tools_removed": 0 },
+    "miss_causes": { "tools_changed": 2 },
+    "recache_tokens_if_cold": 45000
   }
 }
 JSON
@@ -2801,7 +2817,7 @@ _tl_paste_mark() {
 # ============================================================
 # SECTION: Token picker (Tokens & Lines → press 'a')
 # ============================================================
-# Full-screen grouped list of all 42 tokens. Pressing Enter inserts the
+# Full-screen grouped list of all 48 tokens. Pressing Enter inserts the
 # selected token after the cursor in the calling Tokens & Lines screen.
 
 TOK_PICKER_LIST=()    # ordered ids
@@ -3616,9 +3632,9 @@ examples_catalog() {
   fi
 
   if [[ "$only" == "all" || "$only" == "tokens" ]]; then
-    echo "## Tokens  (42 total — pick any combination via Tokens & lines wizard)"
+    echo "## Tokens  (48 total — pick any combination via Tokens & lines wizard)"
     echo
-    echo "### Claude session (29 tokens, read from stdin JSON)"
+    echo "### Claude session (35 tokens, read from stdin JSON)"
     for tok in model session_name session_id context tokens_input tokens_output context_size context_remaining cache_hit cache_warm cache_ttl cache_expires cache_write cache_rebuild cache_misses cost duration api_duration lines_added lines_removed rl_5h rl_7d thinking effort output_style version fast_mode exceeds_200k dir worktree vim_mode agent_name added_dirs git_worktree transcript; do
       _print_token_row "$tok"
     done

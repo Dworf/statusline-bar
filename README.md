@@ -23,17 +23,17 @@ Run `--examples` to see this and every other preset, theme, prefix style, separa
 The Claude Code ecosystem already has a dozen excellent statuslines, each great at one thing. We wanted **one tool** that:
 
 - ships every useful field — model, cost, context %, cache hit ratio, rate limits (5h + 7d) with countdowns, git branch + status + ahead/behind, vim mode, agent name, session id, plus zero-cost local readouts (clock, battery, memory, load average, hostname)
-- looks great out of the box (11 presets, 21 themes, 12 progress-bar styles, truecolor support)
+- looks great out of the box (12 presets, 21 themes, 12 progress-bar styles, truecolor support)
 - is **trivial to install** — one bash file + `jq`, no Node, no Rust, no Python, no daemon
 - stays customizable down to the smallest detail (per-token prefix, format, bar style, and separator-after overrides)
 
 ## Features
 
-- **Single file**, ~3,000 lines of bash 3.2+. Drop it anywhere on `$PATH`.
+- **Single file**, ~3,900 lines of bash 3.2+. Drop it anywhere on `$PATH`.
 - **Up to 4 lines** of statusline, each a freely-arranged token sequence.
-- **42 tokens**: 29 from Claude Code's stdin JSON + 6 from `git` + 7 from local OS.
+- **48 tokens**: 35 from Claude Code's stdin JSON + 6 from `git` + 7 from local OS.
 - **Many format variants** per token — bars, percents, countdowns, combined views, compact model names, hourly cost projections, token-count combos, short-form durations, etc. Each token advertises only the formats that make sense for its data.
-- **11 presets**: `minimum`, `compact`, `focus`, `coder`, `default`, `modern`, `rates`, `claude`, `fancy`, `everything`, `maximum`.
+- **12 presets**: `minimum`, `compact`, `focus`, `coder`, `default`, `modern`, `rates`, `cache`, `claude`, `fancy`, `everything`, `maximum`.
 - **21 themes**: grouped by terminal compatibility — Auto / adaptive (3), Light terminals (6), Dark terminals (12).
 - **12 progress-bar styles**: `blocks`, `heavy`, `line`, `braille`, `dots`, `arrows`, `ascii`, plus 5 sub-character precision variants — `gradient`, `gradient_dots`, `gradient_fade`, `gradient_shade`, `gradient_braille`.
 - **8 prefix styles**: `none`, `label`, `emoji`, `nerd`, `ascii` + `emoji+label`, `label+emoji`, `nerd+label`.
@@ -149,7 +149,7 @@ Picker screens for the single-choice settings (preset, theme, prefix, separator,
 
 <table>
   <tr>
-    <td><img src="screenshots/menu_preset.png" alt="Preset picker — 11 presets each with a short description and token count" /></td>
+    <td><img src="screenshots/menu_preset.png" alt="Preset picker — 12 presets each with a short description and token count" /></td>
     <td><img src="screenshots/menu_theme.png" alt="Theme picker — 21 themes grouped by terminal compatibility, each with good/warn/crit color swatches" /></td>
   </tr>
   <tr>
@@ -178,9 +178,9 @@ Drill into any token to edit its per-token prefix / format / bar style overrides
   </tr>
 </table>
 
-Hit `a` from any line to add a token — the picker shows all 42 grouped by source, each row with a live sample and a `✓` mark next to tokens already used somewhere:
+Hit `a` from any line to add a token — the picker shows all 48 grouped by source, each row with a live sample and a `✓` mark next to tokens already used somewhere:
 
-![Token picker — 42 tokens grouped by Claude session / Git / Local OS, each row showing the rendered sample](screenshots/menu_tokens_lines_add_token.png)
+![Token picker — 48 tokens grouped by Claude session / Git / Local OS, each row showing the rendered sample](screenshots/menu_tokens_lines_add_token.png)
 
 ### Tune it live alongside Claude Code
 
@@ -209,8 +209,8 @@ Prints a catalog with one row per option, rendered live against synthetic data. 
 
 ## Reference
 
-- **42 tokens** — 29 from Claude stdin (model, context, cost, rate limits, token counts, vim mode, agent name, session id, …) + 6 git + 7 OS (clock, battery, memory, load, …)
-- **11 presets** — 1-line: `minimum`, `compact`, `focus`, `coder` · 2-line: `default`, `modern`, `rates`, `claude` · 3-line: `fancy` · 4-line: `everything`, `maximum`
+- **48 tokens** — 35 from Claude stdin (model, context, cost, prompt cache, rate limits, token counts, vim mode, agent name, session id, …) + 6 git + 7 OS (clock, battery, memory, load, …)
+- **12 presets** — 1-line: `minimum`, `compact`, `focus`, `coder` · 2-line: `default`, `modern`, `rates`, `cache`, `claude` · 3-line: `fancy` · 4-line: `everything`, `maximum`
 - **21 themes** — Auto / adaptive: `default`, `solarized`, `graphite` · Light: `light`, `solarized-light`, `catppuccin-latte`, `tokyo-day`, `ayu-light`, `garden` · Dark: `dark`, `dracula`, `nord`, `gruvbox`, `tokyo-night`, `catppuccin`, `one-dark`, `rose-pine`, `monokai`, `mocha`, `silver`, `ocean`
 - **8 prefix styles** — `none`, `label`, `emoji`, `nerd`, `ascii` + `emoji+label`, `label+emoji`, `nerd+label`
 - **19 separators** — ASCII (3), Unicode (10), Decorative (3), Powerline (3)
@@ -225,7 +225,7 @@ The same output you'd see from `statusline-bar.sh --examples` in your terminal, 
 
 ### Presets
 
-11 layouts, ranging from 3 tokens on one line to 42 on four. Individual close-ups first:
+12 layouts, ranging from 3 tokens on one line to 48 on four. Individual close-ups first:
 
 <table>
   <tr>
@@ -250,7 +250,7 @@ The full 11-preset catalog at a glance:
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="screenshots/showroom_presets_dark.png">
-  <img src="screenshots/showroom_presets_light.png" alt="All 11 presets rendered: minimum, compact, focus, coder, default, modern, rates, claude, fancy, everything, maximum">
+  <img src="screenshots/showroom_presets_light.png" alt="All 12 presets rendered: minimum, compact, focus, coder, default, modern, rates, cache, claude, fancy, everything, maximum">
 </picture>
 
 ### Themes
@@ -306,11 +306,11 @@ Full prefix-style catalog (all 8 styles applied to model + context + cost):
 
 ### Tokens
 
-All 42 tokens grouped by source — Claude session (29), Git (6), Local OS (7) — each with a live sample and an inline `ⓘ` description:
+All 48 tokens grouped by source — Claude session (35), Git (6), Local OS (7) — each with a live sample and an inline `ⓘ` description:
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="screenshots/showroom_tokens_dark.png">
-  <img src="screenshots/showroom_tokens_light.png" alt="All 42 tokens rendered alone with inline descriptions">
+  <img src="screenshots/showroom_tokens_light.png" alt="All 48 tokens rendered alone with inline descriptions">
 </picture>
 
 <details>
@@ -334,7 +334,10 @@ All 42 tokens grouped by source — Claude session (29), Git (6), Local OS (7) �
 [ modern     ] 🕔 5h █████░░░░░ 50% | 🕖 7d █████░░░░░ 50% | ⏳ 3m 50s
 
 [ rates      ] 🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40
-[ rates      ] 🕔 5h █████░░░░░ 50% 🔄 3h 25m 13s | 🕖 7d █████░░░░░ 50% 🔄 5d 2h 17m 0s | 💾 ██████████ 97% | 📡 39s
+[ rates      ] 🕔 5h █████░░░░░ 50% 🔄 3h 25m 13s | 🕖 7d █████░░░░░ 50% 🔄 5d 2h 17m 0s | 💾 ██████████ 97% | ❄️ 58m 12s | 📡 39s
+
+[ cache      ] 🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40
+[ cache      ] 💾 ██████████ 97% | 🔥 warm | ❄️ 58m 12s | ⏲️ 1h | ⚠️ 2 (tools_changed) | ✍️ 352k
 
 [ claude     ] 🤖 Opus 4.7 (1M context) | 📝 Browse | 🧠 50% (49k/100k) | 💰 $0.40 | ⏳ 3m 50s
 [ claude     ] 💭 true | 💪 xhigh | 🎨 default | ⚡️ | 🏷️ 2.1.139
@@ -344,12 +347,12 @@ All 42 tokens grouped by source — Claude session (29), Git (6), Local OS (7) �
 [ fancy      ] 📁 example_dir | 🌿 feat/wizard | 📊 +3 ~5 ?2 | 💭 true | 💪 xhigh | 🔋 █████████░ 92% | 🕒 18:03
 
 [ everything ] 🤖 Opus 4.7 (1M context) | 📝 Browse | 🔖 browse00 | 🧠 50% (49k/100k) | 📥 49k | 📤 50 | 🪟 100k | 🆓 50%
-[ everything ] 💾 97% | 💰 $0.40 | 📡 39s | 🕔 5h █████░░░░░ 50% 🔄 3h 25m 13s | 🕖 7d █████░░░░░ 50% 🔄 5d 2h 17m 0s | 💭 true | 💪 xhigh | 🎨 default | 🏷️ 2.1.139 | 🤝 Explore | ⌨️ INSERT | ⚡️ | 📈
+[ everything ] 💾 97% | 🔥 warm | ❄️ 58m 12s | ⏲️ 1h | ⚠️ 2 (tools_changed) | 🔁 45k | ✍️ 352k | 💰 $0.40 | 📡 39s | 🕔 5h █████░░░░░ 50% 🔄 3h 25m 13s | 🕖 7d █████░░░░░ 50% 🔄 5d 2h 17m 0s | 💭 true | 💪 xhigh | 🎨 default | 🏷️ 2.1.139 | 🤝 Explore | ⌨️ INSERT | ⚡️ | 📈
 [ everything ] 📁 example_dir | 🌳 main | 📂 0 | 🌲 /tmp/example_dir/feature | 📜 browse001.jsonl | 🌿 feat/wizard | 📊 +3 ~5 ?2 | ➕ 3 | ✏️ 5 | ❓ 2 | 🔀 ↑2 ↓1 | ➕ +128 | ➖ -42
 [ everything ] ⏳ 3m 50s | 🕒 18:03 | 📅 2026-05-11 | 🖥️ mac | 👤 alice | 🔋 92% | 🧬 45% | 📊 1.2
 
 [ maximum    ] 🤖 Opus 4.7 (1M context) | 📝 Browse | 🔖 browse00 | 🧠 █████░░░░░ 50% (49k/100k) | 📥 49k | 📤 50 | 🪟 100k | 🆓 █████░░░░░ 50%
-[ maximum    ] 💾 ██████████ 97% | 💰 $0.40 | 📡 39s | 🕔 5h █████░░░░░ 50% 🔄 3h 25m 13s | 🕖 7d █████░░░░░ 50% 🔄 5d 2h 17m 0s | 💭 true | 💪 xhigh | 🎨 default | 🏷️ 2.1.139 | 🤝 Explore | ⌨️ INSERT | ⚡️ | 📈
+[ maximum    ] 💾 ██████████ 97% | 🔥 warm | ❄️ 58m 12s | ⏲️ 1h | ⚠️ 2 (tools_changed) | 🔁 45k | ✍️ 352k | 💰 $0.40 | 📡 39s | 🕔 5h █████░░░░░ 50% 🔄 3h 25m 13s | 🕖 7d █████░░░░░ 50% 🔄 5d 2h 17m 0s | 💭 true | 💪 xhigh | 🎨 default | 🏷️ 2.1.139 | 🤝 Explore | ⌨️ INSERT | ⚡️ | 📈
 [ maximum    ] 📁 example_dir | 🌳 main | 📂 0 | 🌲 /tmp/example_dir/feature | 📜 browse001.jsonl | 🌿 feat/wizard | 📊 +3 ~5 ?2 | ➕ 3 | ✏️ 5 | ❓ 2 | 🔀 ↑2 ↓1 | ➕ +128 | ➖ -42
 [ maximum    ] ⏳ 3m 50s | 🕒 18:03 | 📅 2026-05-11 | 🖥️ mac | 👤 alice | 🔋 █████████░ 92% | 🧬 █████░░░░░ 45% | 📊 1.2
 
@@ -422,55 +425,61 @@ All 42 tokens grouped by source — Claude session (29), Git (6), Local OS (7) �
 [ gradient_shade   ] ██▓░░░░░░░ 25%   ███████▓░░ 75%   █████████▓ 95%
 [ gradient_braille ] ██⡇······· 25%   ███████⡇·· 75%   █████████⡇ 95%
 
-## Tokens  (42 total — pick any combination via Tokens & lines wizard)
+## Tokens  (48 total — pick any combination via Tokens & lines wizard)
 
-### Claude session (29 tokens, read from stdin JSON)
-[ model              ] 🤖 Opus 4.7 (1M context)           ⓘ Current Claude model display name
-[ session_name       ] 📝 Browse                          ⓘ Custom session name set via --name or /rename
-[ session_id         ] 🔖 browse00                        ⓘ Session UUID (first 8 chars)
-[ context            ] 🧠 50% (49k/100k)                  ⓘ % of context window used; rich formats include tokens used and window size
-[ tokens_input       ] 📥 49k                             ⓘ Total input tokens this session (e.g. 202k)
-[ tokens_output      ] 📤 50                              ⓘ Total output tokens this session (e.g. 265)
-[ context_size       ] 🪟 100k                            ⓘ Configured context window size (e.g. 1M)
-[ context_remaining  ] 🆓 50%                             ⓘ % of context window still available
-[ cache_hit          ] 💾 97%                             ⓘ % of input tokens served from cache
-[ cost               ] 💰 $0.40                           ⓘ Session cost in USD (formatted $0.40)
-[ duration           ] ⏳ 3m 50s                           ⓘ Total wall-clock time since session start
-[ api_duration       ] 📡 39s                             ⓘ Time spent waiting for API responses
-[ lines_added        ] ➕ +128                             ⓘ Lines of code added in this session (+128)
-[ lines_removed      ] ➖ -42                              ⓘ Lines of code removed in this session (-42)
+### Claude session (35 tokens, read from stdin JSON)
+[ model              ] 🤖 Opus 4.7 (1M context)             ⓘ Current Claude model display name
+[ session_name       ] 📝 Browse                            ⓘ Custom session name set via --name or /rename
+[ session_id         ] 🔖 browse00                          ⓘ Session UUID (first 8 chars)
+[ context            ] 🧠 50% (49k/100k)                    ⓘ % of context window used; rich formats include tokens used and window size
+[ tokens_input       ] 📥 49k                               ⓘ Total input tokens this session (e.g. 202k)
+[ tokens_output      ] 📤 50                                ⓘ Total output tokens this session (e.g. 265)
+[ context_size       ] 🪟 100k                              ⓘ Configured context window size (e.g. 1M)
+[ context_remaining  ] 🆓 50%                               ⓘ % of context window still available
+[ cache_hit          ] 💾 97%                               ⓘ % of session input tokens served from cache
+[ cache_warm         ] 🔥 warm                              ⓘ Whether the prompt cache is still warm (warm/cold)
+[ cache_ttl          ] ⏲️ 1h                               ⓘ Prompt cache lifetime tier (5m or 1h)
+[ cache_expires      ] ❄️ 58m 12s                          ⓘ Countdown until the prompt cache goes cold
+[ cache_write        ] ✍️ 352k                             ⓘ Tokens written to the prompt cache this session
+[ cache_rebuild      ] 🔁 45k                               ⓘ Tokens the next request re-caches if the cache goes cold
+[ cache_misses       ] ⚠️ 2 (tools_changed)                ⓘ Prompt-cache misses this session + the latest cause
+[ cost               ] 💰 $0.40                             ⓘ Session cost in USD (formatted $0.40)
+[ duration           ] ⏳ 3m 50s                             ⓘ Total wall-clock time since session start
+[ api_duration       ] 📡 39s                               ⓘ Time spent waiting for API responses
+[ lines_added        ] ➕ +128                               ⓘ Lines of code added in this session (+128)
+[ lines_removed      ] ➖ -42                                ⓘ Lines of code removed in this session (-42)
 [ rl_5h              ] 🕔 5h █████░░░░░ 50% 🔄 3h 25m 13s    ⓘ 5-hour rate limit % + reset countdown
 [ rl_7d              ] 🕖 7d █████░░░░░ 50% 🔄 5d 2h 17m 0s    ⓘ 7-day rate limit % + reset countdown
-[ thinking           ] 💭 true                            ⓘ Whether extended thinking is enabled
-[ effort             ] 💪 xhigh                           ⓘ Current reasoning effort (low/medium/high/xhigh/max)
-[ output_style       ] 🎨 default                         ⓘ Active output style name
-[ version            ] 🏷️ 2.1.139                      ⓘ Claude Code version
-[ fast_mode          ] ⚡️                               ⓘ Fast mode flag (shows only when true)
-[ exceeds_200k       ] 📈                                 ⓘ Token-count-over-200k flag (shows only when true)
-[ dir                ] 📁 example_dir                     ⓘ Workspace directory basename
-[ worktree           ] 🌳 main                            ⓘ Worktree name (--worktree sessions only)
-[ vim_mode           ] ⌨️ INSERT                        ⓘ Current vim mode (NORMAL/INSERT/VISUAL)
-[ agent_name         ] 🤝 Explore                         ⓘ Name of the running --agent
-[ added_dirs         ] 📂 0                               ⓘ Count of dirs added via /add-dir
-[ git_worktree       ] 🌲 /tmp/example_dir/feature        ⓘ Git worktree name (set for any linked worktree)
-[ transcript         ] 📜 browse001.jsonl                 ⓘ Basename of the transcript file
+[ thinking           ] 💭 true                              ⓘ Whether extended thinking is enabled
+[ effort             ] 💪 xhigh                             ⓘ Current reasoning effort (low/medium/high/xhigh/max)
+[ output_style       ] 🎨 default                           ⓘ Active output style name
+[ version            ] 🏷️ 2.1.139                          ⓘ Claude Code version
+[ fast_mode          ] ⚡️                                  ⓘ Fast mode flag (shows only when true)
+[ exceeds_200k       ] 📈                                   ⓘ Token-count-over-200k flag (shows only when true)
+[ dir                ] 📁 example_dir                       ⓘ Workspace directory basename
+[ worktree           ] 🌳 main                              ⓘ Worktree name (--worktree sessions only)
+[ vim_mode           ] ⌨️ INSERT                           ⓘ Current vim mode (NORMAL/INSERT/VISUAL)
+[ agent_name         ] 🤝 Explore                           ⓘ Name of the running --agent
+[ added_dirs         ] 📂 0                                 ⓘ Count of dirs added via /add-dir
+[ git_worktree       ] 🌲 /tmp/example_dir/feature          ⓘ Git worktree name (set for any linked worktree)
+[ transcript         ] 📜 browse001.jsonl                   ⓘ Basename of the transcript file
 
 ### Git (6 tokens, populated when cwd is inside a git repo)
-[ git_branch         ] 🌿 feat/wizard                     ⓘ Current git branch name
-[ git_status         ] 📊 +3 ~5 ?2                        ⓘ Combined +staged ~modified ?untracked counts
-[ git_staged         ] ➕ 3                                ⓘ Count of staged files
-[ git_modified       ] ✏️ 5                             ⓘ Count of modified-but-unstaged files
-[ git_untracked      ] ❓ 2                                ⓘ Count of untracked files
-[ git_ahead_behind   ] 🔀 ↑2 ↓1                       ⓘ Ahead/behind count vs upstream
+[ git_branch         ] 🌿 feat/wizard                       ⓘ Current git branch name
+[ git_status         ] 📊 +3 ~5 ?2                          ⓘ Combined +staged ~modified ?untracked counts
+[ git_staged         ] ➕ 3                                  ⓘ Count of staged files
+[ git_modified       ] ✏️ 5                                ⓘ Count of modified-but-unstaged files
+[ git_untracked      ] ❓ 2                                  ⓘ Count of untracked files
+[ git_ahead_behind   ] 🔀 ↑2 ↓1                            ⓘ Ahead/behind count vs upstream
 
 ### Local OS (7 tokens, from the machine running the statusline)
-[ clock              ] 🕒 18:03                           ⓘ Current time (HH:MM)
-[ date               ] 📅 2026-05-11                      ⓘ Current date (YYYY-MM-DD)
-[ hostname           ] 🖥️ mac                          ⓘ Short hostname
-[ user               ] 👤 alice                           ⓘ Current user ($USER)
-[ battery            ] 🔋 92%                             ⓘ Battery % (low % = critical color)
-[ memory             ] 🧬 45%                             ⓘ Memory used % (relaxed thresholds; 80% is normal)
-[ load               ] 📊 1.2                             ⓘ 1-minute load average
+[ clock              ] 🕒 18:03                             ⓘ Current time (HH:MM)
+[ date               ] 📅 2026-05-11                        ⓘ Current date (YYYY-MM-DD)
+[ hostname           ] 🖥️ mac                              ⓘ Short hostname
+[ user               ] 👤 alice                             ⓘ Current user ($USER)
+[ battery            ] 🔋 92%                               ⓘ Battery % (low % = critical color)
+[ memory             ] 🧬 45%                               ⓘ Memory used % (relaxed thresholds; 80% is normal)
+[ load               ] 📊 1.2                               ⓘ 1-minute load average
 
 ```
 
@@ -524,6 +533,17 @@ jq . /tmp/statusline-bar-input.json
 The write is best-effort and can never break the render. Set `STATUSLINE_BAR_DEBUG_INPUT` to a path to relocate the file, or to `off` to disable it. With several concurrent sessions the file simply holds whichever session rendered last.
 
 ## Changelog
+
+### 0.6.0 — 2026-09-14
+
+- **Six new prompt-cache tokens.** Claude Code 2.1.251+ ships a `prompt_cache` object in the statusline payload; `cache_warm`, `cache_expires`, `cache_ttl`, `cache_misses`, `cache_rebuild` and `cache_write` surface it. `cache_misses` shows the latest diagnosed cause alongside the count (`2 (tools_changed)`) via the new `cause` and `count+cause` formats. All six render nothing on older Claude Code versions, where the object is absent.
+- **New `cache` preset** — 2 lines, 9 tokens, focused on cache health. `rates` gains `cache_expires`; `everything` and `maximum` carry all six new tokens.
+- **`cache_hit` now reports the session-wide hit ratio** from `prompt_cache.hit_ratio`, not a ratio derived from the last API call alone. The old number collapsed toward zero after any cache write. Payloads without `prompt_cache` still fall back to the derived value.
+- **`cache_hit`'s color is no longer inverted.** A high hit rate rendered red because the token shared a threshold rule with `context` and the rate limits, where high means "running out". High now renders green.
+- **Fixed a crash on stock macOS bash 3.2.** `set -- "${_args[@]}"` aborts under `set -u` when the array is empty — bash 3.2 treats the expansion as an unbound variable — so the script exited 1 and rendered nothing, with or without `--config`. Present since before 0.5.0 and invisible to CI, because `#!/usr/bin/env bash` resolves to a newer bash on most development machines. The guarded form `${_args[@]+"${_args[@]}"}` is byte-identical for non-empty arguments. The test runner carried the same hazard and is fixed too; the zero-argument invocation Claude Code actually uses now has end-to-end coverage.
+- **`schema.json` brought back in line with the script.** The bundled JSON Schema — referenced as `$schema` by every generated config, so editors validate against it — had drifted since 0.4.0: its preset enum listed 7 of 12, its theme enum 10 of 21, its bar-style enums 8 of 12, and its format enum 9 of 27. The per-token key pattern `^[a-z_]+$` also silently skipped `rl_5h`, `rl_7d` and `exceeds_200k`. All enums are now generated from the script's embedded tables.
+
+Tests: 160 e2e cases passing.
 
 ### 0.5.2 — 2026-09-05
 
