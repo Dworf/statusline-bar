@@ -99,6 +99,10 @@ run_case fmt_cache_warm_value_on  "" "" --apply-format cache_warm value true  bl
 run_case fmt_cache_warm_value_off "" "" --apply-format cache_warm value false blocks 10 0
 run_case fmt_cache_warm_flag_on   "" "" --apply-format cache_warm flag  true  blocks 10 0
 run_case fmt_cache_warm_flag_off  "" "" --apply-format cache_warm flag  false blocks 10 0
+# Regression: an absent prompt_cache must render the placeholder, never "cold".
+# Needs a placeholder config -- with empty_behavior "hide" render_token returns
+# before apply_format runs, so a "hide" config cannot see this at all.
+run_case render_cache_warm_absent no-prompt-cache.json placeholder-min.json --dump-render-token cache_warm
 
 # Phase 5: rate-limit tokens
 run_case tok_rl_5h sample-input.json "" --dump-token rl_5h

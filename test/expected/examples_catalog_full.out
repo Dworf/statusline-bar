@@ -115,7 +115,7 @@
 [ context_size       ] 🪟 100k                              ⓘ Configured context window size (e.g. 1M)
 [ context_remaining  ] 🆓 50%                               ⓘ % of context window still available
 [ cache_hit          ] 💾 97%                               ⓘ % of input tokens served from cache
-[ cache_warm         ] 🔥 cold                              ⓘ Whether the prompt cache is still warm (warm/cold)
+[ cache_warm         ] 🔥 —                                 ⓘ Whether the prompt cache is still warm (warm/cold)
 [ cache_ttl          ] ⏲️ —                               ⓘ Prompt cache lifetime tier (5m or 1h)
 [ cost               ] 💰 $0.40                             ⓘ Session cost in USD (formatted $0.40)
 [ duration           ] ⏳ 3m 50s                             ⓘ Total wall-clock time since session start

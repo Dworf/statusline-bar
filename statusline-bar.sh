@@ -948,7 +948,14 @@ apply_format() {
     value)
       case "$id" in
         cache_warm)
-          if [[ "$raw" == "true" ]]; then printf 'warm'; else printf 'cold'; fi ;;
+          # Three-way: anything that is not a real boolean (notably the
+          # placeholder, when prompt_cache is absent) passes through verbatim
+          # rather than being asserted as "cold".
+          case "$raw" in
+            true)  printf 'warm' ;;
+            false) printf 'cold' ;;
+            *)     printf '%s' "$raw" ;;
+          esac ;;
         *) printf '%s' "$raw" ;;
       esac ;;
     compact)
@@ -1358,8 +1365,9 @@ _threshold_color() {
     lines_added)   _theme_var "$theme" good ;;
     lines_removed) _theme_var "$theme" crit ;;
     cache_warm)
-      if [[ "$raw" == "true" ]]; then _theme_var "$theme" good
-      else                            _theme_var "$theme" crit
+      if   [[ "$raw" == "true"  ]]; then _theme_var "$theme" good
+      elif [[ "$raw" == "false" ]]; then _theme_var "$theme" crit
+      else                               _theme_var "$theme" accent
       fi ;;
     *) _theme_var "$theme" accent ;;
   esac
