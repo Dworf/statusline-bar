@@ -162,6 +162,15 @@ run_case render_cache_warm_absent no-prompt-cache.json placeholder-min.json --du
 # the same swap as prefix_cache_warm_emoji_cold, but through the whole render
 # path (tok_ -> apply_format -> apply_prefix) rather than the dump hook.
 run_case render_cache_warm_cold   cache-cold.json       placeholder-min.json --dump-render-token cache_warm
+# cache_read is per-API-call and reads context_window.current_usage, not
+# prompt_cache -- so unlike its cache_* siblings it still renders on a payload
+# with no prompt_cache object (no-prompt-cache.json). Its absent case is a
+# payload whose context_window carries no current_usage at all.
+run_case tok_cache_read_value     sample-input.json     "" --dump-token cache_read
+run_case tok_cache_read_absent    no-cache-data.json    "" --dump-token cache_read
+# A cold call reads nothing. Hidden at zero, like cache_write and cache_rebuild:
+# "read 0 tokens from the cache" is what cache_warm already says, better.
+run_case tok_cache_read_zero      cache-read-zero.json  "" --dump-token cache_read
 run_case tok_cache_write_value    sample-input.json     "" --dump-token cache_write
 run_case tok_cache_write_absent   no-prompt-cache.json  "" --dump-token cache_write
 run_case tok_cache_rebuild_value  sample-input.json     "" --dump-token cache_rebuild
@@ -169,6 +178,7 @@ run_case tok_cache_rebuild_value  sample-input.json     "" --dump-token cache_re
 # blinking out for a turn is correct behaviour, not a bug.
 run_case tok_cache_rebuild_null   cache-cold.json       "" --dump-token cache_rebuild
 run_case tok_cache_rebuild_absent no-prompt-cache.json  "" --dump-token cache_rebuild
+run_case fmt_cache_read_short    "" "" --apply-format cache_read    short 201332 blocks 10 0
 run_case fmt_cache_write_short   "" "" --apply-format cache_write   short 352000 blocks 10 0
 run_case fmt_cache_rebuild_short "" "" --apply-format cache_rebuild short 45000  blocks 10 0
 # cache_misses emits "<count>|<causes>": the count is session-total misses, the

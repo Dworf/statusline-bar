@@ -2,6 +2,14 @@
 
 Release history for [statusline-bar](README.md). Newest first.
 
+## 0.6.1 — 2026-09-19
+
+- **New `cache_read` token** — the tokens the last API call read back out of the prompt cache, as a raw count (`📖 201k`). `cache_hit` gives the ratio and `cache_write` the writes; on a warm turn the read count is most of what was sent, and nothing showed it. Formats `value` and `short`, `short` by default. It renders nothing at zero, and nothing on a payload with no `context_window.current_usage` — but it does not need the `prompt_cache` object the other cache counters read, so it works on Claude Code versions older than 2.1.251 too.
+- **`cache_read` counts one API call, not the session.** `cache_write` and `cache_misses` are session totals and `cache_hit` a session ratio; `cache_read` is the most recent request alone. The two names are parallel, they sit next to each other, and nothing in the ids says they count over different spans — so `cache_read`'s description names its window, and [REFERENCE.md](REFERENCE.md#tokens) states the split above the token table.
+- **`cache_read` joins three presets.** `cache` goes from 9 tokens to 10, beside `cache_write`; `everything` and `maximum` from 48 to 49. A config that already carries its own `lines` array keeps the layout it has — the stored lines outrank the preset.
+
+Tests: 179 e2e cases passing.
+
 ## 0.6.0 — 2026-09-14
 
 - **Six new prompt-cache tokens.** Claude Code 2.1.251+ ships a `prompt_cache` object in the statusline payload; `cache_warm`, `cache_expires`, `cache_ttl`, `cache_misses`, `cache_rebuild` and `cache_write` surface it. `cache_misses` shows the latest diagnosed cause alongside the count (`2 (tools_changed)`) via the new `cause` and `count+cause` formats. All six render nothing on older Claude Code versions, where the object is absent.
