@@ -18,7 +18,7 @@
 [ rates      ] 🕔 5h █████░░░░░ 50% 🔄 3h 25m 13s | 🕖 7d █████░░░░░ 50% 🔄 5d 2h 17m 0s | 💾 ██████████ 97% | ❄️ 58m 12s | 📡 39s
 
 [ cache      ] 🤖 Opus 4.7 (1M context) | 🧠 50% (49k/100k) | 💰 $0.40
-[ cache      ] 💾 ██████████ 97% | 🔥 warm | ❄️ 58m 12s | 🪟 1h | ⚠️ 2 (tools_changed) | ✍️ 352k
+[ cache      ] 💾 ██████████ 97% | 🔥 warm | ❄️ 58m 12s | 🪟 1h | ⚠️ 2 (tools_changed) | 📖 9k | ✍️ 352k
 
 [ claude     ] 🤖 Opus 4.7 (1M context) | 📝 Browse | 🧠 50% (49k/100k) | 💰 $0.40 | ⏳ 3m 50s
 [ claude     ] 💭 true | 💪 xhigh | 🎨 default | ⚡️ | 🏷️ 2.1.139
@@ -28,12 +28,12 @@
 [ fancy      ] 📁 example_dir | 🌿 feat/wizard | 📊 +3 ~5 ?2 | 💭 true | 💪 xhigh | 🔋 █████████░ 92% | 🕒 18:03
 
 [ everything ] 🤖 Opus 4.7 (1M context) | 📝 Browse | 🔖 browse00 | 🧠 50% (49k/100k) | 📥 49k | 📤 50 | 📦 100k | 🆓 50%
-[ everything ] 💾 97% | 🔥 warm | ❄️ 58m 12s | 🪟 1h | ⚠️ 2 (tools_changed) | 🔁 45k | ✍️ 352k | 💰 $0.40 | 📡 39s | 🕔 5h █████░░░░░ 50% 🔄 3h 25m 13s | 🕖 7d █████░░░░░ 50% 🔄 5d 2h 17m 0s | 💭 true | 💪 xhigh | 🎨 default | 🏷️ 2.1.139 | 🤝 Explore | ⌨️ INSERT | ⚡️ | 📈
+[ everything ] 💾 97% | 🔥 warm | ❄️ 58m 12s | 🪟 1h | ⚠️ 2 (tools_changed) | 🔁 45k | 📖 9k | ✍️ 352k | 💰 $0.40 | 📡 39s | 🕔 5h █████░░░░░ 50% 🔄 3h 25m 13s | 🕖 7d █████░░░░░ 50% 🔄 5d 2h 17m 0s | 💭 true | 💪 xhigh | 🎨 default | 🏷️ 2.1.139 | 🤝 Explore | ⌨️ INSERT | ⚡️ | 📈
 [ everything ] 📁 example_dir | 🌳 main | 📂 0 | 🌲 /tmp/example_dir/feature | 📜 browse001.jsonl | 🌿 feat/wizard | 📊 +3 ~5 ?2 | ➕ 3 | ✏️ 5 | ❓ 2 | 🔀 ↑2 ↓1 | ➕ +128 | ➖ -42
 [ everything ] ⏳ 3m 50s | 🕒 18:03 | 📅 2026-05-11 | 🖥️ mac | 👤 alice | 🔋 92% | 🧬 45% | 📊 1.2
 
 [ maximum    ] 🤖 Opus 4.7 (1M context) | 📝 Browse | 🔖 browse00 | 🧠 █████░░░░░ 50% (49k/100k) | 📥 49k | 📤 50 | 📦 100k | 🆓 █████░░░░░ 50%
-[ maximum    ] 💾 ██████████ 97% | 🔥 warm | ❄️ 58m 12s | 🪟 1h | ⚠️ 2 (tools_changed) | 🔁 45k | ✍️ 352k | 💰 $0.40 | 📡 39s | 🕔 5h █████░░░░░ 50% 🔄 3h 25m 13s | 🕖 7d █████░░░░░ 50% 🔄 5d 2h 17m 0s | 💭 true | 💪 xhigh | 🎨 default | 🏷️ 2.1.139 | 🤝 Explore | ⌨️ INSERT | ⚡️ | 📈
+[ maximum    ] 💾 ██████████ 97% | 🔥 warm | ❄️ 58m 12s | 🪟 1h | ⚠️ 2 (tools_changed) | 🔁 45k | 📖 9k | ✍️ 352k | 💰 $0.40 | 📡 39s | 🕔 5h █████░░░░░ 50% 🔄 3h 25m 13s | 🕖 7d █████░░░░░ 50% 🔄 5d 2h 17m 0s | 💭 true | 💪 xhigh | 🎨 default | 🏷️ 2.1.139 | 🤝 Explore | ⌨️ INSERT | ⚡️ | 📈
 [ maximum    ] 📁 example_dir | 🌳 main | 📂 0 | 🌲 /tmp/example_dir/feature | 📜 browse001.jsonl | 🌿 feat/wizard | 📊 +3 ~5 ?2 | ➕ 3 | ✏️ 5 | ❓ 2 | 🔀 ↑2 ↓1 | ➕ +128 | ➖ -42
 [ maximum    ] ⏳ 3m 50s | 🕒 18:03 | 📅 2026-05-11 | 🖥️ mac | 👤 alice | 🔋 █████████░ 92% | 🧬 █████░░░░░ 45% | 📊 1.2
 
@@ -106,9 +106,9 @@
 [ gradient_shade   ] ██▓░░░░░░░ 25%   ███████▓░░ 75%   █████████▓ 95%
 [ gradient_braille ] ██⡇······· 25%   ███████⡇·· 75%   █████████⡇ 95%
 
-## Tokens  (48 total — pick any combination via Tokens & lines wizard)
+## Tokens  (49 total — pick any combination via Tokens & lines wizard)
 
-### Claude session (35 tokens, read from stdin JSON)
+### Claude session (36 tokens, read from stdin JSON)
 [ model              ] 🤖 Opus 4.7 (1M context)             ⓘ Current Claude model display name
 [ session_name       ] 📝 Browse                            ⓘ Custom session name set via --name or /rename
 [ session_id         ] 🔖 browse00                          ⓘ Session UUID (first 8 chars)
@@ -121,6 +121,7 @@
 [ cache_warm         ] 🔥 warm                              ⓘ Whether the prompt cache is still warm (warm/cold)
 [ cache_ttl          ] 🪟 1h                                ⓘ Prompt cache lifetime tier (5m or 1h)
 [ cache_expires      ] ❄️ 58m 12s                          ⓘ Countdown until the prompt cache goes cold
+[ cache_read         ] 📖 9k                                ⓘ Tokens read from the prompt cache this API call
 [ cache_write        ] ✍️ 352k                             ⓘ Tokens written to the prompt cache this session
 [ cache_rebuild      ] 🔁 45k                               ⓘ Tokens the next request re-caches if the cache goes cold
 [ cache_misses       ] ⚠️ 2 (tools_changed)                ⓘ Prompt-cache misses this session + the latest cause

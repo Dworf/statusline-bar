@@ -5,7 +5,7 @@
 
 set -u
 
-VERSION="0.6.0"
+VERSION="0.6.1"
 
 # ============================================================
 # SECTION: Embedded data — themes
@@ -151,7 +151,7 @@ read -r -d '' PRESETS_JSON <<'JSON' || true
   "cache": {
     "lines": [
       ["model","context","cost"],
-      ["cache_hit","cache_warm","cache_expires","cache_ttl","cache_misses","cache_write"]
+      ["cache_hit","cache_warm","cache_expires","cache_ttl","cache_misses","cache_read","cache_write"]
     ],
     "token_formats": {
       "cache_hit": "progressbar+percent",
@@ -181,7 +181,7 @@ read -r -d '' PRESETS_JSON <<'JSON' || true
   "everything": {
     "lines": [
       ["model","session_name","session_id","context","tokens_input","tokens_output","context_size","context_remaining"],
-      ["cache_hit","cache_warm","cache_expires","cache_ttl","cache_misses","cache_rebuild","cache_write","cost","api_duration","rl_5h","rl_7d","thinking","effort","output_style","version","agent_name","vim_mode","fast_mode","exceeds_200k"],
+      ["cache_hit","cache_warm","cache_expires","cache_ttl","cache_misses","cache_rebuild","cache_read","cache_write","cost","api_duration","rl_5h","rl_7d","thinking","effort","output_style","version","agent_name","vim_mode","fast_mode","exceeds_200k"],
       ["dir","worktree","added_dirs","git_worktree","transcript","git_branch","git_status","git_staged","git_modified","git_untracked","git_ahead_behind","lines_added","lines_removed"],
       ["duration","clock","date","hostname","user","battery","memory","load"]
     ],
@@ -190,7 +190,7 @@ read -r -d '' PRESETS_JSON <<'JSON' || true
   "maximum": {
     "lines": [
       ["model","session_name","session_id","context","tokens_input","tokens_output","context_size","context_remaining"],
-      ["cache_hit","cache_warm","cache_expires","cache_ttl","cache_misses","cache_rebuild","cache_write","cost","api_duration","rl_5h","rl_7d","thinking","effort","output_style","version","agent_name","vim_mode","fast_mode","exceeds_200k"],
+      ["cache_hit","cache_warm","cache_expires","cache_ttl","cache_misses","cache_rebuild","cache_read","cache_write","cost","api_duration","rl_5h","rl_7d","thinking","effort","output_style","version","agent_name","vim_mode","fast_mode","exceeds_200k"],
       ["dir","worktree","added_dirs","git_worktree","transcript","git_branch","git_status","git_staged","git_modified","git_untracked","git_ahead_behind","lines_added","lines_removed"],
       ["duration","clock","date","hostname","user","battery","memory","load"]
     ],
@@ -211,7 +211,7 @@ read -r -d '' PRESETS_JSON <<'JSON' || true
 JSON
 
 # ============================================================
-# SECTION: Embedded data — tokens (48)
+# SECTION: Embedded data — tokens (49)
 # ============================================================
 # `nerd` fields use Font Awesome glyphs from any Nerd Font patched set.
 # Codepoints are written as JSON \uXXXX escapes — jq decodes them on
@@ -254,6 +254,8 @@ read -r -d '' TOKENS_JSON <<'JSON' || true
   "cache_expires": { "source":"claude", "default_prefix":"emoji", "default_format":"countdown",
              "applicable_formats":["value","countdown","countdown_short","remaining","remaining_short"],
              "prefix": { "none":"", "label":"Cold in:", "emoji":"❄️", "nerd":"\uf252", "ascii":"[Cx]" } },
+  "cache_read": { "source":"claude", "default_prefix":"emoji", "default_format":"short", "applicable_formats":["value","short"],
+             "prefix": { "none":"", "label":"Read:", "emoji":"📖", "nerd":"\uf02d", "ascii":"[Rd]" } },
   "cache_write": { "source":"claude", "default_prefix":"emoji", "default_format":"short", "applicable_formats":["value","short"],
              "prefix": { "none":"", "label":"Wrote:", "emoji":"✍️", "nerd":"\uf040", "ascii":"[Cw]" } },
   "cache_rebuild": { "source":"claude", "default_prefix":"emoji", "default_format":"short", "applicable_formats":["value","short"],
@@ -863,6 +865,19 @@ tok_cache_expires() {
 
 # Bare token counts, rendered short ("352k") by the default format. Hidden at
 # zero: "wrote 0 tokens to the cache" is noise, not information.
+#
+# cache_read is the odd one out in this group: it reads context_window's
+# current_usage, not prompt_cache, so it survives on payloads with no
+# prompt_cache object -- and it measures ONE API call (the most recent),
+# where cache_write/cache_rebuild/cache_misses are session-cumulative.
+# The two windows are stated in _token_description so the picker and the
+# generated token table carry the distinction to the user; nothing about
+# the ids themselves says it.
+tok_cache_read() {
+  local n; n="$(jq -r '.context_window.current_usage.cache_read_input_tokens // empty' <<<"$INPUT_JSON")"
+  [[ -z "$n" || "$n" == "0" ]] && return
+  printf '%s' "$n"
+}
 tok_cache_write() {
   local n; n="$(jq -r '.prompt_cache.cache_write_tokens // empty' <<<"$INPUT_JSON")"
   [[ -z "$n" || "$n" == "0" ]] && return
@@ -1081,7 +1096,7 @@ apply_format() {
         model)
           local _dn; _dn="$(jq -r '.model.display_name // ""' <<<"$INPUT_JSON")"
           printf '%s' "$(_strip_trailing_paren "$_dn")" ;;
-        tokens_input|tokens_output|context_size|cache_write|cache_rebuild)
+        tokens_input|tokens_output|context_size|cache_read|cache_write|cache_rebuild)
           _fmt_short "$raw" ;;
         duration)
           local _ms; _ms="$(jq -r '.cost.total_duration_ms // 0' <<<"$INPUT_JSON")"
@@ -1782,11 +1797,11 @@ _TOOLTIPS_PRESET=(
   "Default: 2 lines, 18 tokens — usage row on top (model, context, cost, rate limits, cache expiry); thinking / dir / git / counters / cache hit + TTL / duration below."
   "Modern: 2 lines, 9 tokens — git staged/modified inline; rate-limit bars + duration on line 2."
   "Rates: 2 lines, 8 tokens — context+cost on top; rate limits (with bars+countdown), cache hit + expiry, and api time below."
-  "Cache: 2 lines, 9 tokens — context+cost on top; prompt-cache health (hit bar, warm, expiry, TTL, misses, writes) below."
+  "Cache: 2 lines, 10 tokens — context+cost on top; prompt-cache health (hit bar, warm, expiry, TTL, misses, reads + writes) below."
   "Claude: 2 lines, 10 tokens — session info + cost/duration; claude state (thinking/effort/style/version) below."
   "Fancy: 3 lines, 13 tokens — context bar, rate-limit bars, OS chrome (battery, clock), git status."
-  "Everything: 4 lines, all 48 tokens, each using its default format. Coverage over compactness."
-  "Maximum: same 48 tokens as Everything, but with progress bars, countdowns, and combined views where applicable."
+  "Everything: 4 lines, all 49 tokens, each using its default format. Coverage over compactness."
+  "Maximum: same 49 tokens as Everything, but with progress bars, countdowns, and combined views where applicable."
 )
 
 # Count how many config fields differ from the built-in defaults. Used to
@@ -2136,11 +2151,11 @@ _PRESETS_EX=(
   "2 lines · 18 tokens"
   "2 lines · 9 tokens"
   "2 lines · 8 tokens"
-  "2 lines · 9 tokens"
+  "2 lines · 10 tokens"
   "2 lines · 10 tokens"
   "3 lines · 13 tokens"
-  "4 lines · 48 tokens"
-  "4 lines · 48 tokens (detailed)"
+  "4 lines · 49 tokens"
+  "4 lines · 49 tokens (detailed)"
 )
 
 # _PREFIXES_EX and _SEPARATORS_EX are rebuilt at wizard start (so the
@@ -2852,7 +2867,7 @@ _tl_paste_mark() {
 # ============================================================
 # SECTION: Token picker (Tokens & Lines → press 'a')
 # ============================================================
-# Full-screen grouped list of all 48 tokens. Pressing Enter inserts the
+# Full-screen grouped list of all 49 tokens. Pressing Enter inserts the
 # selected token after the cursor in the calling Tokens & Lines screen.
 
 TOK_PICKER_LIST=()    # ordered ids
@@ -2905,6 +2920,7 @@ _token_description() {
     cache_warm)       echo "Whether the prompt cache is still warm (warm/cold)" ;;
     cache_ttl)        echo "Prompt cache lifetime tier (5m or 1h)" ;;
     cache_expires)    echo "Countdown until the prompt cache goes cold" ;;
+    cache_read)       echo "Tokens read from the prompt cache this API call" ;;
     cache_write)      echo "Tokens written to the prompt cache this session" ;;
     cache_rebuild)    echo "Tokens the next request re-caches if the cache goes cold" ;;
     cache_misses)     echo "Prompt-cache misses this session + the latest cause" ;;
@@ -3678,10 +3694,10 @@ examples_catalog() {
   fi
 
   if [[ "$only" == "all" || "$only" == "tokens" ]]; then
-    echo "## Tokens  (48 total — pick any combination via Tokens & lines wizard)"
+    echo "## Tokens  (49 total — pick any combination via Tokens & lines wizard)"
     echo
-    echo "### Claude session (35 tokens, read from stdin JSON)"
-    for tok in model session_name session_id context tokens_input tokens_output context_size context_remaining cache_hit cache_warm cache_ttl cache_expires cache_write cache_rebuild cache_misses cost duration api_duration lines_added lines_removed rl_5h rl_7d thinking effort output_style version fast_mode exceeds_200k dir worktree vim_mode agent_name added_dirs git_worktree transcript; do
+    echo "### Claude session (36 tokens, read from stdin JSON)"
+    for tok in model session_name session_id context tokens_input tokens_output context_size context_remaining cache_hit cache_warm cache_ttl cache_expires cache_read cache_write cache_rebuild cache_misses cost duration api_duration lines_added lines_removed rl_5h rl_7d thinking effort output_style version fast_mode exceeds_200k dir worktree vim_mode agent_name added_dirs git_worktree transcript; do
       _print_token_row "$tok"
     done
     echo

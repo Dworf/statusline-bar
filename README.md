@@ -3,7 +3,7 @@
 A customizable statusline for Claude Code. One bash file and `jq` — no Node, no
 Rust, no daemon, no network calls.
 
-![The default preset rendered and annotated: 18 of 48 tokens across two lines, covering model, context, cost, rate limits, prompt cache, git state, line counters and duration](screenshots/hero.png)
+![The default preset rendered and annotated: 18 of 49 tokens across two lines, covering model, context, cost, rate limits, prompt cache, git state, line counters and duration](screenshots/hero.png)
 
 That is the `default` preset on a dark terminal. Here is the same statusline,
 same session, on a light one:
@@ -13,13 +13,13 @@ same session, on a light one:
 6 of the 21 themes are drawn for a light background and 3 more work on either, so
 light terminals are a first-class target, not an afterthought.
 
-> ### That was 18 tokens. There are **48**.
+> ### That was 18 tokens. There are **49**.
 >
 > Pick any of them, in any order, across up to four lines.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="screenshots/showroom_tokens_dark.png">
-  <img src="screenshots/showroom_tokens_light.png" alt="All 48 tokens rendered individually with their descriptions: 35 read from the JSON Claude Code pipes in, 6 from git, 7 from the local machine">
+  <img src="screenshots/showroom_tokens_light.png" alt="All 49 tokens rendered individually with their descriptions: 36 read from the JSON Claude Code pipes in, 6 from git, 7 from the local machine">
 </picture>
 
 <details>
@@ -37,7 +37,7 @@ light terminals are a first-class target, not an afterthought.
 The Claude Code ecosystem already has a dozen good statuslines, each strong at
 one thing. This is an attempt at one tool that does all of it:
 
-- **Every useful field.** 48 tokens — model, cost, context, prompt-cache
+- **Every useful field.** 49 tokens — model, cost, context, prompt-cache
   health, 5h and 7d rate limits with countdowns, git branch and status and
   ahead/behind, vim mode, agent name, session id, plus free local readouts like
   clock, battery, memory and load.
@@ -167,7 +167,7 @@ force a refresh, type `/` in Claude Code and pick any slash command.
 
 ## What you can change
 
-Twelve presets, from three tokens on one line to all 48 across four:
+Twelve presets, from three tokens on one line to all 49 across four:
 
 <table>
   <tr>
@@ -206,7 +206,7 @@ is swappable, globally or one at a time:
 
 | | |
 |---|---|
-| **48 tokens** | 35 from Claude Code's stdin JSON, 6 from `git`, 7 from the local machine |
+| **49 tokens** | 36 from Claude Code's stdin JSON, 6 from `git`, 7 from the local machine |
 | **12 presets** | 1-line `minimum` `compact` `focus` `coder` · 2-line `default` `modern` `rates` `cache` `claude` · 3-line `fancy` · 4-line `everything` `maximum` |
 | **21 themes** | 3 adaptive, 6 for light terminals, 12 for dark |
 | **8 prefix styles** | `none` `label` `emoji` `nerd` `ascii` and three combinations |

@@ -1,7 +1,7 @@
 # Reference
 
 Every catalog, the config schema, and the full CLI for
-[statusline-bar](README.md) 0.6.0. All of it is also available live in your own
+[statusline-bar](README.md) 0.6.1. All of it is also available live in your own
 terminal — `statusline-bar.sh --examples [SECTION]` prints the same catalogs at
 your terminal's real color depth. The showroom images below ship in light and
 dark variants and switch with your GitHub theme.
@@ -27,11 +27,11 @@ set afterwards are kept.
 | `default` | 2 lines · 18 tokens | usage row on top (model, context, cost, rate limits, cache expiry); thinking / dir / git / counters / cache hit + TTL / duration below. |
 | `modern` | 2 lines · 9 tokens | git staged/modified inline; rate-limit bars + duration on line 2. |
 | `rates` | 2 lines · 8 tokens | context + cost on top; rate limits with bars and countdowns, cache hit + expiry, and api time below. |
-| `cache` | 2 lines · 9 tokens | context + cost on top; prompt-cache health (hit bar, warm, expiry, TTL, misses, writes) below. |
+| `cache` | 2 lines · 10 tokens | context + cost on top; prompt-cache health (hit bar, warm, expiry, TTL, misses, reads + writes) below. |
 | `claude` | 2 lines · 10 tokens | session info + cost/duration; Claude state (thinking, effort, style, version) below. |
 | `fancy` | 3 lines · 13 tokens | context bar, rate-limit bars, OS chrome (battery, clock), git status. |
-| `everything` | 4 lines · 48 tokens | all 48 tokens, each in its default format. Coverage over compactness. |
-| `maximum` | 4 lines · 48 tokens | the same 48 tokens, but with progress bars, countdowns, and combined views wherever a token offers them. |
+| `everything` | 4 lines · 49 tokens | all 49 tokens, each in its default format. Coverage over compactness. |
+| `maximum` | 4 lines · 49 tokens | the same 49 tokens, but with progress bars, countdowns, and combined views wherever a token offers them. |
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="screenshots/showroom_presets_dark.png">
@@ -149,21 +149,28 @@ style. Any token with a bar can override it with `tokens.<id>.bar_style`.
 
 ## Tokens
 
-48 tokens: 35 read out of the JSON Claude Code pipes in, 6 from `git`, 7 from
+49 tokens: 36 read out of the JSON Claude Code pipes in, 6 from `git`, 7 from
 the machine running the statusline. Each token advertises only the formats that
 make sense for its data; the **bold** one is its default.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="screenshots/showroom_tokens_dark.png">
-  <img src="screenshots/showroom_tokens_light.png" alt="All 48 tokens rendered alone with inline descriptions">
+  <img src="screenshots/showroom_tokens_light.png" alt="All 49 tokens rendered alone with inline descriptions">
 </picture>
 
-### Claude session (35)
+### Claude session (36)
 
 Read from stdin. A token whose field is absent from the payload renders the
-placeholder (or disappears, under `empty_behavior: hide`) — that is what the
-six `cache_*` tokens do on Claude Code versions older than 2.1.251, which do
-not send a `prompt_cache` object.
+placeholder (or disappears, under `empty_behavior: hide`) — that is what six of
+the eight `cache_*` tokens do on Claude Code versions older than 2.1.251, which
+do not send a `prompt_cache` object. `cache_hit` and `cache_read` are the
+exceptions: both fall back on `context_window`, which every version sends.
+
+Mind the window each cache token counts over. `cache_read` is the **last API
+call**; `cache_write` and `cache_misses` are **session totals** and `cache_hit`
+a **session ratio** — except on Claude Code older than 2.1.251, where `cache_hit`
+falls back to deriving from the last call alone. Each of those four names its
+window in its description.
 
 | Token | Icon | Description | Formats |
 |---|---|---|---|
@@ -178,6 +185,7 @@ not send a `prompt_cache` object.
 | `cache_warm` | 🔥 | Whether the prompt cache is still warm (warm/cold) | **`value`** `flag` |
 | `cache_ttl` | 🪟 | Prompt cache lifetime tier (5m or 1h) | **`value`** |
 | `cache_expires` | ❄️ | Countdown until the prompt cache goes cold | `value` **`countdown`** `countdown_short` `remaining` `remaining_short` |
+| `cache_read` | 📖 | Tokens read from the prompt cache this API call | `value` **`short`** |
 | `cache_write` | ✍️ | Tokens written to the prompt cache this session | `value` **`short`** |
 | `cache_rebuild` | 🔁 | Tokens the next request re-caches if the cache goes cold | `value` **`short`** |
 | `cache_misses` | ⚠️ | Prompt-cache misses this session + the latest cause | `value` `cause` **`count+cause`** |
@@ -386,10 +394,10 @@ renders that actual token under every option:
   </tr>
 </table>
 
-`a` from any line opens the token picker: all 48 grouped by source, each row a
+`a` from any line opens the token picker: all 49 grouped by source, each row a
 live sample, with `✓` next to the ones already placed somewhere.
 
-<img src="screenshots/menu_tokens_lines_add_token.png" alt="Token picker: 48 tokens grouped by Claude session, Git and Local OS, each with a rendered sample" width="480">
+<img src="screenshots/menu_tokens_lines_add_token.png" alt="Token picker: 49 tokens grouped by Claude session, Git and Local OS, each with a rendered sample" width="480">
 
 </details>
 
