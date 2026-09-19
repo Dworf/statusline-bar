@@ -121,7 +121,7 @@
 [ cache_warm         ] 🔥 warm                              ⓘ Whether the prompt cache is still warm (warm/cold)
 [ cache_ttl          ] 🪟 1h                                ⓘ Prompt cache lifetime tier (5m or 1h)
 [ cache_expires      ] ❄️ 58m 12s                          ⓘ Countdown until the prompt cache goes cold
-[ cache_read         ] 📖 9k                                ⓘ Tokens read from the prompt cache this turn
+[ cache_read         ] 📖 9k                                ⓘ Tokens read from the prompt cache this API call
 [ cache_write        ] ✍️ 352k                             ⓘ Tokens written to the prompt cache this session
 [ cache_rebuild      ] 🔁 45k                               ⓘ Tokens the next request re-caches if the cache goes cold
 [ cache_misses       ] ⚠️ 2 (tools_changed)                ⓘ Prompt-cache misses this session + the latest cause

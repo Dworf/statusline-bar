@@ -2920,7 +2920,7 @@ _token_description() {
     cache_warm)       echo "Whether the prompt cache is still warm (warm/cold)" ;;
     cache_ttl)        echo "Prompt cache lifetime tier (5m or 1h)" ;;
     cache_expires)    echo "Countdown until the prompt cache goes cold" ;;
-    cache_read)       echo "Tokens read from the prompt cache this turn" ;;
+    cache_read)       echo "Tokens read from the prompt cache this API call" ;;
     cache_write)      echo "Tokens written to the prompt cache this session" ;;
     cache_rebuild)    echo "Tokens the next request re-caches if the cache goes cold" ;;
     cache_misses)     echo "Prompt-cache misses this session + the latest cause" ;;

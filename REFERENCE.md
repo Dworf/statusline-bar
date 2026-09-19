@@ -167,8 +167,10 @@ do not send a `prompt_cache` object. `cache_hit` and `cache_read` are the
 exceptions: both fall back on `context_window`, which every version sends.
 
 Mind the window each cache token counts over. `cache_read` is the **last API
-call**; `cache_hit`, `cache_write` and `cache_misses` are **session totals**.
-Each of those four names its window in its description.
+call**; `cache_write` and `cache_misses` are **session totals** and `cache_hit`
+a **session ratio** — except on Claude Code older than 2.1.251, where `cache_hit`
+falls back to deriving from the last call alone. Each of those four names its
+window in its description.
 
 | Token | Icon | Description | Formats |
 |---|---|---|---|
@@ -183,7 +185,7 @@ Each of those four names its window in its description.
 | `cache_warm` | 🔥 | Whether the prompt cache is still warm (warm/cold) | **`value`** `flag` |
 | `cache_ttl` | 🪟 | Prompt cache lifetime tier (5m or 1h) | **`value`** |
 | `cache_expires` | ❄️ | Countdown until the prompt cache goes cold | `value` **`countdown`** `countdown_short` `remaining` `remaining_short` |
-| `cache_read` | 📖 | Tokens read from the prompt cache this turn | `value` **`short`** |
+| `cache_read` | 📖 | Tokens read from the prompt cache this API call | `value` **`short`** |
 | `cache_write` | ✍️ | Tokens written to the prompt cache this session | `value` **`short`** |
 | `cache_rebuild` | 🔁 | Tokens the next request re-caches if the cache goes cold | `value` **`short`** |
 | `cache_misses` | ⚠️ | Prompt-cache misses this session + the latest cause | `value` `cause` **`count+cause`** |
